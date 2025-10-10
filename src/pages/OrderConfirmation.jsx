@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // To get the current user ID
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   Container,
   Typography,
@@ -13,17 +13,20 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 function OrderConfirmation({ setCart }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   
-  // Get the order ID passed from the checkout page
   const orderId = location.state?.orderId;
 
-  // Clear the cart when the component mounts
   useEffect(() => {
     if (setCart) {
       setCart([]);
     }
   }, [setCart]);
+
+  const handleViewOrders = () => {
+      navigate('/my-orders');
+  };
 
   return (
     <Container component="main" maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
@@ -43,11 +46,11 @@ function OrderConfirmation({ setCart }) {
         )}
 
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 4 }}>
-          <Button component={RouterLink} to="/" variant="contained">
+          <Button component={RouterLink} to="/products" variant="contained">
             Seguir Comprando
           </Button>
           {currentUser && (
-             <Button component={RouterLink} to={`/profile/${currentUser.uid}`} variant="outlined">
+             <Button variant="outlined" onClick={handleViewOrders}>
                 Ver Mis Pedidos
              </Button>
           )}

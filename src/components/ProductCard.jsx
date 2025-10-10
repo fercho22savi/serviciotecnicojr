@@ -1,113 +1,112 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-    Card, CardContent, CardMedia, Typography, Box, IconButton, Rating, Button, TextField
+    Card, CardContent, CardMedia, Typography, Box, Button, Chip, IconButton
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import ProductDetailModal from './ProductDetailModal';
+import { AddShoppingCart, Favorite, FavoriteBorder } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 const StyledCard = styled(Card)(({ theme }) => ({
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+    maxWidth: 345,
+    margin: 'auto',
+    transition: 'transform 0.3s, box-shadow 0.3s',
     '&:hover': {
-        transform: 'translateY(-5px)',
+        transform: 'translateY(-8px)',
         boxShadow: theme.shadows[8],
     },
     cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    height: '100%',
+    position: 'relative', // <-- Añadido para el posicionamiento del icono
 }));
 
-const CardActionsContainer = styled(Box)({
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '8px 16px',
-    marginTop: 'auto', // Pushes actions to the bottom
-});
+const ProductCard = ({ 
+    product, 
+    onCardClick, 
+    onAddToCart, 
+    isInWishlist, 
+    handleWishlist, 
+    isLoggedIn 
+}) => {
+    const navigate = useNavigate();
 
-function ProductCard({ product, products, addToCart, handleWishlist, wishlist }) {
-    const [quantity, setQuantity] = useState(1);
-    const [open, setOpen] = useState(false);
-    const isWishlisted = wishlist.has(product.id);
-
-    const onAddToCart = (e) => {
+    const handleAddToCart = (e) => {
         e.stopPropagation();
-        addToCart(product, quantity);
+        onAddToCart(product);
     };
 
-    const onToggleWishlist = (e) => {
+    const handleWishlistClick = (e) => {
         e.stopPropagation();
-        handleWishlist(product.id);
-    }
-
-    const handleOpen = () => setOpen(true);
-    const handleClose = () => setOpen(false);
+        if (!isLoggedIn) {
+            navigate('/login');
+        } else {
+            handleWishlist(product.id);
+        }
+    };
 
     return (
-        <>
-            <StyledCard onClick={handleOpen}>
-                <CardMedia
-                    component="img"
-                    image={product.imageUrl}
-                    alt={product.name}
-                    sx={{ height: 200, backgroundSize: 'contain', objectFit: 'contain' }}
-                />
-                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Typography gutterBottom variant="h6" component="h2" noWrap>
-                        {product.name}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Rating name="read-only" value={product.averageRating || 0} precision={0.5} readOnly />
-                        <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                            ({product.reviewCount || 0})
-                        </Typography>
-                    </Box>
-                    <Typography variant="h5" color="primary" fontWeight="bold">
-                        ${product.price.toFixed(2)}
-                    </Typography>
-                </CardContent>
+        <StyledCard onClick={() => onCardClick(product)}>
+            <IconButton
+                aria-label="add to wishlist"
+                onClick={handleWishlistClick}
+                sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    '&:hover': {
+                        backgroundColor: 'rgba(255, 255, 255, 1)',
+                    }
+                }}
+            >
+                {isInWishlist ? <Favorite color="error" /> : <FavoriteBorder />}
+            </IconButton>
 
-                {/* Quantity Selector */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 1 }} onClick={e => e.stopPropagation()}>
-                    <IconButton size="small" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-                        <RemoveIcon />
-                    </IconButton>
-                    <TextField 
-                        size="small" 
-                        value={quantity} 
-                        InputProps={{ readOnly: true }} 
-                        sx={{ width: '50px', textAlign: 'center', '& .MuiInputBase-input': { textAlign: 'center' } }}
-                    />
-                    <IconButton size="small" onClick={() => setQuantity(quantity + 1)}>
-                        <AddIcon />
-                    </IconButton>
-                </Box>
-
-                <CardActionsContainer>
-                    <IconButton onClick={onToggleWishlist} color={isWishlisted ? 'error' : 'default'}>
-                        {isWishlisted ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                    </IconButton>
-                    <Button variant="contained" startIcon={<AddShoppingCartIcon />} onClick={onAddToCart}>
-                        Add to Cart
-                    </Button>
-                </CardActionsContainer>
-            </StyledCard>
-            <ProductDetailModal
-                open={open}
-                handleClose={handleClose}
-                product={product}
-                products={products}
-                addToCart={addToCart}
-                wishlist={wishlist}
-                handleWishlist={handleWishlist}
+            <CardMedia
+                component="img"
+                sx={{ 
+                    height: 220, 
+                    objectFit: 'contain',
+                    p: 2, 
+                 }}
+                image={product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/220'}
+                alt={product.name}
             />
-        </>
+            <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', pt: 0 }}>
+                <Typography gutterBottom variant="body1" component="div" sx={{ fontWeight: '500', height: '3.5em', overflow: 'hidden' }}>
+                    {product.name}
+                </Typography>
+                <Box sx={{ flexGrow: 1 }} /> 
+                <Box>
+                    {product.originalPrice && (
+                        <Typography variant="caption" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
+                            ${Number(product.originalPrice).toLocaleString('es-CO')}
+                        </Typography>
+                    )}
+                    <Typography variant="h5" color="text.primary" sx={{ fontWeight: 'bold' }}>
+                        ${Number(product.price).toLocaleString('es-CO')}
+                    </Typography>
+                    {product.installments && (
+                        <Typography variant="body2" color="green">
+                            en {product.installments}x ${Number(product.price / product.installments).toLocaleString('es-CO')} sin interés
+                        </Typography>
+                    )}
+                     <Button 
+                        variant="contained" 
+                        color="primary" 
+                        fullWidth 
+                        sx={{ mt: 2, textTransform: 'none', fontWeight: 'bold' }}
+                        startIcon={<AddShoppingCart />}
+                        onClick={handleAddToCart}
+                    >
+                        Añadir al carrito
+                    </Button>
+                </Box>
+            </CardContent>
+        </StyledCard>
     );
-}
+};
 
 export default ProductCard;

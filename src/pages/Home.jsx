@@ -1,13 +1,17 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, Button, Container, Grid } from '@mui/material';
 import ProductCard from '../components/ProductCard';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlist, wishlist }) {
+// 1. Aceptar las nuevas props: isLoggedIn
+function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlist, wishlist, isLoggedIn }) {
+    const navigate = useNavigate();
+
     const filteredProducts = useMemo(() => {
+        if (!products) return [];
         let filtered = products;
 
-        if (selectedCategory && selectedCategory !== 'All') {
+        if (selectedCategory && selectedCategory !== 'Todas') {
             filtered = filtered.filter(p => p.category === selectedCategory);
         }
 
@@ -16,8 +20,8 @@ function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlis
                 product.name.toLowerCase().includes(searchTerm)
             );
         }
-
-        if (!searchTerm && !selectedCategory) {
+        // En la Home, mostrar solo 8 si no hay filtros
+        if (!searchTerm && (!selectedCategory || selectedCategory === 'Todas')) {
             return filtered.slice(0, 8);
         }
 
@@ -25,18 +29,9 @@ function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlis
 
     }, [products, searchTerm, selectedCategory]);
 
-    const getTitle = () => {
-        if (searchTerm && selectedCategory) {
-            return `Results for "${searchTerm}" in ${selectedCategory}`;
-        }
-        if (searchTerm) {
-            return `Results for "${searchTerm}"`
-        }
-        if (selectedCategory) {
-            return `Showing products from ${selectedCategory}`;
-        }
-        return 'Our Catalog';
-    }
+    const handleCardClick = (product) => {
+        navigate(`/product/${product.id}`);
+    };
 
     return (
         <>
@@ -62,7 +57,7 @@ function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlis
                     mb: 6,
                 }}
             >
-                <Container maxWidth="md">
+                 <Container maxWidth="md">
                     <Typography variant="h2" component="h1" fontWeight="bold" gutterBottom
                         sx={{
                             fontSize: {
@@ -72,10 +67,10 @@ function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlis
                             }
                         }}
                     >
-                        Products from Our Catalog
+                        Los Mejores Productos
                     </Typography>
                     <Typography variant="h6" component="p" sx={{ my: 3, fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                        Find the perfect piece for your space.
+                        Encuentra la pieza perfecta para tu espacio.
                     </Typography>
                     <Button
                         variant="contained"
@@ -95,7 +90,7 @@ function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlis
                         component={RouterLink}
                         to="/products"
                     >
-                        SHOP NOW
+                        COMPRAR AHORA
                     </Button>
                 </Container>
             </Box>
@@ -103,17 +98,19 @@ function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlis
             {/* Product Catalog */}
             <Container sx={{ pb: 8 }} maxWidth="lg">
                 <Typography variant="h4" component="h2" fontWeight="bold" gutterBottom sx={{ mb: 4, textAlign: 'center' }}>
-                    {getTitle()}
+                    Nuestros Productos Destacados
                 </Typography>
                 <Grid container spacing={4}>
                     {filteredProducts.map((product) => (
                         <Grid item key={product.id} xs={12} sm={6} md={4} lg={3}>
+                            {/* 2. Pasar TODAS las props a ProductCard */}
                             <ProductCard 
                                 product={product} 
-                                products={products}
-                                addToCart={addToCart} 
+                                onCardClick={handleCardClick}
+                                onAddToCart={addToCart} 
                                 handleWishlist={handleWishlist} 
-                                wishlist={wishlist}
+                                isInWishlist={wishlist.has(product.id)}
+                                isLoggedIn={isLoggedIn}
                             />
                         </Grid>
                     ))}

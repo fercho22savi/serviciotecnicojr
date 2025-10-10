@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase/config'; // Import Firestore
+import { doc, getDoc } from 'firebase/firestore'; // Import Firestore functions
 import { 
   Box, 
   TextField, 
@@ -21,18 +23,47 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, signInWithGoogle } = useAuth(); // Get signInWithGoogle from context
+  const { login, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  // --- HANDLERS ---
+  // --- REDIRECTION HANDLER ---
+
+  const handleSuccessfulLogin = async (user) => {
+    if (!user) return;
+
+    try {
+      // 1. Get user role from Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        // 2. Redirect based on role
+        if (userData.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/user-profile');
+        }
+      } else {
+        // Fallback if user document doesn't exist for some reason
+        navigate('/user-profile'); 
+      }
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+      // Redirect to a default page even if fetching role fails
+      navigate('/user-profile');
+    }
+  };
+  
+  // --- LOGIN HANDLERS ---
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/'); // Redirect on successful login
+      const userCredential = await login(email, password);
+      await handleSuccessfulLogin(userCredential.user);
     } catch (err) {
       setError('Credenciales inválidas. Por favor, verifica tu correo y contraseña.');
       console.error(err);
@@ -43,8 +74,8 @@ function Login() {
   const handleGoogleLogin = async () => {
     setError('');
     try {
-      await signInWithGoogle();
-      navigate('/'); // Redirect on successful login
+      const userCredential = await signInWithGoogle();
+      await handleSuccessfulLogin(userCredential.user);
     } catch (err) {
       setError('No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.');
       console.error(err);
@@ -63,7 +94,6 @@ function Login() {
         
         {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
         
-        {/* Email/Password Form */}
         <Box component="form" onSubmit={handleEmailLogin} noValidate>
           <Grid container spacing={2}>
             <Grid item xs={12}>
@@ -89,7 +119,6 @@ function Login() {
             </Grid>
         </Box>
 
-        {/* Divider and Social Login */}
         <Divider sx={{ my: 3 }}>O continúa con</Divider>
 
         <Grid container spacing={2}>
@@ -99,7 +128,7 @@ function Login() {
               variant="outlined"
               startIcon={<GoogleIcon />}
               sx={{ py: 1.5, borderRadius: '12px' }}
-              onClick={handleGoogleLogin} // Connect to Google login handler
+              onClick={handleGoogleLogin}
             >
               Iniciar Sesión con Google
             </Button>

@@ -9,11 +9,10 @@ import {
   GoogleAuthProvider, 
   signInWithPopup
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   return useContext(AuthContext);
 };
@@ -27,10 +26,8 @@ export const AuthProvider = ({ children }) => {
     await updateProfile(userCredential.user, { displayName });
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     await setDoc(userDocRef, {
-      uid: userCredential.user.uid,
-      displayName,
-      email,
-      role: 'customer',
+      uid: userCredential.user.uid, displayName, email, role: 'Usuario Básico',
+      createdAt: serverTimestamp(), lastLogin: serverTimestamp(), status: 'Activo',
     });
     return userCredential;
   };
@@ -47,17 +44,12 @@ export const AuthProvider = ({ children }) => {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
-
     const userDocRef = doc(db, 'users', user.uid);
     const userDoc = await getDoc(userDocRef);
-
     if (!userDoc.exists()) {
       await setDoc(userDocRef, {
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        role: 'customer',
+        uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL,
+        role: 'Usuario Básico', createdAt: serverTimestamp(), lastLogin: serverTimestamp(), status: 'Activo',
       });
     }
     return result;
@@ -68,11 +60,19 @@ export const AuthProvider = ({ children }) => {
       if (user) {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
+
         if (userDoc.exists()) {
-          setCurrentUser({ ...user, ...userDoc.data() });
+          const userData = userDoc.data();
+          user.role = userData.role || 'Usuario Básico'; // Asignar rol
         } else {
-          setCurrentUser(user);
+          // Crear documento si no existe para usuarios que inician sesión
+          await setDoc(userDocRef, {
+            uid: user.uid, displayName: user.displayName, email: user.email,
+            role: 'Usuario Básico', createdAt: serverTimestamp(), status: 'Activo'
+          });
+          user.role = 'Usuario Básico';
         }
+        setCurrentUser(user);
       } else {
         setCurrentUser(null);
       }
@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

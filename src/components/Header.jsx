@@ -4,13 +4,14 @@ import {
     ListItemIcon, Divider, TextField, InputAdornment, Tooltip, Select, FormControl
 } from '@mui/material';
 import {
-    ShoppingCart, FavoriteBorder, AccountCircle, Logout, AdminPanelSettings, Search, Store, Storefront
+    ShoppingCart, FavoriteBorder, AccountCircle, Logout, Search, Store, Storefront, Dashboard
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { auth } from '../firebase/config';
 
 function Header({ cartItemCount, searchTerm, handleSearchChange, wishlistCount, categories, selectedCategory, handleCategoryChange }) {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const open = Boolean(anchorEl);
@@ -29,15 +30,20 @@ function Header({ cartItemCount, searchTerm, handleSearchChange, wishlistCount, 
   };
 
   const handleLogoutClick = async () => {
-    await logout();
-    handleClose();
-    navigate('/');
+    try {
+        await auth.signOut();
+        handleClose();
+        navigate('/');
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error)
+    }
   };
+
+  const isAdmin = currentUser && (currentUser.role === 'Admin' || currentUser.role === 'admin');
 
   return (
     <AppBar position="static" elevation={0} sx={{ bgcolor: 'transparent', color: '#000' }}>
       <Toolbar sx={{ justifyContent: 'space-between', borderBottom: '1px solid #e0e0e0', py: 1 }}>
-        {/* Logo */}
         <Typography
           variant="h5"
           component={Link}
@@ -48,7 +54,6 @@ function Header({ cartItemCount, searchTerm, handleSearchChange, wishlistCount, 
           MiTienda
         </Typography>
 
-        {/* Search Bar & Category Filter */}
         <Box sx={{ flexGrow: 1, mx: { xs: 1, md: 4 }, display: 'flex', alignItems: 'center', gap: 1 }}>
             <FormControl size="small" sx={{ minWidth: 150, 
                 '& .MuiOutlinedInput-root': {
@@ -97,7 +102,6 @@ function Header({ cartItemCount, searchTerm, handleSearchChange, wishlistCount, 
             />
         </Box>
 
-        {/* Icons and Auth */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Tooltip title="Catálogo">
                 <IconButton color="inherit" component={Link} to="/products" sx={{ mr: 0.5 }}>
@@ -133,14 +137,14 @@ function Header({ cartItemCount, searchTerm, handleSearchChange, wishlistCount, 
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
               >
-                <MenuItem onClick={() => handleNavigate('/account')}>
+                <MenuItem onClick={() => handleNavigate('/user-profile')}>
                   <ListItemIcon><AccountCircle fontSize="small" /></ListItemIcon>
                   Mi Cuenta
                 </MenuItem>
-                {currentUser.role === 'admin' && (
-                  <MenuItem onClick={() => handleNavigate('/admin')}>
-                    <ListItemIcon><AdminPanelSettings fontSize="small" /></ListItemIcon>
-                    Panel de Admin
+                {isAdmin && (
+                  <MenuItem onClick={() => handleNavigate('/admin/users')}>
+                    <ListItemIcon><Dashboard fontSize="small" /></ListItemIcon>
+                    Dashboard
                   </MenuItem>
                 )}
                 <Divider />
