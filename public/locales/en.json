@@ -1,0 +1,25 @@
+{
+  "header": {
+    "searchPlaceholder": "Search products...",
+    "catalog": "Catalog",
+    "wishlist": "Wishlist",
+    "cart": "Cart",
+    "account": "My Account",
+    "adminPanel": "Admin Panel",
+    "logout": "Logout",
+    "login": "LOGIN",
+    "signup": "SIGN UP",
+    "allCategories": "All"
+  },
+  "home": {
+    "heroTitle": "Style that Defines your Space",
+    "heroSubtitle": "Discover unique pieces that transform your house into a home.",
+    "exploreButton": "EXPLORE COLLECTION NOW",
+    "ourCatalog": "Our Catalog",
+    "resultsFor": "Results for",
+    "showingProductsFrom": "Showing products from"
+  },
+  "products_page": {
+      "title": "Product Catalog"
+  }
+}
