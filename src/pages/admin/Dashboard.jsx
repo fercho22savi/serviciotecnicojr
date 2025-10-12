@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '../../firebase/config'; // Corrected import
+import { db } from '../../firebase/config';
 import { Box, Container, Grid, Paper, Typography, CircularProgress, Table, TableBody, TableCell, TableHead, TableRow, Chip } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -8,7 +8,6 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PeopleIcon from '@mui/icons-material/People';
 import InventoryIcon from '@mui/icons-material/Inventory';
 
-// Stat Card Component
 const StatCard = ({ title, value, icon, color }) => (
   <Paper sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }} elevation={3}>
     <Box>
@@ -21,7 +20,6 @@ const StatCard = ({ title, value, icon, color }) => (
   </Paper>
 );
 
-// Main Dashboard Component
 function AdminDashboard() {
   const [stats, setStats] = useState({ totalRevenue: 0, totalOrders: 0, totalCustomers: 0, totalProducts: 0 });
   const [recentOrders, setRecentOrders] = useState([]);
@@ -31,26 +29,22 @@ function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch all data in parallel
         const [ordersSnapshot, productsSnapshot, usersSnapshot, recentOrdersSnapshot] = await Promise.all([
           getDocs(collection(db, 'orders')),
           getDocs(collection(db, 'products')),
-          getDocs(collection(db, 'users')), // Assuming a 'users' collection for customer count
+          getDocs(collection(db, 'users')),
           getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5)))
         ]);
 
-        // --- Process Stats ---
         const totalRevenue = ordersSnapshot.docs.reduce((acc, doc) => acc + doc.data().total, 0);
         const totalOrders = ordersSnapshot.size;
         const totalProducts = productsSnapshot.size;
         const totalCustomers = usersSnapshot.size;
         setStats({ totalRevenue, totalOrders, totalProducts, totalCustomers });
 
-        // --- Process Recent Orders ---
         const orders = recentOrdersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setRecentOrders(orders);
 
-        // --- Process Sales Data for Chart (last 7 days) ---
         const salesByDay = {};
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -58,13 +52,12 @@ function AdminDashboard() {
         ordersSnapshot.docs.forEach(doc => {
           const order = doc.data();
           if (order.createdAt && order.createdAt.toDate() > sevenDaysAgo) {
-            const date = order.createdAt.toDate().toLocaleDateString('en-CA'); // YYYY-MM-DD
+            const date = order.createdAt.toDate().toLocaleDateString('en-CA');
             if (!salesByDay[date]) salesByDay[date] = 0;
             salesByDay[date] += order.total;
           }
         });
 
-        // Format for Recharts
         const chartData = Object.keys(salesByDay).sort().map(date => ({ 
           date: new Date(date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
           ingresos: salesByDay[date]
@@ -89,17 +82,15 @@ function AdminDashboard() {
     <Container maxWidth="xl" sx={{ my: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>Dashboard</Typography>
       
-      {/* KPI Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}><StatCard title="Ingresos Totales" value={`$${stats.totalRevenue.toFixed(2)}`} icon={<MonetizationOnIcon fontSize="inherit"/>} color="success.main" /></Grid>
-        <Grid item xs={12} sm={6} md={3}><StatCard title="Pedidos Totales" value={stats.totalOrders} icon={<ShoppingCartIcon fontSize="inherit"/>} color="info.main" /></Grid>
-        <Grid item xs={12} sm={6} md={3}><StatCard title="Clientes Totales" value={stats.totalCustomers} icon={<PeopleIcon fontSize="inherit"/>} color="warning.main" /></Grid>
-        <Grid item xs={12} sm={6} md={3}><StatCard title="Productos Totales" value={stats.totalProducts} icon={<InventoryIcon fontSize="inherit"/>} color="error.main" /></Grid>
+        <Grid xs={12} sm={6} md={3}><StatCard title="Ingresos Totales" value={`$${stats.totalRevenue.toFixed(2)}`} icon={<MonetizationOnIcon fontSize="inherit"/>} color="success.main" /></Grid>
+        <Grid xs={12} sm={6} md={3}><StatCard title="Pedidos Totales" value={stats.totalOrders} icon={<ShoppingCartIcon fontSize="inherit"/>} color="info.main" /></Grid>
+        <Grid xs={12} sm={6} md={3}><StatCard title="Clientes Totales" value={stats.totalCustomers} icon={<PeopleIcon fontSize="inherit"/>} color="warning.main" /></Grid>
+        <Grid xs={12} sm={6} md={3}><StatCard title="Productos Totales" value={stats.totalProducts} icon={<InventoryIcon fontSize="inherit"/>} color="error.main" /></Grid>
       </Grid>
 
-      {/* Sales Chart */}
       <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Paper sx={{ p: 3, height: 400 }} elevation={3}>
             <Typography variant="h6" gutterBottom>Ingresos de los Últimos 7 Días</Typography>
             <ResponsiveContainer width="100%" height="100%">
@@ -115,8 +106,7 @@ function AdminDashboard() {
           </Paper>
         </Grid>
 
-        {/* Recent Orders Table */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
             <Paper sx={{ p: 3 }} elevation={3}>
                 <Typography variant="h6" gutterBottom>Últimos Pedidos</Typography>
                 <Table sx={{ minWidth: 650 }} aria-label="simple table">

@@ -1,111 +1,164 @@
 import React from 'react';
 import {
-    Card, CardContent, CardMedia, Typography, Box, Button, Chip, IconButton
+    Card, CardContent, CardMedia, Typography, Box, Button, IconButton, Chip
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import { AddShoppingCart, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
-const StyledCard = styled(Card)(({ theme }) => ({
-    maxWidth: 345,
-    margin: 'auto',
-    transition: 'transform 0.3s, box-shadow 0.3s',
-    '&:hover': {
-        transform: 'translateY(-8px)',
-        boxShadow: theme.shadows[8],
-    },
-    cursor: 'pointer',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    height: '100%',
-    position: 'relative', // <-- Añadido para el posicionamiento del icono
-}));
-
-const ProductCard = ({ 
-    product, 
-    onCardClick, 
-    onAddToCart, 
-    isInWishlist, 
-    handleWishlist, 
-    isLoggedIn 
-}) => {
+const ProductCard = ({ product, addToCart, isInWishlist, handleWishlist, isLoggedIn }) => {
     const navigate = useNavigate();
+
+    // Defensive check: If product is null or undefined, render nothing.
+    if (!product) {
+        return null;
+    }
+
+    // Destructure with default values to prevent crashes from missing data.
+    const {
+        id,
+        stock = 0,
+        images = [],
+        category = 'Sin Categoría',
+        name = 'Producto Desconocido',
+        price = 0,
+        originalPrice,
+        installments
+    } = product;
+
+    const handleCardClick = () => {
+        if (id) {
+            navigate(`/product/${id}`);
+        }
+    };
 
     const handleAddToCart = (e) => {
         e.stopPropagation();
-        onAddToCart(product);
+        if (product) {
+            addToCart(product);
+            toast.success('¡Añadido al carrito!');
+        } else {
+            toast.error('Este producto no se puede añadir.')
+        }
     };
 
     const handleWishlistClick = (e) => {
         e.stopPropagation();
         if (!isLoggedIn) {
+            toast.error('Debes iniciar sesión para usar la lista de deseos');
             navigate('/login');
-        } else {
-            handleWishlist(product.id);
+        } else if (id) {
+            handleWishlist(id);
         }
     };
 
-    return (
-        <StyledCard onClick={() => onCardClick(product)}>
-            <IconButton
-                aria-label="add to wishlist"
-                onClick={handleWishlistClick}
-                sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                    '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 1)',
-                    }
-                }}
-            >
-                {isInWishlist ? <Favorite color="error" /> : <FavoriteBorder />}
-            </IconButton>
+    const stockStatus = stock > 0 ? (stock < 5 ? 'Poco Stock' : 'En Stock') : 'Agotado';
+    const stockColor = stock > 0 ? (stock < 5 ? 'warning' : 'success') : 'error';
+    const imageUrl = images && images.length > 0 ? images[0] : 'https://via.placeholder.com/300';
 
-            <CardMedia
-                component="img"
-                sx={{ 
-                    height: 220, 
-                    objectFit: 'contain',
-                    p: 2, 
-                 }}
-                image={product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/220'}
-                alt={product.name}
-            />
-            <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', pt: 0 }}>
-                <Typography gutterBottom variant="body1" component="div" sx={{ fontWeight: '500', height: '3.5em', overflow: 'hidden' }}>
-                    {product.name}
+    return (
+        <Card sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            transition: (theme) => theme.transitions.create(['box-shadow', 'transform'], {
+                duration: theme.transitions.duration.short,
+            }),
+            '&:hover': {
+                transform: 'translateY(-8px)',
+                boxShadow: (theme) => theme.shadows[6],
+            },
+            opacity: stock === 0 ? 0.7 : 1, // Visually indicate out-of-stock
+        }}>
+            <Box sx={{ position: 'relative', cursor: id ? 'pointer' : 'default' }} onClick={handleCardClick}>
+                <Chip 
+                    label={stockStatus}
+                    color={stockColor}
+                    size="small"
+                    sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1, fontWeight: 'bold', fontSize: '0.7rem' }} 
+                />
+                <IconButton
+                    aria-label="add to wishlist"
+                    onClick={handleWishlistClick}
+                    sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        zIndex: 1,
+                        bgcolor: 'rgba(255, 255, 255, 0.6)',
+                        backdropFilter: 'blur(4px)',
+                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.9)' },
+                        color: 'text.secondary'
+                    }}
+                >
+                    {isInWishlist ? <Favorite color="error" /> : <FavoriteBorder />}
+                </IconButton>
+                <Box sx={{ pt: '100%', position: 'relative', bgcolor: 'grey.100' }}>
+                    <CardMedia
+                        component="img"
+                        image={imageUrl}
+                        alt={name}
+                        sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                </Box>
+            </Box>
+
+            <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
+                <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 1 }}>
+                    {category}
                 </Typography>
-                <Box sx={{ flexGrow: 1 }} /> 
-                <Box>
-                    {product.originalPrice && (
-                        <Typography variant="caption" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
-                            ${Number(product.originalPrice).toLocaleString('es-CO')}
+                <Typography 
+                    gutterBottom 
+                    variant="h6" 
+                    component="div" 
+                    title={name}
+                    sx={{ 
+                        fontWeight: 600, 
+                        lineHeight: 1.3, 
+                        height: '2.6em', 
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: '2',
+                        WebkitBoxOrient: 'vertical',
+                        cursor: id ? 'pointer' : 'default'
+                    }} 
+                    onClick={handleCardClick}
+                >
+                    {name}
+                </Typography>
+                
+                <Box sx={{ my: 2 }}>
+                    {originalPrice && originalPrice > price && (
+                        <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through', mr: 1 }}>
+                            ${Number(originalPrice).toLocaleString('es-CO')}
                         </Typography>
                     )}
                     <Typography variant="h5" color="text.primary" sx={{ fontWeight: 'bold' }}>
-                        ${Number(product.price).toLocaleString('es-CO')}
+                        ${Number(price).toLocaleString('es-CO')}
                     </Typography>
-                    {product.installments && (
-                        <Typography variant="body2" color="green">
-                            en {product.installments}x ${Number(product.price / product.installments).toLocaleString('es-CO')} sin interés
+                    {installments && (
+                        <Typography variant="body2" sx={{color: (theme) => theme.palette.success.main}}>
+                            Hasta {installments} cuotas sin interés
                         </Typography>
                     )}
-                     <Button 
+                </Box>
+
+                <Box sx={{ mt: 'auto' }}>
+                    <Button 
                         variant="contained" 
                         color="primary" 
                         fullWidth 
-                        sx={{ mt: 2, textTransform: 'none', fontWeight: 'bold' }}
                         startIcon={<AddShoppingCart />}
                         onClick={handleAddToCart}
+                        disabled={stock === 0}
+                        sx={{ fontWeight: 'bold' }}
                     >
-                        Añadir al carrito
+                        {stock === 0 ? 'Agotado' : 'Añadir al carrito'}
                     </Button>
                 </Box>
             </CardContent>
-        </StyledCard>
+        </Card>
     );
 };
 

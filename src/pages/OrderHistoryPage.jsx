@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -16,7 +16,7 @@ import {
     Paper,
     Button,
     Alert,
-    TablePagination // <-- 1. Importar el componente de paginación
+    TablePagination
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -25,31 +25,26 @@ const OrderHistoryPage = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { currentUser } = useAuth();
+    const { user } = useAuth(); // Corrected: useAuth provides 'user', not 'currentUser'
     const navigate = useNavigate();
 
-    // 2. Añadir estados para la paginación
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     useEffect(() => {
         const fetchOrders = async () => {
-            if (!currentUser) {
+            if (!user) {
                 setLoading(false);
-                setError("Por favor, inicia sesión para ver tu historial de pedidos.");
+                // No need to set an error, the component will just show the empty state
                 return;
             }
             try {
                 setLoading(true);
                 const ordersRef = collection(db, 'orders');
-                const q = query(ordersRef, where("userId", "==", currentUser.uid));
+                // Query orders for the current user, ordered by creation date
+                const q = query(ordersRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
-                let userOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                userOrders.sort((a, b) => {
-                    const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
-                    const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
-                    return dateB - dateA;
-                });
+                const userOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setOrders(userOrders);
                 setError(null);
             } catch (err) {
@@ -60,20 +55,20 @@ const OrderHistoryPage = () => {
             }
         };
         fetchOrders();
-    }, [currentUser]);
+    }, [user]);
 
-    // 3. Crear manejadores para los eventos de paginación
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
     };
 
     const handleChangeRowsPerPage = (event) => {
         setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0); // Volver a la primera página cuando cambia la cantidad de filas
+        setPage(0);
     };
 
+    // Corrected navigation path
     const handleViewOrder = (orderId) => {
-        navigate(`/order/${orderId}`);
+        navigate(`/account/orders/${orderId}`);
     };
 
     if (loading) {
@@ -84,7 +79,6 @@ const OrderHistoryPage = () => {
         );
     }
 
-    // 4. Calcular el "trozo" de pedidos a mostrar
     const paginatedOrders = orders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
@@ -94,8 +88,12 @@ const OrderHistoryPage = () => {
             </Typography>
 
             {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+            
+            {!user && !loading && (
+                 <Alert severity="info" sx={{ mb: 3 }}>Por favor, inicia sesión para ver tu historial de pedidos.</Alert>
+            )}
 
-            {!loading && !error && orders.length === 0 ? (
+            {user && !loading && !error && orders.length === 0 ? (
                 <Paper elevation={2} sx={{ p: 4, textAlign: 'center', mt: 4 }}>
                     <Typography variant="h6">Aún no has realizado ningún pedido.</Typography>
                     <Typography color="text.secondary" sx={{ mt: 1 }}>
@@ -105,7 +103,7 @@ const OrderHistoryPage = () => {
                         Ir al Catálogo
                     </Button>
                 </Paper>
-            ) : (
+            ) : user && (
                 <Paper elevation={3} sx={{ width: '100%', overflow: 'hidden' }}>
                     <TableContainer sx={{ maxHeight: 640 }}>
                         <Table stickyHeader>
@@ -122,14 +120,15 @@ const OrderHistoryPage = () => {
                                     <TableRow key={order.id} hover>
                                         <TableCell component="th" scope="row">
                                             <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                                                #{order.id}
+                                                #{order.id.substring(0, 6).toUpperCase()}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
                                             {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd/MM/yyyy') : 'Fecha no disponible'}
                                         </TableCell>
                                         <TableCell align="right">
-                                            ${order.total.toLocaleString('es-CO')}
+                                            {/* Corrected field name from total to totalAmount */}
+                                            ${order.totalAmount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </TableCell>
                                         <TableCell align="center">
                                             <Button
@@ -145,9 +144,8 @@ const OrderHistoryPage = () => {
                             </TableBody>
                         </Table>
                     </TableContainer>
-                    {/* 5. Añadir el componente de paginación a la interfaz */}
                     <TablePagination
-                        rowsPerPageOptions={[10, 25, 100]}
+                        rowsPerPageOptions={[5, 10, 25]}
                         component="div"
                         count={orders.length}
                         rowsPerPage={rowsPerPage}

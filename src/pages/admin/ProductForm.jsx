@@ -97,10 +97,10 @@ function ProductForm() {
       </Typography>
       <Paper sx={{ p: 4 }} component="form" onSubmit={handleSubmit} elevation={3}>
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField name="name" label="Nombre del Producto" value={product.name} onChange={handleChange} fullWidth required />
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextareaAutosize 
                 name="description"
                 placeholder="Descripción del producto" 
@@ -110,10 +110,10 @@ function ProductForm() {
                 style={{ width: '100%', padding: '1rem', fontSize: '1rem', borderRadius: '4px', borderColor: '#ccc' }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField name="price" label="Precio" type="number" value={product.price} onChange={handleChange} fullWidth required inputProps={{ step: "0.01" }}/>
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <FormControl fullWidth required>
               <InputLabel>Categoría</InputLabel>
               <Select name="category" label="Categoría" value={product.category} onChange={handleChange}>
@@ -121,21 +121,21 @@ function ProductForm() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField name="stock" label="Stock" type="number" value={product.stock} onChange={handleChange} fullWidth required />
           </Grid>
-           <Grid item xs={12}>
+           <Grid xs={12}>
             <TextField name="image" label="URL de la Imagen" value={product.image} onChange={handleChange} fullWidth required />
           </Grid>
           {product.image && 
-            <Grid item xs={12} sx={{textAlign: 'center'}}>
+            <Grid xs={12} sx={{textAlign: 'center'}}>
                 <Typography variant="caption">Vista Previa:</Typography>
                 <Box sx={{mt: 1, border: '1px solid #ddd', padding: 1}}>
                     <img src={product.image} alt="Vista previa" style={{ maxWidth: '100%', maxHeight: '200px' }} />
                 </Box>
             </Grid>
            }
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
               <Button onClick={() => navigate('/admin/products')} sx={{ mr: 2 }}>Cancelar</Button>
               <Button type="submit" variant="contained" disabled={submitting}>

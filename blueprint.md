@@ -2,51 +2,72 @@
 
 ## Descripción General
 
-Esta aplicación es una plataforma de comercio electrónico moderna construida con React y Firebase. Ofrece una experiencia de compra completa, desde la navegación y búsqueda de productos hasta el proceso de pago y la gestión de pedidos. La aplicación también incluye un panel de administración para la gestión de productos, pedidos, cupones y reseñas.
+Esta aplicación es una plataforma de comercio electrónico moderna construida con React y Firebase. Ofrece una experiencia de compra completa, desde la navegación y búsqueda de productos hasta el proceso de pago y la gestión de pedidos. La aplicación cuenta con un diseño totalmente renovado, que incluye un tema personalizable con modos claro y oscuro, y un panel de administración para la gestión de productos, pedidos, cupones y reseñas.
 
 ## Esquema del Proyecto
 
 ### Estilo y Diseño
 
-*   **Componentes de la Interfaz de Usuario:** La aplicación utiliza [Material-UI (MUI)](https://mui.com/) como biblioteca de componentes principal, lo que garantiza una interfaz de usuario coherente y visualmente atractiva.
-*   **Diseño Responsivo:** La aplicación está diseñada para ser totalmente responsiva, adaptándose a diferentes tamaños de pantalla para una experiencia de usuario óptima en dispositivos de escritorio y móviles.
+*   **Componentes de la Interfaz de Usuario:** La aplicación utiliza [Material-UI (MUI)](https://mui.com/) como biblioteca de componentes principal.
+*   **Diseño Responsivo:** La aplicación está diseñada para ser totalmente responsiva.
 
 ### Enrutamiento y Navegación
 
-*   **Enrutador:** Se utiliza [React Router DOM](https://reactrouter.com/) para gestionar la navegación dentro de la aplicación.
-*   **Rutas Protegidas:** La aplicación implementa rutas protegidas para garantizar que solo los usuarios autenticados puedan acceder a ciertas páginas, como el perfil de usuario y el proceso de pago.
-*   **Rutas de Administrador:** Se utilizan rutas de administrador para restringir el acceso al panel de administración solo a los usuarios con el rol de "administrador".
+*   **Enrutador:** Se utiliza [React Router DOM](https://reactrouter.com/) para la navegación.
+*   **Rutas Protegidas y de Administrador:** La aplicación implementa rutas protegidas para controlar el acceso a páginas específicas.
 
 ### Gestión del Estado
 
-*   **Estado Local:** El estado local de los componentes se gestiona con los hooks `useState` y `useReducer` de React.
-*   **Estado Global:**
-    *   `AuthContext`: Gestiona el estado de autenticación del usuario en toda la aplicación.
-    *   `ThemeContext`: Gestiona el tema de la aplicación (claro/oscuro).
+*   **Estado Global:** Se utilizan `AuthContext` y `ThemeContext` para gestionar la autenticación y el tema de la aplicación.
 
 ### Backend y Base de Datos
 
-*   **Firebase:** La aplicación utiliza Firebase como plataforma de backend, aprovechando los siguientes servicios:
-    *   **Firebase Authentication:** Para la autenticación de usuarios (correo electrónico/contraseña y Google).
-    *   **Firestore:** Como base de datos NoSQL para almacenar información de productos, pedidos, usuarios, cupones y reseñas.
+*   **Firebase:** Se utiliza como plataforma de backend para la autenticación (Authentication) y la base de datos (Firestore).
 
-## Plan de Rediseño de la Interfaz de Usuario (UI)
+## Plan de Desarrollo Actual
 
-**Objetivo:** Rediseñar la interfaz de usuario de la aplicación para que coincida con el diseño proporcionado, creando una experiencia más moderna y atractiva.
+**Objetivo:** Implementar un panel de cuenta de usuario completo y estructurado basado en el esquema de datos proporcionado.
 
-**Plan de Acción:**
+### 1. Modelo de Datos del Cliente (Firestore)
 
-1.  **Página de Inicio (`src/pages/Home.jsx`):**
-    *   **Sección Hero:** Implementar una sección "hero" prominente con el título "Estilo que Define tu Espacio" y un subtítulo.
-    *   **Botón de Llamada a la Acción (CTA):** Añadir un botón "EXPLORAR COLECCIÓN AHORA".
-    *   **Catálogo de Productos:** Crear una sección "Nuestro Catálogo" para mostrar la lista de productos.
-    *   **Lógica de Datos:** Trasladar la lógica de obtención de productos desde `App.jsx` a `Home.jsx` para una mejor separación de responsabilidades.
+Se organizará la información del usuario en la colección `users` de la siguiente manera:
 
-2.  **Encabezado (`src/components/Header.jsx`):**
-    *   **Logo:** Actualizar el logo a "MiTienda".
-    *   **Barra de Búsqueda:** Integrar una barra de búsqueda de productos.
-    *   **Iconos de Usuario:** Añadir iconos para la "Lista de Deseos" y el "Carrito de Compras".
-    *   **Autenticación:** Incluir botones de "INICIAR SESIÓN" y "REGISTRARSE".
+*   **Documento Principal (`users/{userId}`):**
+    *   `personal_info`: (Objeto) Nombre, apellido, fecha de nacimiento, etc.
+    *   `contact_info`: (Objeto) Email, teléfono.
+    *   `account_info`: (Objeto) Fecha de registro, rol, estado.
+    *   `preferences`: (Objeto) Idioma, notificaciones, foto de perfil.
+    *   `wishlist`: (Array) Lista de IDs de productos favoritos.
+*   **Subcolecciones:**
+    *   `users/{userId}/addresses`: Para almacenar múltiples direcciones de envío y facturación.
+    *   `users/{userId}/payment_methods`: Para almacenar de forma segura los métodos de pago.
 
-3.  **Componente Principal (`src/App.jsx`):**
-    *   **Simplificación:** Refactorizar `App.jsx` para que se centre principalmente en la configuración de rutas, eliminando la lógica de obtención de datos que se moverá a `Home.jsx`.
+### 2. Diseño del Panel de Cuenta (`/account`)
+
+Se rediseñará el panel de usuario con una navegación lateral mejorada y las siguientes secciones:
+
+*   **Mi Perfil (`/account/profile`):**
+    *   **Funcionalidad:** Ver y editar datos personales y de contacto.
+    *   **Componente:** `src/pages/account/Profile.jsx` (será actualizado).
+
+*   **Mis Pedidos (`/account/orders`):**
+    *   **Funcionalidad:** Ver el historial de pedidos y el detalle de cada uno.
+    *   **Componentes:** `src/pages/account/Orders.jsx` y `src/pages/account/OrderDetail.jsx` (ya creados).
+
+*   **Direcciones (`/account/addresses`):**
+    *   **Funcionalidad:** Añadir, editar y eliminar direcciones de envío y facturación.
+    *   **Componente:** `src/pages/account/Addresses.jsx` (nuevo).
+
+*   **Métodos de Pago (`/account/payment-methods`):**
+    *   **Funcionalidad:** Gestionar tarjetas de crédito/débito y otros métodos de pago.
+    *   **Componente:** `src/pages/account/PaymentMethods.jsx` (nuevo).
+
+*   **Seguridad (`/account/security`):**
+    *   **Funcionalidad:** Cambiar contraseña y gestionar la seguridad de la cuenta.
+    *   **Componente:** `src/pages/account/Security.jsx` (nuevo).
+
+*   **Preferencias (`/account/preferences`):**
+    *   **Funcionalidad:** Configurar preferencias de notificaciones, idioma, etc.
+    *   **Componente:** `src/pages/account/Preferences.jsx` (nuevo).
+
+---

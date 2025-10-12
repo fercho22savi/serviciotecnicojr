@@ -1,0 +1,247 @@
+{
+    "header": {
+        "searchPlaceholder": "Buscar productos...",
+        "products": "Productos",
+        "wishlist": "Lista de deseos",
+        "cart": "Carrito",
+        "login": "Iniciar Sesión",
+        "signup": "Registrarse",
+        "account": "Mi Cuenta",
+        "my_orders": "Mis Pedidos",
+        "dashboard": "Panel de Admin",
+        "logout": "Cerrar Sesión",
+        "lightModeTooltip": "Cambiar a modo claro",
+        "darkModeTooltip": "Cambiar a modo oscuro",
+        "logout_error": "Error al cerrar sesión"
+    },
+    "footer": {
+        "company_slogan": "La mejor tecnología al alcance de tu mano. Calidad, servicio y los mejores precios.",
+        "legal": "Legal",
+        "privacy_policy": "Política de Privacidad",
+        "terms_of_service": "Términos de Servicio",
+        "help": "Ayuda",
+        "faq": "Preguntas Frecuentes",
+        "contact": "Contacto",
+        "shipping_returns": "Envíos y Devoluciones",
+        "follow_us": "Síguenos",
+        "copyright": "Copyright © TuTienda.com {{year}}. Ahorra con nosotros"
+    },
+    "preferences": {
+        "title": "Preferencias",
+        "subtitle": "Personaliza tu experiencia en la aplicación.",
+        "notifications": "Notificaciones",
+        "email_offers": "Ofertas y noticias por email",
+        "sms_updates": "Actualizaciones de pedidos por SMS",
+        "push_notifications": "Notificaciones push en la app",
+        "appearance_language": "Apariencia e Idioma",
+        "theme": "Tema",
+        "light_theme": "Claro",
+        "dark_theme": "Oscuro",
+        "system_theme": "Automático (del sistema)",
+        "language": "Idioma",
+        "spanish": "Español",
+        "english": "Inglés",
+        "save_button": "Guardar Preferencias",
+        "saving_toast": "Guardando preferencias...",
+        "save_success": "Preferencias guardadas con éxito",
+        "save_error": "Error al guardar las preferencias"
+    },
+    "faq_page": {
+        "title": "Preguntas Frecuentes",
+        "payment_q": "¿Qué métodos de pago aceptan?",
+        "payment_a": "Aceptamos una amplia variedad de métodos de pago, incluyendo tarjetas de crédito y débito (Visa, MasterCard, American Express), PayPal y otras plataformas de pago digital. Todas las transacciones son 100% seguras.",
+        "shipping_q": "¿Cuánto tiempo tarda en llegar mi pedido?",
+        "shipping_a": "El tiempo de entrega estándar es de 3 a 5 días hábiles. También ofrecemos envío exprés (1-2 días hábiles) por un costo adicional.",
+        "returns_q": "¿Cuál es su política de devoluciones?",
+        "returns_a": "Ofrecemos una política de devolución de 30 días. Si no estás satisfecho, puedes devolverlo para un reembolso completo o cambio. El producto debe estar en su estado original.",
+        "account_q": "¿Necesito una cuenta para comprar?",
+        "account_a": "No, puedes comprar como invitado. Sin embargo, una cuenta te ofrece advantages como un proceso de compra más rápido y acceso a tu historial de pedidos.",
+        "international_q": "¿Realizan envíos internacionales?",
+        "international_a": "Actualmente, nos enfocamos en el mercado nacional, but we plan to expand. Subscribe to our newsletter to be the first to know!",
+        "damaged_q": "Mi producto ha llegado dañado, ¿qué hago?",
+        "damaged_a": "Lamentamos oír eso. Por favor, contacta a soporte al cliente con tu número de pedido y fotos del producto dañado para que podamos ayudarte."
+    },
+    "account_menu": {
+        "title": "Panel de Usuario",
+        "profile": "Mi Perfil",
+        "orders": "Mis Pedidos",
+        "addresses": "Direcciones",
+        "payment_methods": "Métodos de Pago",
+        "security": "Seguridad",
+        "preferences": "Preferencias"
+    },
+    "addresses": {
+        "title": "Mis Direcciones",
+        "add_button": "Añadir Dirección",
+        "loading_error": "Error al cargar las direcciones.",
+        "saving_toast": "Guardando dirección...",
+        "updating_toast": "Actualizando dirección...",
+        "save_success": "Dirección guardada con éxito",
+        "update_success": "Dirección actualizada con éxito",
+        "save_error": "Hubo un error al guardar la dirección.",
+        "delete_confirm": "¿Estás seguro de que quieres eliminar esta dirección?",
+        "deleting_toast": "Eliminando dirección...",
+        "delete_success": "Dirección eliminada con éxito",
+        "delete_error": "Error al eliminar la dirección.",
+        "no_addresses_title": "No tienes direcciones guardadas.",
+        "no_addresses_subtitle": "Añade una dirección para facilitar tus futuras compras.",
+        "phone_label": "Tel",
+        "edit_dialog_title": "Editar Dirección",
+        "add_dialog_title": "Añadir Nueva Dirección",
+        "cancel_button": "Cancelar",
+        "save_changes_button": "Guardar Cambios",
+        "save_button": "Guardar",
+        "form": {
+            "recipient_name": "Nombre del Receptor",
+            "address": "Dirección",
+            "city": "Ciudad",
+            "state": "Departamento/Estado",
+            "postal_code": "Código Postal",
+            "country": "País",
+            "recipient_phone": "Teléfono del Receptor",
+            "shipping_notes": "Notas de Envío"
+        }
+    },
+    "orders": {
+        "title": "Mis Pedidos",
+        "fetch_error": "Error al cargar los pedidos.",
+        "no_orders_title": "Aún no has realizado pedidos.",
+        "no_orders_subtitle": "Explora nuestros productos y encuentra algo que te encante.",
+        "browse_products_button": "Ver Productos",
+        "order_number_label": "Nº de Pedido",
+        "date_label": "Fecha",
+        "total_label": "Total",
+        "status_label": "Estado",
+        "view_details_button": "Ver Detalles",
+        "status": {
+            "pendiente": "Pendiente",
+            "procesando": "Procesando",
+            "enviado": "Enviado",
+            "entregado": "Entregado",
+            "cancelado": "Cancelado"
+        }
+    },
+    "payment_methods": {
+        "title": "Métodos de Pago",
+        "add_button": "Añadir Nuevo",
+        "load_error": "Error al cargar los métodos de pago.",
+        "saving_toast": "Guardando método de pago...",
+        "save_success": "Método de pago guardado con éxito",
+        "save_error": "Hubo un error al guardar el método de pago.",
+        "delete_confirm": "¿Estás seguro de que quieres eliminar este método de pago?",
+        "deleting_toast": "Eliminando...",
+        "delete_success": "Método de pago eliminado",
+        "delete_error": "Error al eliminar.",
+        "no_methods_title": "No tienes métodos de pago guardados.",
+        "no_methods_subtitle": "Añade uno para un proceso de compra más rápido.",
+        "card_ending_in": "{{brand}} terminada en {{last4}}",
+        "expires_label": "Expira",
+        "add_dialog_title": "Añadir Nuevo Método de Pago",
+        "cancel_button": "Cancelar",
+        "save_button": "Guardar Tarjeta",
+        "unknown_brand": "Desconocida",
+        "form": {
+            "cardholder_name": "Nombre en la Tarjeta",
+            "card_number": "Número de Tarjeta",
+            "expiry": "Expira (MM/AA)",
+            "cvc": "CVC",
+            "security_note": "Tu información de pago está segura. No almacenamos los detalles completos de tu tarjeta."
+        }
+    },
+    "security": {
+        "title": "Seguridad de la Cuenta",
+        "subtitle": "Para mantener tu cuenta segura, te recomendamos cambiar tu contraseña periódicamente.",
+        "form": {
+            "current_password": "Contraseña Actual",
+            "new_password": "Nueva Contraseña",
+            "confirm_password": "Confirmar Nueva Contraseña"
+        },
+        "button": {
+            "change_password": "Cambiar Contraseña"
+        },
+        "toast": {
+            "changing_password": "Cambiando contraseña...",
+            "success": "Contraseña actualizada con éxito"
+        },
+        "errors": {
+            "fill_all_fields": "Por favor, rellena todos los campos.",
+            "passwords_do_not_match": "Las nuevas contraseñas no coinciden.",
+            "password_too_short": "La nueva contraseña debe tener al menos 6 caracteres.",
+            "generic_error": "Hubo un error al cambiar la contraseña.",
+            "wrong_current_password": "La contraseña actual es incorrecta."
+        }
+    },
+    "profile": {
+        "title": "Mi Perfil",
+        "subtitle": "Actualiza tus datos personales y de contacto.",
+        "loading": "Cargando perfil...",
+        "form": {
+            "first_name": "Nombre",
+            "last_name": "Apellido",
+            "email_helper": "El correo electrónico no se puede cambiar.",
+            "phone": "Teléfono",
+            "id_document": "Documento de Identidad",
+            "birth_date": "Fecha de Nacimiento"
+        },
+        "button": {
+            "save": "Guardar Cambios"
+        },
+        "toast": {
+            "updating": "Actualizando perfil...",
+            "success": "Perfil actualizado con éxito"
+        },
+        "errors": {
+            "load_profile": "No se pudo cargar tu perfil.",
+            "update_profile": "Hubo un error al actualizar tu perfil."
+        }
+    },
+    "shipping_policy": {
+        "title": "Envíos y Devoluciones",
+        "subtitle": "Todo lo que necesitas saber sobre cómo llevamos nuestros productos hasta tu puerta.",
+        "delivery_time_label": "Tiempo de entrega",
+        "shipping_options": {
+            "title": "Opciones de Envío",
+            "standard": {
+                "title": "Envío Estándar Nacional",
+                "description": "Nuestro envío estándar es gratuito para todos los pedidos superiores a $50. Para pedidos inferiores, tiene un coste fijo de $5.",
+                "time": "3-5 días laborables",
+                "tracking": "Todos los paquetes son enviados con un número de seguimiento que recibirás por correo electrónico tan pronto como el pedido sea despachado."
+            },
+            "express": {
+                "title": "Envío Express",
+                "description": "¿Necesitas tu pedido con urgencia? Ofrecemos un servicio de envío express por un coste adicional de $15.",
+                "time": "1-2 días laborables"
+            }
+        },
+        "returns_policy": {
+            "title": "Política de Devoluciones",
+            "conditions": {
+                "title": "Plazo y Condiciones",
+                "description": "Aceptamos devoluciones hasta 30 días después de la fecha de entrega. Para que una devolución sea aceptada, el producto debe estar en su embalaje original, sin usar y en las mismas condiciones en que lo recibiste.",
+                "exceptions": "Los productos de software y las tarjetas de regalo no son retornables."
+            },
+            "process": {
+                "title": "Proceso de Devolución",
+                "description": "Para iniciar una devolución, por favor, contacta con nuestro equipo de soporte a través de la página de contacto con tu número de pedido. Te proporcionaremos las instrucciones y la dirección para el envío.",
+                "shipping_costs": "Los costes de envío de la devolución corren a cargo del cliente, a menos que el motivo de la devolución sea un error por nuestra parte (producto incorrecto o defectuoso)."
+            }
+        },
+        "general_rules": {
+            "title": "Reglas Generales",
+            "description": "Nos reservamos el derecho de rechazar cualquier devolución que no cumpla con los criterios mencionados. Es importante inspeccionar tu pedido tan pronto como lo recibas. Si encuentras algún problema, contáctanos inmediatamente."
+        }
+    },
+    "contact_page": {
+        "title": "Contáctanos",
+        "get_in_touch": "Ponte en contacto",
+        "form_intro": "¿Tienes alguna pregunta o necesitas ayuda? Rellena el formulario y nuestro equipo se pondrá en contacto contigo lo antes posible.",
+        "form": {
+            "first_name": "Nombre",
+            "last_name": "Apellido",
+            "email": "Correo Electrónico",
+            "subject": "Asunto",
+            "message": "Mensaje",
+            "send_button": "Enviar Mensaje"
+        }
+    }
+}

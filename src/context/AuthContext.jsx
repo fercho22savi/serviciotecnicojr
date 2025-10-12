@@ -1,99 +1,73 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { auth, db } from '../firebase/config';
-import { 
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile,
-  GoogleAuthProvider, 
-  signInWithPopup
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+    onAuthStateChanged,
+    signOut,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    GoogleAuthProvider,
+    sendPasswordResetEmail,
+    setPersistence,
+    browserLocalPersistence, // For "Remember Me" functionality
+    browserSessionPersistence // Default behavior
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase/config';
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-  const signup = async (email, password, displayName) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(userCredential.user, { displayName });
-    const userDocRef = doc(db, 'users', userCredential.user.uid);
-    await setDoc(userDocRef, {
-      uid: userCredential.user.uid, displayName, email, role: 'Usuario Básico',
-      createdAt: serverTimestamp(), lastLogin: serverTimestamp(), status: 'Activo',
-    });
-    return userCredential;
-  };
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            setLoading(true);
+            if (currentUser) {
+                const userRef = doc(db, 'users', currentUser.uid);
+                const docSnap = await getDoc(userRef);
+                setIsAdmin(docSnap.exists() && docSnap.data().isAdmin);
+                setUser(currentUser);
+            } else {
+                setUser(null);
+                setIsAdmin(false);
+            }
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, []);
 
-  const login = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
-  };
+    const login = async (email, password, rememberMe) => {
+        const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+        await setPersistence(auth, persistence);
+        return signInWithEmailAndPassword(auth, email, password);
+    };
 
-  const logout = () => {
-    return signOut(auth);
-  };
+    const loginWithGoogle = () => {
+        const provider = new GoogleAuthProvider();
+        return signInWithPopup(auth, provider);
+    };
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-    if (!userDoc.exists()) {
-      await setDoc(userDocRef, {
-        uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL,
-        role: 'Usuario Básico', createdAt: serverTimestamp(), lastLogin: serverTimestamp(), status: 'Activo',
-      });
-    }
-    return result;
-  };
+    const logout = () => signOut(auth);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
+    const resetPassword = (email) => sendPasswordResetEmail(auth, email);
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          user.role = userData.role || 'Usuario Básico'; // Asignar rol
-        } else {
-          // Crear documento si no existe para usuarios que inician sesión
-          await setDoc(userDocRef, {
-            uid: user.uid, displayName: user.displayName, email: user.email,
-            role: 'Usuario Básico', createdAt: serverTimestamp(), status: 'Activo'
-          });
-          user.role = 'Usuario Básico';
-        }
-        setCurrentUser(user);
-      } else {
-        setCurrentUser(null);
-      }
-      setLoading(false);
-    });
+    const value = {
+        user,
+        isAdmin,
+        loading,
+        login,
+        loginWithGoogle,
+        logout,
+        resetPassword,
+        onAuthStateChanged
+    };
 
-    return unsubscribe;
-  }, []);
-
-  const value = {
-    currentUser,
-    loading,
-    signup,
-    login,
-    logout,
-    signInWithGoogle,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
 };

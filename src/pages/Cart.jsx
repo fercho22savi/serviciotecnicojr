@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -16,12 +16,16 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase/config';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
-function Cart({ cart, setCart }) {
+function Cart({ cart, setCart, user, isLoggedIn }) {
+  const navigate = useNavigate();
 
-  // --- Handlers for Cart Logic ---
   const handleQuantityChange = (productId, newQuantity) => {
-    if (newQuantity < 1) return; // Prevent quantity from going below 1
+    if (newQuantity < 1) return;
     setCart(cart.map(item => 
       item.id === productId ? { ...item, quantity: newQuantity } : item
     ));
@@ -31,12 +35,48 @@ function Cart({ cart, setCart }) {
     setCart(cart.filter(item => item.id !== productId));
   };
 
-  // --- Calculations ---
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingCost = subtotal > 100 ? 0 : 15; // Free shipping on orders over $100
+  const shippingCost = subtotal > 100 ? 0 : 15;
   const total = subtotal + shippingCost;
 
-  // --- Render Logic ---
+  const handleCheckout = async () => {
+    if (!isLoggedIn) {
+      toast.error('Debes iniciar sesión para realizar la compra.');
+      navigate('/login');
+      return;
+    }
+
+    const loadingToast = toast.loading('Procesando tu pedido...');
+
+    try {
+      const orderData = {
+        userId: user.uid,
+        items: cart.map(item => ({ 
+          id: item.id, 
+          name: item.name, 
+          quantity: item.quantity, 
+          price: item.price 
+        })),
+        totalAmount: total,
+        createdAt: serverTimestamp(),
+        status: 'Procesando',
+      };
+
+      const docRef = await addDoc(collection(db, 'orders'), orderData);
+      
+      toast.dismiss(loadingToast);
+      toast.success(`¡Pedido #${docRef.id.substring(0, 6)} realizado con éxito!`);
+      
+      setCart([]);
+      navigate('/account/orders');
+
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('Hubo un error al procesar tu pedido. Inténtalo de nuevo.');
+      console.error("Error creating order: ", error);
+    }
+  };
+
   if (cart.length === 0) {
     return (
       <Container sx={{ textAlign: 'center', py: 8 }}>
@@ -60,7 +100,6 @@ function Cart({ cart, setCart }) {
         Tu Carrito de Compras
       </Typography>
       <Grid container spacing={4}>
-        {/* Cart Items */}
         <Grid item xs={12} md={8}>
           {cart.map((item) => (
             <Paper key={item.id} elevation={2} sx={{ display: 'flex', mb: 2, p: 2, alignItems: 'center' }}>
@@ -83,7 +122,6 @@ function Cart({ cart, setCart }) {
           ))}
         </Grid>
 
-        {/* Order Summary */}
         <Grid item xs={12} md={4}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h5" gutterBottom fontWeight="medium">Resumen del Pedido</Typography>
@@ -101,8 +139,8 @@ function Cart({ cart, setCart }) {
               <Typography variant="h6" fontWeight="bold">Total</Typography>
               <Typography variant="h6" fontWeight="bold">${total.toFixed(2)}</Typography>
             </Box>
-            <Button component={RouterLink} to="/checkout" variant="contained" size="large" fullWidth>
-              Proceder al Pago
+            <Button onClick={handleCheckout} variant="contained" size="large" fullWidth>
+              Finalizar Compra
             </Button>
           </Paper>
         </Grid>

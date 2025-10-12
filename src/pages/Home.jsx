@@ -1,52 +1,50 @@
-import React, { useMemo } from 'react';
-import { Box, Typography, Button, Container, Grid } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, Button, Container, Grid, CircularProgress } from '@mui/material';
 import ProductCard from '../components/ProductCard';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
+import { db } from '../firebase/config';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
-// 1. Aceptar las nuevas props: isLoggedIn
-function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlist, wishlist, isLoggedIn }) {
-    const navigate = useNavigate();
+function Home({ addToCart, handleWishlist, wishlist, isLoggedIn }) {
+    const [featuredProducts, setFeaturedProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const filteredProducts = useMemo(() => {
-        if (!products) return [];
-        let filtered = products;
+    useEffect(() => {
+        const fetchFeaturedProducts = async () => {
+            setLoading(true);
+            try {
+                // Create a query to get 8 products, ordered by a specific field (e.g., createdAt or name)
+                const productsQuery = query(
+                    collection(db, "products"), 
+                    orderBy("createdAt", "desc"), // Assuming you have a createdAt field
+                    limit(8)
+                );
+                const querySnapshot = await getDocs(productsQuery);
+                const productsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setFeaturedProducts(productsList);
+            } catch (error) {
+                console.error("Error fetching featured products: ", error);
+                toast.error("No se pudieron cargar los productos destacados.");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        if (selectedCategory && selectedCategory !== 'Todas') {
-            filtered = filtered.filter(p => p.category === selectedCategory);
-        }
-
-        if (searchTerm) {
-            filtered = filtered.filter(product =>
-                product.name.toLowerCase().includes(searchTerm)
-            );
-        }
-        // En la Home, mostrar solo 8 si no hay filtros
-        if (!searchTerm && (!selectedCategory || selectedCategory === 'Todas')) {
-            return filtered.slice(0, 8);
-        }
-
-        return filtered;
-
-    }, [products, searchTerm, selectedCategory]);
-
-    const handleCardClick = (product) => {
-        navigate(`/product/${product.id}`);
-    };
+        fetchFeaturedProducts();
+    }, []);
 
     return (
         <>
             {/* Hero Section */}
             <Box
                 sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    minHeight: { xs: '50vh', md: '60vh' },
-                    color: 'white',
+                    pt: { xs: 8, md: 12 },
+                    pb: { xs: 8, md: 12 },
                     textAlign: 'center',
-                    p: 4,
-                    background: 'linear-gradient(45deg, #1A2980 0%, #26D0CE 100%)',
+                    color: 'primary.contrastText',
+                    background: (theme) =>
+                        `linear-gradient(45deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
                     backgroundSize: '400% 400%',
                     animation: 'gradient 15s ease infinite',
                     '@keyframes gradient': {
@@ -54,67 +52,70 @@ function Home({ products, searchTerm, selectedCategory, addToCart, handleWishlis
                         '50%': { backgroundPosition: '100% 50%' },
                         '100%': { backgroundPosition: '0% 50%' },
                     },
-                    mb: 6,
                 }}
             >
-                 <Container maxWidth="md">
-                    <Typography variant="h2" component="h1" fontWeight="bold" gutterBottom
-                        sx={{
-                            fontSize: {
-                                xs: '2.5rem',
-                                sm: '3.5rem',
-                                md: '4rem'
-                            }
-                        }}
-                    >
-                        Los Mejores Productos
+                <Container maxWidth="md">
+                    <Typography variant="h2" component="h1" fontWeight="bold" gutterBottom>
+                        Estilo que Define tu Espacio
                     </Typography>
-                    <Typography variant="h6" component="p" sx={{ my: 3, fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                        Encuentra la pieza perfecta para tu espacio.
+                    <Typography variant="h6" component="p" sx={{ my: 3, opacity: 0.9 }}>
+                        Descubre piezas únicas que transforman tu hogar en un santuario de diseño y confort.
                     </Typography>
                     <Button
                         variant="contained"
-                        sx={{
-                            py: 1.5,
-                            px: { xs: 3, sm: 5 },
-                            fontSize: { xs: '0.9rem', sm: '1rem' },
-                            bgcolor: '#FFFFFF',
-                            color: '#1A2980',
-                            fontWeight: 'bold',
-                            '&:hover': {
-                                bgcolor: '#f0f0f0',
-                                transform: 'scale(1.05)'
-                            },
-                            transition: 'transform 0.2s ease-in-out'
-                        }}
+                        color="secondary"
+                        size="large"
                         component={RouterLink}
                         to="/products"
+                        sx={{
+                            color: 'white',
+                            fontWeight: 'bold',
+                            transform: 'scale(1)',
+                            transition: (theme) => theme.transitions.create('transform', {
+                                duration: theme.transitions.duration.short,
+                            }),
+                            '&:hover': {
+                                transform: 'scale(1.05)'
+                            },
+                         }}
                     >
-                        COMPRAR AHORA
+                        EXPLORAR COLECCIÓN
                     </Button>
                 </Container>
             </Box>
 
-            {/* Product Catalog */}
-            <Container sx={{ pb: 8 }} maxWidth="lg">
+            {/* Featured Products Section */}
+            <Container sx={{ py: 8 }} maxWidth="lg">
                 <Typography variant="h4" component="h2" fontWeight="bold" gutterBottom sx={{ mb: 4, textAlign: 'center' }}>
                     Nuestros Productos Destacados
                 </Typography>
-                <Grid container spacing={4}>
-                    {filteredProducts.map((product) => (
-                        <Grid item key={product.id} xs={12} sm={6} md={4} lg={3}>
-                            {/* 2. Pasar TODAS las props a ProductCard */}
-                            <ProductCard 
-                                product={product} 
-                                onCardClick={handleCardClick}
-                                onAddToCart={addToCart} 
-                                handleWishlist={handleWishlist} 
-                                isInWishlist={wishlist.has(product.id)}
-                                isLoggedIn={isLoggedIn}
-                            />
-                        </Grid>
-                    ))}
-                </Grid>
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center'}}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    <Grid container spacing={4}>
+                        {featuredProducts.length > 0 ? (
+                            featuredProducts.map((product) => (
+                                <Grid item key={product.id} xs={12} sm={6} md={4} lg={3}>
+                                    <ProductCard
+                                        product={product}
+                                        addToCart={addToCart}
+                                        handleWishlist={handleWishlist}
+                                        isInWishlist={wishlist.has(product.id)}
+                                        isLoggedIn={isLoggedIn}
+                                    />
+                                </Grid>
+                            ))
+                        ) : (
+                            <Grid item xs={12}>
+                                <Typography variant="h6" align="center" sx={{ mt: 4 }}>
+                                    No hay productos destacados disponibles en este momento.
+                                </Typography>
+                            </Grid>
+                        )}
+                    </Grid>
+                )}
             </Container>
         </>
     );

@@ -1,195 +1,221 @@
 import React, { useState } from 'react';
-import { Container, Box, Typography, TextField, Button, Grid, Paper, Checkbox, FormControlLabel, Select, MenuItem, InputLabel, FormControl, FormHelperText } from '@mui/material';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-
-// A simple list of countries for the dropdown
-const countries = ['Estados Unidos', 'Canadá', 'México', 'España', 'Colombia', 'Argentina', 'Perú', 'Chile'];
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Grid,
+  Checkbox,
+  FormControlLabel,
+  Divider,
+  CircularProgress,
+  Alert
+} from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 
 function SignUp() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [agreesToTerms, setAgreesToTerms] = useState(false);
+  const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    address: '',
-    address2: '',
-    city: '',
-    state: '',
-    zip: '',
-    country: '',
-    agreesToTerms: false,
-    subscribes: false,
-  });
 
-  const [errors, setErrors] = useState({});
-
-  const validate = () => {
-    let tempErrors = {};
-    tempErrors.firstName = formData.firstName ? '' : 'El nombre es obligatorio.';
-    tempErrors.lastName = formData.lastName ? '' : 'El apellido es obligatorio.';
-    tempErrors.email = (/$^|.+@.+..+/).test(formData.email) ? '' : 'El correo electrónico no es válido.';
-    tempErrors.phone = formData.phone ? '' : 'El teléfono es obligatorio.';
-    tempErrors.password = formData.password.length >= 6 ? '' : 'La contraseña debe tener al menos 6 caracteres.';
-    tempErrors.confirmPassword = formData.password === formData.confirmPassword ? '' : 'Las contraseñas no coinciden.';
-    tempErrors.address = formData.address ? '' : 'La dirección es obligatoria.';
-    tempErrors.city = formData.city ? '' : 'La ciudad es obligatoria.';
-    tempErrors.zip = formData.zip ? '' : 'El código postal es obligatorio.';
-    tempErrors.country = formData.country ? '' : 'Debes seleccionar un país.';
-    tempErrors.agreesToTerms = formData.agreesToTerms ? '' : 'Debes aceptar los términos y condiciones.';
-
-    setErrors(tempErrors);
-    return Object.values(tempErrors).every(x => x === "");
-  };
-
-  const handleChange = (e) => {
-    const { name, value, checked, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      console.log('Formulario de registro enviado:', formData);
-      // Here you would typically send the data to your backend
-      alert('¡Registro exitoso! Serás redirigido a la página de inicio.');
-      navigate('/');
+    setError('');
+    if (!agreesToTerms) {
+      setError('Debes aceptar los términos y condiciones para continuar.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await signUp(email, password, { firstName, lastName });
+      navigate('/products');
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Este correo electrónico ya está en uso. Intenta iniciar sesión.');
+      } else {
+        setError('Ocurrió un error al crear la cuenta. Por favor, inténtalo de nuevo.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+      navigate('/products');
+    } catch (err) {
+      setError('No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Container component="main" maxWidth="md" sx={{ my: 4 }}>
-      <Paper elevation={3} sx={{ p: { xs: 3, md: 5 }, borderRadius: '16px' }}>
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Typography component="h1" variant="h4" fontWeight="bold">
+    <Grid container component="main" sx={{ height: 'calc(100vh - 64px)' }}>
+       <Grid
+        xs={false}
+        sm={4}
+        md={7}
+        sx={{
+          backgroundImage: 'url(https://source.unsplash.com/random?ecommerce)',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: (t) =>
+            t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+      <Grid
+        xs={12}
+        sm={8}
+        md={5}
+        component={Box}
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        p={4}
+      >
+        <Box
+          sx={{
+            my: 8,
+            mx: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: '100%',
+            maxWidth: '450px',
+          }}
+        >
+          <Typography component="h1" variant="h4" fontWeight="bold" gutterBottom>
             Crear una Cuenta
           </Typography>
-          <Typography color="text.secondary">
-            Completa el formulario para empezar a comprar.
+          <Typography color="text.secondary" sx={{ mb: 3 }}>
+            Únete a nuestra comunidad y descubre productos increíbles.
           </Typography>
-        </Box>
-        <form onSubmit={handleSubmit} noValidate>
-          <Grid container spacing={3}>
-            {/* --- Personal Information --- */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                id="firstName"
-                label="Nombre"
-                name="firstName"
-                autoComplete="given-name"
-                value={formData.firstName}
-                onChange={handleChange}
-                error={!!errors.firstName}
-                helperText={errors.firstName}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                id="lastName"
-                label="Apellidos"
-                name="lastName"
-                autoComplete="family-name"
-                value={formData.lastName}
-                onChange={handleChange}
-                error={!!errors.lastName}
-                helperText={errors.lastName}
-              />
-            </Grid>
-            
-            {/* --- Shipping Address --- */}
-             <Grid item xs={12}>
-                <Typography variant="h6" sx={{mt: 2, mb: 1}}>Dirección de Envío</Typography>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField required fullWidth name="address" label="Dirección (Calle y Número)" value={formData.address} onChange={handleChange} error={!!errors.address} helperText={errors.address} />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField fullWidth name="address2" label="Información Adicional (Apto, suite, etc.)" value={formData.address2} onChange={handleChange} />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField required fullWidth name="city" label="Ciudad" value={formData.city} onChange={handleChange} error={!!errors.city} helperText={errors.city} />
-            </Grid>
-             <Grid item xs={12} sm={6}>
-              <TextField required fullWidth name="zip" label="Código Postal" value={formData.zip} onChange={handleChange} error={!!errors.zip} helperText={errors.zip} />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-                <FormControl fullWidth required error={!!errors.country}>
-                    <InputLabel>País</InputLabel>
-                    <Select name="country" label="País" value={formData.country} onChange={handleChange}>
-                        {countries.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-                    </Select>
-                    {errors.country && <FormHelperText>{errors.country}</FormHelperText>}
-                </FormControl>
-            </Grid>
-             <Grid item xs={12} sm={6}>
-              <TextField name="state" label="Estado / Provincia" fullWidth value={formData.state} onChange={handleChange} />
-            </Grid>
 
-            {/* --- Account Details --- */}
-            <Grid item xs={12}>
-                <Typography variant="h6" sx={{mt: 2, mb: 1}}>Datos de la Cuenta</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField required fullWidth name="email" label="Correo Electrónico" type="email" value={formData.email} onChange={handleChange} error={!!errors.email} helperText={errors.email} />
-            </Grid>
-             <Grid item xs={12} sm={6}>
-              <TextField required fullWidth name="phone" label="Teléfono" type="tel" value={formData.phone} onChange={handleChange} error={!!errors.phone} helperText={errors.phone} />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField required fullWidth name="password" label="Contraseña" type="password" value={formData.password} onChange={handleChange} error={!!errors.password} helperText={errors.password} />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField required fullWidth name="confirmPassword" label="Confirmar Contraseña" type="password" value={formData.confirmPassword} onChange={handleChange} error={!!errors.confirmPassword} helperText={errors.confirmPassword} />
-            </Grid>
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+              <CircularProgress />
+            </Box>
+          )}
 
-            {/* --- Legal & Marketing --- */}
-            <Grid item xs={12}>
-              <FormControl required error={!!errors.agreesToTerms}>
-                <FormControlLabel
-                  control={<Checkbox name="agreesToTerms" checked={formData.agreesToTerms} onChange={handleChange} />}
-                  label="Acepto los Términos y Condiciones y la Política de Privacidad"
-                />
-                {!!errors.agreesToTerms && <FormHelperText sx={{ml: 0}}>Debes aceptar para continuar</FormHelperText>}
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={<Checkbox name="subscribes" checked={formData.subscribes} onChange={handleChange} />}
-                label="Quiero recibir ofertas y noticias por correo."
-              />
-            </Grid>
-          </Grid>
+          {error && (
+            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            sx={{ mt: 4, mb: 2, py: 1.5, borderRadius: '12px' }}
-            disabled={!formData.agreesToTerms}
+          <Box
+            component="form"
+            onSubmit={handleSignUp}
+            noValidate
+            sx={{ mt: 1, width: '100%', opacity: loading ? 0.6 : 1 }}
           >
-            Crear Cuenta
-          </Button>
-
-          <Grid container justifyContent="flex-end">
-            <Grid item>
-              <Button component={RouterLink} to="/login">
-                ¿Ya tienes una cuenta? Inicia sesión
-              </Button>
+            <Grid container spacing={2}>
+              <Grid xs={12} sm={6}>
+                <TextField
+                  autoComplete="given-name"
+                  name="firstName"
+                  required
+                  fullWidth
+                  id="firstName"
+                  label="Nombre"
+                  autoFocus
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  disabled={loading}
+                />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField
+                  required
+                  fullWidth
+                  id="lastName"
+                  label="Apellidos"
+                  name="lastName"
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={loading}
+                />
+              </Grid>
+              <Grid xs={12}>
+                <TextField
+                  required
+                  fullWidth
+                  id="email"
+                  label="Correo Electrónico"
+                  name="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                />
+              </Grid>
+              <Grid xs={12}>
+                <TextField
+                  required
+                  fullWidth
+                  name="password"
+                  label="Contraseña"
+                  type="password"
+                  id="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                />
+              </Grid>
             </Grid>
-          </Grid>
-        </form>
-      </Paper>
-    </Container>
+             <FormControlLabel
+                control={<Checkbox value={agreesToTerms} onChange={(e) => setAgreesToTerms(e.target.checked)} color="primary" />}
+                label="Acepto los Términos y Condiciones"
+                sx={{ mt: 2, mb: 1, alignSelf: 'flex-start' }}
+              />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              sx={{ mt: 2, py: 1.5, borderRadius: '8px', fontWeight: 'bold' }}
+              disabled={loading || !agreesToTerms}
+            >
+              Crear Cuenta
+            </Button>
+            <Grid container justifyContent="center" sx={{ mt: 2 }}>
+              <Grid>
+                <Button component={RouterLink} to="/login" disabled={loading}>
+                  ¿Ya tienes una cuenta? Inicia sesión
+                </Button>
+              </Grid>
+            </Grid>
+          </Box>
+          <Divider sx={{ my: 3, width: '100%' }}>O continúa con</Divider>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            sx={{ py: 1.5, borderRadius: '8px' }}
+            onClick={handleGoogleLogin}
+            disabled={loading}
+          >
+            Regístrate con Google
+          </Button>
+        </Box>
+      </Grid>
+    </Grid>
   );
 }
 

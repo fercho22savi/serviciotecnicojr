@@ -1,220 +1,184 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
-import { db, storage } from '../firebase/config';
-import { doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { updateProfile } from 'firebase/auth';
-import {
-    Box,
-    Container,
-    Typography,
+import { 
+    Box, 
+    Grid, 
+    Paper, 
+    Typography, 
+    CircularProgress, 
+    Table, 
+    TableBody, 
+    TableCell, 
+    TableHead, 
+    TableRow, 
+    Chip, 
     Avatar,
-    TextField,
-    Button,
-    Paper,
-    Grid,
-    CircularProgress,
-    IconButton,
-    Input,
-    Snackbar,
-    Alert,
-    LinearProgress
+    Button
 } from '@mui/material';
-import { PhotoCamera } from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import { Link as RouterLink } from 'react-router-dom';
 
-// --- STYLED COMPONENTS ---
-const ProfileAvatar = styled(Avatar)(({ theme }) => ({
-    width: theme.spacing(16),
-    height: theme.spacing(16),
-    margin: 'auto',
-    border: `4px solid ${theme.palette.background.paper}`,
-    boxShadow: theme.shadows[3],
-}));
+const StatCard = ({ title, value, icon, color }) => (
+  <Paper sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }} elevation={3}>
+    <Box>
+      <Typography color="text.secondary" gutterBottom>{title}</Typography>
+      <Typography variant="h4" component="p">{value}</Typography>
+    </Box>
+    <Box sx={{ color: color, fontSize: 48 }}>{icon}</Box>
+  </Paper>
+);
 
-const AvatarContainer = styled(Box)({
-    position: 'relative',
-    display: 'inline-block',
-});
+const UserProfile = () => {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState({ totalSpent: 0, totalOrders: 0, averageOrderValue: 0 });
+  const [salesByMonth, setSalesByMonth] = useState([]);
+  const [salesByDay, setSalesByDay] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-const UploadIconButton = styled(IconButton)(({ theme }) => ({
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
-    '&:hover': {
-        backgroundColor: theme.palette.primary.dark,
-    },
-}));
+  useEffect(() => {
+    if (!user) {
+        setLoading(false);
+        return;
+    }
 
-// --- COMPONENT ---
-function UserProfile() {
-    const { currentUser, setCurrentUser } = useAuth();
-    
-    // State for user data
-    const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
-    const [photoURL, setPhotoURL] = useState(currentUser?.photoURL || null);
-    
-    // State for UI
-    const [loading, setLoading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null);
+    const fetchOrderData = async () => {
+      try {
+        const ordersQuery = query(collection(db, 'orders'), where('userId', '==', user.uid));
+        const ordersSnapshot = await getDocs(ordersQuery);
+        const userOrders = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setOrders(userOrders);
 
-    // --- HANDLERS ---
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // You can add file type/size validation here
-
-        uploadProfilePicture(file);
-    };
-
-    const uploadProfilePicture = useCallback((file) => {
-        setLoading(true);
-        setUploadProgress(0);
-        setError(null);
-
-        const storageRef = ref(storage, `profile_pictures/${currentUser.uid}/${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (err) => {
-                console.error("Upload error:", err);
-                setError('Error al subir la imagen. Por favor, inténtalo de nuevo.');
-                setLoading(false);
-                setUploadProgress(0);
-            },
-            async () => {
-                try {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    setPhotoURL(downloadURL);
-                    await updateUserData(currentUser.uid, { photoURL: downloadURL });
-                    setSuccess('¡Foto de perfil actualizada!');
-                } catch (err) {
-                    console.error("Error getting download URL:", err);
-                    setError('No se pudo obtener la URL de la imagen.');
-                } finally {
-                    setLoading(false);
-                    setUploadProgress(0);
-                }
-            }
-        );
-    }, [currentUser]);
-
-    const handleProfileUpdate = async (e) => {
-        e.preventDefault();
-        if (displayName.trim() === currentUser.displayName) return; // No changes
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            await updateUserData(currentUser.uid, { displayName: displayName.trim() });
-            setSuccess('¡Perfil actualizado correctamente!');
-        } catch (err) {
-            console.error("Profile update error:", err);
-            setError('No se pudo actualizar el perfil.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const updateUserData = async (uid, data) => {
-        // 1. Update Firestore document
-        const userDocRef = doc(db, 'users', uid);
-        await updateDoc(userDocRef, data);
-
-        // 2. Update Firebase Auth profile
-        if (currentUser) {
-          await updateProfile(currentUser, data);
-        }
+        const totalSpent = userOrders.reduce((acc, order) => acc + order.total, 0);
+        const totalOrders = userOrders.length;
+        const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
+        setStats({ totalSpent, totalOrders, averageOrderValue });
         
-        // 3. Update local context state
-        setCurrentUser(prevUser => ({...prevUser, ...data}));
+        const recentOrdersQuery = query(collection(db, 'orders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), limit(5));
+        const recentOrdersSnapshot = await getDocs(recentOrdersQuery);
+        setRecentOrders(recentOrdersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+        const monthlySales = Array(12).fill(0).map((_, i) => ({ month: new Date(0, i).toLocaleString('es-ES', { month: 'short' }), total: 0 }));
+        const dailySales = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => ({ day, total: 0 }));
+
+        userOrders.forEach(order => {
+            if (order.createdAt) {
+                const date = order.createdAt.toDate();
+                const monthIndex = date.getMonth();
+                monthlySales[monthIndex].total += order.total;
+                const dayIndex = date.getDay();
+                dailySales[dayIndex].total += 1;
+            }
+        });
+        
+        setSalesByMonth(monthlySales);
+        setSalesByDay(dailySales);
+
+      } catch (error) {
+        console.error("Error fetching user order data: ", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // --- RENDER ---
+    fetchOrderData();
+  }, [user]);
 
-    return (
-        <Container maxWidth="md" sx={{ my: 5 }}>
-            <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, borderRadius: '24px', overflow: 'hidden' }}>
-                <Grid container spacing={4}>
-                    {/* --- AVATAR SECTION --- */}
-                    <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
-                        <AvatarContainer>
-                            <ProfileAvatar src={photoURL} />
-                            <label htmlFor="icon-button-file">
-                                <Input accept="image/*" id="icon-button-file" type="file" sx={{ display: 'none' }} onChange={handleFileChange} disabled={loading} />
-                                <UploadIconButton color="primary" aria-label="upload picture" component="span" disabled={loading}>
-                                    <PhotoCamera />
-                                </UploadIconButton>
-                            </label>
-                        </AvatarContainer>
-                        <Typography variant="h6" sx={{ mt: 2 }}>{currentUser?.displayName}</Typography>
-                        <Typography variant="body2" color="text.secondary">{currentUser?.email}</Typography>
-                        {uploadProgress > 0 && <LinearProgress variant="determinate" value={uploadProgress} sx={{mt: 2, borderRadius: '8px'}} />}
-                    </Grid>
+  if (loading) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}><CircularProgress /></Box>;
+  }
 
-                    {/* --- FORM SECTION --- */}
-                    <Grid item xs={12} md={8}>
-                         <Typography component="h1" variant="h4" fontWeight="bold" gutterBottom>Editar Perfil</Typography>
-                         <Typography color="text.secondary" sx={{mb: 3}}>Actualiza tu información personal.</Typography>
-                        <Box component="form" onSubmit={handleProfileUpdate}>
-                            <TextField
-                                fullWidth
-                                id="displayName"
-                                label="Nombre para mostrar"
-                                value={displayName}
-                                onChange={(e) => setDisplayName(e.target.value)}
-                                margin="normal"
-                                variant="outlined"
-                                required
-                            />
-                            <TextField
-                                fullWidth
-                                id="email"
-                                label="Correo Electrónico"
-                                value={currentUser?.email || ''}
-                                margin="normal"
-                                variant="outlined"
-                                disabled // Email is not editable
-                            />
-                            <Button 
-                                type="submit" 
-                                variant="contained" 
-                                size="large" 
-                                sx={{ mt: 2, borderRadius: '12px' }} 
-                                disabled={loading || !displayName.trim()}
-                            >
-                                {loading ? <CircularProgress size={24} color="inherit" /> : 'Guardar Cambios'}
-                            </Button>
-                        </Box>
-                    </Grid>
-                </Grid>
-            </Paper>
+  if (!user) {
+    return <Typography>Por favor, inicia sesión para ver tu perfil.</Typography>;
+  }
 
-            {/* --- FEEDBACK SNACKBARS --- */}
-            <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
-                    {error}
-                </Alert>
-            </Snackbar>
-            <Snackbar open={!!success} autoHideDuration={4000} onClose={() => setSuccess(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                <Alert onClose={() => setSuccess(null)} severity="success" sx={{ width: '100%' }}>
-                    {success}
-                </Alert>
-            </Snackbar>
-        </Container>
-    );
-}
+  return (
+    <Box>
+      <Paper elevation={2} sx={{ p: 3, mb: 4, display: 'flex', alignItems: 'center', gap: 3, background: '#f8f9fa' }}>
+        <Avatar src={user.photoURL} alt={user.displayName} sx={{ width: 80, height: 80 }} />
+        <Box>
+            <Typography variant="h5" fontWeight="bold">{user.displayName || 'Usuario'}</Typography>
+            <Typography color="text.secondary">{user.email}</Typography>
+        </Box>
+      </Paper>
+      
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid xs={12} sm={4}><StatCard title="Gasto Total" value={`$${stats.totalSpent.toLocaleString('es-CO')}`} icon={<MonetizationOnIcon fontSize="inherit"/>} color="success.main" /></Grid>
+        <Grid xs={12} sm={4}><StatCard title="Pedidos Realizados" value={stats.totalOrders} icon={<ShoppingCartIcon fontSize="inherit"/>} color="info.main" /></Grid>
+        <Grid xs={12} sm={4}><StatCard title="Gasto Promedio" value={`$${stats.averageOrderValue.toLocaleString('es-CO', {maximumFractionDigits: 0})}`} icon={<AttachMoneyIcon fontSize="inherit"/>} color="warning.main" /></Grid>
+      </Grid>
+
+      <Grid container spacing={4} sx={{ mb: 4 }}>
+        <Grid xs={12} md={8}>
+          <Paper sx={{ p: 2, height: 300 }} elevation={3}>
+            <Typography variant="h6" gutterBottom>Compras por Mes</Typography>
+            <ResponsiveContainer width="100%" height="90%">
+              <BarChart data={salesByMonth}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis tickFormatter={(val) => `$${val.toLocaleString('es-CO', {notation: 'compact'})}`} />
+                <Tooltip formatter={(value) => `$${value.toLocaleString('es-CO')}`}/>
+                <Bar dataKey="total" fill="#8884d8" name="Total Gastado" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid>
+        <Grid xs={12} md={4}>
+           <Paper sx={{ p: 2, height: 300 }} elevation={3}>
+            <Typography variant="h6" gutterBottom>Actividad por Día</Typography>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={salesByDay}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={false} />
+                <Tooltip formatter={(value) => `${value} pedidos`} />
+                <Line type="monotone" dataKey="total" stroke="#82ca9d" name="Nº de Pedidos" />
+              </LineChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid>
+      </Grid>
+
+       <Paper sx={{ p: 3 }} elevation={3}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">Pedidos Recientes</Typography>
+                <Button component={RouterLink} to="/account/orders">Ver Todos</Button>
+            </Box>
+            <Table sx={{ minWidth: 650 }}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>ID Pedido</TableCell>
+                        <TableCell>Fecha</TableCell>
+                        <TableCell align="right">Total</TableCell>
+                        <TableCell align="center">Estado</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {recentOrders.length > 0 ? recentOrders.map((order) => (
+                        <TableRow key={order.id} hover>
+                            <TableCell><code>{order.id.substring(0, 8)}...</code></TableCell>
+                            <TableCell>{order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString('es-CO') : 'N/A'}</TableCell>
+                            <TableCell align="right">${order.total.toLocaleString('es-CO')}</TableCell>
+                            <TableCell align="center">
+                                <Chip label={order.status || 'Pendiente'} color={order.status === 'Procesando' ? 'warning' : order.status === 'Completado' ? 'success' : 'default'} size="small"/>
+                            </TableCell>
+                        </TableRow>
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={4} align="center">No has realizado ningún pedido todavía.</TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </Paper>
+    </Box>
+  );
+};
 
 export default UserProfile;

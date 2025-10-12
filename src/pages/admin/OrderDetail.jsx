@@ -74,7 +74,7 @@ function OrderDetail() {
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
         {/* Left Column: Order Details & Status */}
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
             <Paper sx={{ p: 2, mb: 3}} elevation={2}>
                 <Typography variant="h6" gutterBottom>Resumen</Typography>
                 <Typography><b>Fecha:</b> {new Date(order.createdAt.seconds * 1000).toLocaleString()}</Typography>
@@ -100,7 +100,7 @@ function OrderDetail() {
         </Grid>
 
         {/* Right Column: Items & Financials */}
-        <Grid item xs={12} md={8}>
+        <Grid xs={12} md={8}>
             <Paper sx={{ p: 3 }} elevation={2}>
                 <Typography variant="h6" gutterBottom>Artículos del Pedido</Typography>
                 <List disablePadding>

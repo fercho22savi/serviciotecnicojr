@@ -47,8 +47,8 @@ const CouponFormDialog = ({ open, onClose, onSave, coupon }) => {
       <DialogTitle>{coupon ? 'Editar Cupón' : 'Crear Nuevo Cupón'}</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{mt: 1}}>
-            <Grid item xs={12}><TextField label="Código del Cupón" name="code" value={formState.code} onChange={handleChange} fullWidth required autoFocus/></Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12}><TextField label="Código del Cupón" name="code" value={formState.code} onChange={handleChange} fullWidth required autoFocus/></Grid>
+            <Grid xs={12} sm={6}>
                 <FormControl fullWidth required>
                     <InputLabel>Tipo</InputLabel>
                     <Select name="type" value={formState.type} label="Tipo" onChange={handleChange}>
@@ -57,8 +57,8 @@ const CouponFormDialog = ({ open, onClose, onSave, coupon }) => {
                     </Select>
                 </FormControl>
             </Grid>
-            <Grid item xs={12} sm={6}><TextField label="Valor" name="value" type="number" value={formState.value} onChange={handleChange} fullWidth required/></Grid>
-            <Grid item xs={12}>
+            <Grid xs={12} sm={6}><TextField label="Valor" name="value" type="number" value={formState.value} onChange={handleChange} fullWidth required/></Grid>
+            <Grid xs={12}>
               <DatePicker selected={formState.expiresAt} onChange={handleDateChange} dateFormat="MMMM d, yyyy" placeholderText="Seleccionar fecha de expiración" className="MuiInputBase-input MuiOutlinedInput-input" customInput={<TextField label="Fecha de Expiración" fullWidth />}/>
             </Grid>
         </Grid>

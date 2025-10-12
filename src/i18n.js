@@ -1,33 +1,41 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import HttpApi from 'i18next-http-backend';
+
+// Import translations directly to bundle them with the app
+import translationEN from '../public/locales/en/translation.json';
+import translationES from '../public/locales/es/translation.json';
+
+// Prepare the resources object for i18next
+const resources = {
+  en: {
+    translation: translationEN
+  },
+  es: {
+    translation: translationES
+  }
+};
 
 i18n
-  // Carga las traducciones desde la carpeta `public/locales`
-  .use(HttpApi)
-  // Detecta el idioma del navegador
+  // Detect user language
   .use(LanguageDetector)
-  // Pasa i18n a react-i18next
+  // Pass the i18n instance to react-i18next.
   .use(initReactI18next)
-  // Configuración inicial
+  // Initialize i18next
   .init({
-    // Idiomas soportados
-    supportedLngs: ['en'],
-    // Idioma por defecto
-    fallbackLng: 'en',
-    // Opciones para la detección de idioma
+    resources, // Pass the bundled translations
+    fallbackLng: 'es',
+    debug: true, // Enable debug mode
+
+    // Configure the language detector
     detection: {
-      order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
-      caches: ['cookie'],
+      order: ['localStorage', 'navigator'], // Check localStorage first, then the browser language
+      caches: ['localStorage'], // Save the chosen language to localStorage
     },
-    // Dónde encontrar los archivos de traducción
-    backend: {
-      loadPath: '/locales/{{lng}}.json',
+
+    interpolation: {
+      escapeValue: false, // React already safes from xss
     },
-    react: {
-        useSuspense: false, //  <-- Evita errores de Suspense en la carga inicial
-    }
   });
 
 export default i18n;

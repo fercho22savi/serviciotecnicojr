@@ -1,0 +1,247 @@
+{
+    "header": {
+        "searchPlaceholder": "Search products...",
+        "products": "Products",
+        "wishlist": "Wishlist",
+        "cart": "Cart",
+        "login": "Login",
+        "signup": "Sign Up",
+        "account": "My Account",
+        "my_orders": "My Orders",
+        "dashboard": "Admin Dashboard",
+        "logout": "Logout",
+        "lightModeTooltip": "Switch to light mode",
+        "darkModeTooltip": "Switch to dark mode",
+        "logout_error": "Error signing out"
+    },
+    "footer": {
+        "company_slogan": "The best technology at your fingertips. Quality, service, and the best market prices.",
+        "legal": "Legal",
+        "privacy_policy": "Privacy Policy",
+        "terms_of_service": "Terms of Service",
+        "help": "Help",
+        "faq": "Frequently Asked Questions",
+        "contact": "Contact",
+        "shipping_returns": "Shipping & Returns",
+        "follow_us": "Follow Us",
+        "copyright": "Copyright © YourStore.com {{year}}. Save with us"
+    },
+    "preferences": {
+        "title": "Preferences",
+        "subtitle": "Customize your in-app experience.",
+        "notifications": "Notifications",
+        "email_offers": "Email offers and news",
+        "sms_updates": "SMS order updates",
+        "push_notifications": "In-app push notifications",
+        "appearance_language": "Appearance & Language",
+        "theme": "Theme",
+        "light_theme": "Light",
+        "dark_theme": "Dark",
+        "system_theme": "System Default",
+        "language": "Language",
+        "spanish": "Spanish",
+        "english": "English",
+        "save_button": "Save Preferences",
+        "saving_toast": "Saving preferences...",
+        "save_success": "Preferences saved successfully",
+        "save_error": "Error saving preferences"
+    },
+    "faq_page": {
+        "title": "Frequently Asked Questions",
+        "payment_q": "What payment methods do you accept?",
+        "payment_a": "We accept a wide variety of payment methods, including credit and debit cards (Visa, MasterCard, American Express), PayPal, and other digital payment platforms. All transactions are 100% secure.",
+        "shipping_q": "How long does it take for my order to arrive?",
+        "shipping_a": "Standard delivery time is 3-5 business days. We also offer express shipping (1-2 business days) for an additional cost.",
+        "returns_q": "What is your return policy?",
+        "returns_a": "We offer a 30-day return policy. If you are not satisfied, you can return it for a full refund or exchange. The product must be in its original condition.",
+        "account_q": "Do I need an account to make a purchase?",
+        "account_a": "No, you can check out as a guest. However, an account offers advantages like a faster checkout process and access to your order history.",
+        "international_q": "Do you ship internationally?",
+        "international_a": "We are currently focused on the domestic market, but we plan to expand. Subscribe to our newsletter to be the first to know!",
+        "damaged_q": "My product arrived damaged, what should I do?",
+        "damaged_a": "We are sorry to hear that. Please contact customer support with your order number and photos of the damaged product so we can assist you."
+    },
+    "account_menu": {
+        "title": "User Panel",
+        "profile": "My Profile",
+        "orders": "My Orders",
+        "addresses": "Addresses",
+        "payment_methods": "Payment Methods",
+        "security": "Security",
+        "preferences": "Preferences"
+    },
+    "addresses": {
+        "title": "My Addresses",
+        "add_button": "Add Address",
+        "loading_error": "Error loading addresses.",
+        "saving_toast": "Saving address...",
+        "updating_toast": "Updating address...",
+        "save_success": "Address saved successfully",
+        "update_success": "Address updated successfully",
+        "save_error": "There was an error saving the address.",
+        "delete_confirm": "Are you sure you want to delete this address?",
+        "deleting_toast": "Deleting address...",
+        "delete_success": "Address deleted successfully",
+        "delete_error": "Error deleting the address.",
+        "no_addresses_title": "You have no saved addresses.",
+        "no_addresses_subtitle": "Add an address to make your future purchases easier.",
+        "phone_label": "Tel",
+        "edit_dialog_title": "Edit Address",
+        "add_dialog_title": "Add New Address",
+        "cancel_button": "Cancel",
+        "save_changes_button": "Save Changes",
+        "save_button": "Save",
+        "form": {
+            "recipient_name": "Recipient's Name",
+            "address": "Address",
+            "city": "City",
+            "state": "State/Province",
+            "postal_code": "Postal Code",
+            "country": "Country",
+            "recipient_phone": "Recipient's Phone",
+            "shipping_notes": "Shipping Notes"
+        }
+    },
+    "orders": {
+        "title": "My Orders",
+        "fetch_error": "Error fetching orders.",
+        "no_orders_title": "You haven't placed any orders yet.",
+        "no_orders_subtitle": "Browse our products and find something you love.",
+        "browse_products_button": "Browse Products",
+        "order_number_label": "Order #",
+        "date_label": "Date",
+        "total_label": "Total",
+        "status_label": "Status",
+        "view_details_button": "View Details",
+        "status": {
+            "pendiente": "Pending",
+            "procesando": "Processing",
+            "enviado": "Shipped",
+            "entregado": "Delivered",
+            "cancelado": "Canceled"
+        }
+    },
+    "payment_methods": {
+        "title": "Payment Methods",
+        "add_button": "Add New",
+        "load_error": "Error loading payment methods.",
+        "saving_toast": "Saving payment method...",
+        "save_success": "Payment method saved successfully",
+        "save_error": "There was an error saving the payment method.",
+        "delete_confirm": "Are you sure you want to delete this payment method?",
+        "deleting_toast": "Deleting...",
+        "delete_success": "Payment method deleted",
+        "delete_error": "Error deleting.",
+        "no_methods_title": "You have no saved payment methods.",
+        "no_methods_subtitle": "Add one for a faster checkout process.",
+        "card_ending_in": "{{brand}} ending in {{last4}}",
+        "expires_label": "Expires",
+        "add_dialog_title": "Add New Payment Method",
+        "cancel_button": "Cancel",
+        "save_button": "Save Card",
+        "unknown_brand": "Unknown",
+        "form": {
+            "cardholder_name": "Name on Card",
+            "card_number": "Card Number",
+            "expiry": "Expiry (MM/YY)",
+            "cvc": "CVC",
+            "security_note": "Your payment information is secure. We do not store your full card details."
+        }
+    },
+    "security": {
+        "title": "Account Security",
+        "subtitle": "To keep your account secure, we recommend changing your password periodically.",
+        "form": {
+            "current_password": "Current Password",
+            "new_password": "New Password",
+            "confirm_password": "Confirm New Password"
+        },
+        "button": {
+            "change_password": "Change Password"
+        },
+        "toast": {
+            "changing_password": "Changing password...",
+            "success": "Password updated successfully"
+        },
+        "errors": {
+            "fill_all_fields": "Please fill in all fields.",
+            "passwords_do_not_match": "The new passwords do not match.",
+            "password_too_short": "The new password must be at least 6 characters long.",
+            "generic_error": "There was an error changing the password.",
+            "wrong_current_password": "The current password is incorrect."
+        }
+    },
+    "profile": {
+        "title": "My Profile",
+        "subtitle": "Update your personal and contact information.",
+        "loading": "Loading profile...",
+        "form": {
+            "first_name": "First Name",
+            "last_name": "Last Name",
+            "email_helper": "The email address cannot be changed.",
+            "phone": "Phone",
+            "id_document": "Identity Document",
+            "birth_date": "Date of Birth"
+        },
+        "button": {
+            "save": "Save Changes"
+        },
+        "toast": {
+            "updating": "Updating profile...",
+            "success": "Profile updated successfully"
+        },
+        "errors": {
+            "load_profile": "Could not load your profile.",
+            "update_profile": "There was an error updating your profile."
+        }
+    },
+    "shipping_policy": {
+        "title": "Shipping and Returns",
+        "subtitle": "Everything you need to know about how we get our products to your door.",
+        "delivery_time_label": "Delivery time",
+        "shipping_options": {
+            "title": "Shipping Options",
+            "standard": {
+                "title": "Standard Domestic Shipping",
+                "description": "Our standard shipping is free for all orders over $50. For smaller orders, there is a flat rate of $5.",
+                "time": "3-5 business days",
+                "tracking": "All packages are sent with a tracking number that you will receive by email as soon as the order is dispatched."
+            },
+            "express": {
+                "title": "Express Shipping",
+                "description": "Need your order urgently? We offer an express shipping service for an additional cost of $15.",
+                "time": "1-2 business days"
+            }
+        },
+        "returns_policy": {
+            "title": "Returns Policy",
+            "conditions": {
+                "title": "Timeframe and Conditions",
+                "description": "We accept returns up to 30 days after the delivery date. For a return to be accepted, the product must be in its original packaging, unused, and in the same condition you received it.",
+                "exceptions": "Software products and gift cards are non-returnable."
+            },
+            "process": {
+                "title": "Return Process",
+                "description": "To initiate a 'return', please contact our support team through the contact page with your order number. We will provide you with instructions and the shipping address.",
+                "shipping_costs": "Return shipping costs are the responsibility of the customer, unless the reason for the return is an error on our part (incorrect or defective product)."
+            }
+        },
+        "general_rules": {
+            "title": "General Rules",
+            "description": "We reserve the right to refuse any return that does not meet the above criteria. It is important to inspect your order as soon as you receive it. If you find any issues, please contact us immediately."
+        }
+    },
+    "contact_page": {
+        "title": "Contact Us",
+        "get_in_touch": "Get in Touch",
+        "form_intro": "Have a question or need help? Fill out the form and our team will get back to you as soon as possible.",
+        "form": {
+            "first_name": "First Name",
+            "last_name": "Last Name",
+            "email": "Email",
+            "subject": "Subject",
+            "message": "Message",
+            "send_button": "Send Message"
+        }
+    }
+}
