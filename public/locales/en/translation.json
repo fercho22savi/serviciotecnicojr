@@ -23,6 +23,7 @@
         "faq": "Frequently Asked Questions",
         "contact": "Contact",
         "shipping_returns": "Shipping & Returns",
+        "refund_policy": "Refund & Return Policy",
         "follow_us": "Follow Us",
         "copyright": "Copyright © YourStore.com {{year}}. Save with us"
     },
@@ -114,12 +115,28 @@
         "status_label": "Status",
         "view_details_button": "View Details",
         "status": {
-            "pendiente": "Pending",
-            "procesando": "Processing",
+            "en_proceso": "Processing",
+            "pagado": "Paid",
+            "en_preparacion": "Preparing",
             "enviado": "Shipped",
             "entregado": "Delivered",
-            "cancelado": "Canceled"
-        }
+            "cancelado": "Cancelled"
+        },
+        "error_title": "Error Loading Orders",
+        "index_fix_instruction": "Please check the browser console for a link to create the required database index in Firebase.",
+        "search_label": "Search Orders"
+    },
+    "order_detail": {
+        "title": "Order Detail #{{id}}",
+        "title_simple": "Order Detail",
+        "not_found": "Order not found",
+        "date_label": "Date",
+        "total_label": "Total",
+        "items_label": "Items",
+        "quantity_label": "Quantity",
+        "price_label": "Price",
+        "export_pdf_button": "Export to PDF",
+        "print_button": "Print"
     },
     "payment_methods": {
         "title": "Payment Methods",

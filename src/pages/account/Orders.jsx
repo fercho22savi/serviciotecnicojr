@@ -1,116 +1,139 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, CircularProgress, Paper, Grid, Chip, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
-import { useTranslation } from 'react-i18next';
+import {
+    Container, Typography, Box, CircularProgress, Alert, Paper, 
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, TablePagination
+} from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
-const statusColors = {
-  Pendiente: 'warning',
-  Procesando: 'info',
-  Enviado: 'primary',
-  Entregado: 'success',
-  Cancelado: 'error',
-};
+const Orders = () => {
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const { currentUser } = useAuth();
+    
+    // --- State for Pagination ---
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
 
-function Orders() {
-  const { t } = useTranslation();
-  const { user } = useAuth();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+    useEffect(() => {
+        if (!currentUser) {
+            setLoading(false);
+            setError("Debes iniciar sesión para ver tus pedidos.");
+            return;
+        }
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const q = query(
-          collection(db, 'orders'),
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc')
+        setLoading(true);
+        const ordersQuery = query(
+            collection(db, 'orders'), 
+            where("userId", "==", currentUser.uid),
+            orderBy("createdAt", "desc")
         );
-        const querySnapshot = await getDocs(q);
-        const userOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setOrders(userOrders);
-      } catch (error) {
-        console.error("Error fetching orders: ", error);
-        toast.error(t('orders.fetch_error'));
-      }
-      setLoading(false);
+
+        const unsubscribe = onSnapshot(ordersQuery, (querySnapshot) => {
+            const userOrders = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate()
+            }));
+            setOrders(userOrders);
+            setLoading(false);
+        }, (err) => {
+            console.error("Error fetching orders: ", err);
+            setError("No se pudieron cargar tus pedidos. Inténtalo de nuevo más tarde.");
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
+
+    // --- Handlers for Pagination ---
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
     };
 
-    fetchOrders();
-  }, [user, t]);
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
 
-  const getStatusLabel = (status) => {
-    const key = `orders.status.${status.toLowerCase()}`;
-    // Fallback to the original status if the key doesn't exist
-    return t(key, { defaultValue: status });
-  }
+    if (loading) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>;
+    }
 
-  if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
-  }
+    if (error) {
+        return <Alert severity="error">{error}</Alert>;
+    }
+    
+    // Slice orders for current page
+    const paginatedOrders = orders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  return (
-    <Box>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-        {t('orders.title')}
-      </Typography>
-      
-      {orders.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: '12px' }}>
-          <Typography variant="h6">{t('orders.no_orders_title')}</Typography>
-          <Typography color="text.secondary">{t('orders.no_orders_subtitle')}</Typography>
-          <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/products')}>
-            {t('orders.browse_products_button')}
-          </Button>
-        </Paper>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {orders.map(order => (
-            <Paper key={order.id} elevation={2} sx={{ p: 3, borderRadius: '12px', transition: 'box-shadow 0.3s', '&:hover': { boxShadow: 4 } }}>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={3}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{t('orders.order_number_label')}</Typography>
-                  <Typography variant="body2" color="text.secondary">{order.orderId || order.id}</Typography>
-                </Grid>
-                <Grid item xs={6} md={2}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{t('orders.date_label')}</Typography>
-                  <Typography variant="body2" color="text.secondary">{new Date(order.createdAt.seconds * 1000).toLocaleDateString()}</Typography>
-                </Grid>
-                <Grid item xs={6} md={2}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{t('orders.total_label')}</Typography>
-                  <Typography variant="body2" color="text.secondary">${order.totalAmount.toFixed(2)}</Typography>
-                </Grid>
-                <Grid item xs={6} md={3}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>{t('orders.status_label')}</Typography>
-                    <Chip 
-                        label={getStatusLabel(order.status || 'Pendiente')} 
-                        color={statusColors[order.status] || 'default'} 
-                        size="small"
+    return (
+        <Container>
+            <Typography variant="h5" component="h1" sx={{ mb: 3, fontWeight: 'bold' }}>
+                Mis Pedidos
+            </Typography>
+            {orders.length === 0 ? (
+                <Paper sx={{ textAlign: 'center', p: 4, mt: 4, border: '2px dashed', borderColor: 'grey.300' }}>
+                    <ReceiptLongIcon sx={{ fontSize: 60, color: 'grey.400' }} />
+                    <Typography variant="h6" sx={{ mt: 2 }}>Aún no tienes pedidos.</Typography>
+                    <Typography color="text.secondary" sx={{ mb: 3 }}>Cuando realices una compra, aparecerá aquí.</Typography>
+                    <Button component={RouterLink} to="/products" variant="contained">
+                        Explorar Productos
+                    </Button>
+                </Paper>
+            ) : (
+                <Paper>
+                    <TableContainer>
+                        <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>Nº Pedido</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Fecha</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Estado</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>Total</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Acciones</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {paginatedOrders.map((order) => (
+                                    <TableRow key={order.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                        <TableCell component="th" scope="row">
+                                            <Typography variant="body2" sx={{ fontWeight: '500' }}>{order.orderNumber || order.orderId}</Typography>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            {order.createdAt ? new Intl.DateTimeFormat('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }).format(order.createdAt) : '--'}
+                                        </TableCell>
+                                        <TableCell align="center">{order.status}</TableCell>
+                                        <TableCell align="right">${new Intl.NumberFormat('es-CO').format(order.totalAmount)}</TableCell>
+                                        <TableCell align="center">
+                                            <Button component={RouterLink} to={`/account/orders/${order.id}`} size="small">
+                                                Ver Detalles
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                    {/* --- Pagination Component --- */}
+                    <TablePagination
+                        rowsPerPageOptions={[5, 10, 25]}
+                        component="div"
+                        count={orders.length}
+                        rowsPerPage={rowsPerPage}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        labelRowsPerPage="Pedidos por página:"
                     />
-                </Grid>
-                <Grid item xs={6} md={2} sx={{ textAlign: 'right' }}>
-                  <Button 
-                    variant="outlined" 
-                    size="small"
-                    onClick={() => navigate(`/account/orders/${order.id}`)}
-                  >
-                    {t('orders.view_details_button')}
-                  </Button>
-                </Grid>
-              </Grid>
-            </Paper>
-          ))}
-        </Box>
-      )}
-    </Box>
-  );
-}
+                </Paper>
+            )}
+        </Container>
+    );
+};
 
 export default Orders;

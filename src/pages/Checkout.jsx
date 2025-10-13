@@ -1,114 +1,119 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase/config';
+import { useCart } from '../context/CartContext';
+import { db, analytics } from '../firebase/config'; // Import analytics
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { logEvent } from "firebase/analytics"; // Import logEvent
 import { 
-    Container, Paper, Stepper, Step, StepLabel, Button, Typography, Box, Grid, TextField, Divider, List, ListItem, ListItemText, CircularProgress, Alert
+    Container, Paper, Stepper, Step, StepLabel, Button, Typography, Box, CircularProgress, Alert 
 } from '@mui/material';
-
-const generateOrderId = () => {
-    return `ORD-${Date.now().toString(36).substr(2, 9).toUpperCase()}`;
-};
+import toast from 'react-hot-toast';
+import ShippingAddressForm from '../components/checkout/ShippingAddressForm';
+import PaymentForm from '../components/checkout/PaymentForm';
+import Review from '../components/checkout/Review';
 
 const steps = ['Dirección de Envío', 'Detalles de Pago', 'Revisar Pedido'];
 
-function ShippingAddressForm({ formValues, handleChange }) {
-    return (
-        <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}><TextField required id="firstName" name="firstName" label="Nombre" fullWidth variant="standard" value={formValues.firstName} onChange={handleChange} /></Grid>
-            <Grid item xs={12} sm={6}><TextField required id="lastName" name="lastName" label="Apellido" fullWidth variant="standard" value={formValues.lastName} onChange={handleChange} /></Grid>
-            <Grid item xs={12}><TextField required id="address" name="address" label="Dirección" fullWidth variant="standard" value={formValues.address} onChange={handleChange} /></Grid>
-            <Grid item xs={12} sm={6}><TextField required id="city" name="city" label="Ciudad" fullWidth variant="standard" value={formValues.city} onChange={handleChange} /></Grid>
-            <Grid item xs={12} sm={6}><TextField id="state" name="state" label="Estado/Provincia" fullWidth variant="standard" value={formValues.state} onChange={handleChange} /></Grid>
-            <Grid item xs={12} sm={6}><TextField required id="zip" name="zip" label="Código Postal" fullWidth variant="standard" value={formValues.zip} onChange={handleChange} /></Grid>
-            <Grid item xs={12} sm={6}><TextField required id="country" name="country" label="País" fullWidth variant="standard" value={formValues.country} onChange={handleChange} /></Grid>
-        </Grid>
-    );
-}
+// Generates a short, human-readable, unique order number (e.g., AB12CD)
+const generateOrderNumber = () => {
+    const chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+};
 
-function PaymentForm({ formValues, handleChange }) {
-    return (
-        <Grid container spacing={3}>
-            <Grid item xs={12} md={6}><TextField required id="cardName" name="cardName" label="Nombre en la tarjeta" fullWidth variant="standard" value={formValues.cardName} onChange={handleChange}/></Grid>
-            <Grid item xs={12} md={6}><TextField required id="cardNumber" name="cardNumber" label="Número de tarjeta" fullWidth variant="standard" value={formValues.cardNumber} onChange={handleChange} /></Grid>
-            <Grid item xs={12} md={6}><TextField required id="expDate" name="expDate" label="Fecha de expiración (MM/AA)" fullWidth variant="standard" value={formValues.expDate} onChange={handleChange} /></Grid>
-            <Grid item xs={12} md={6}><TextField required id="cvv" name="cvv" label="CVV" fullWidth variant="standard" helperText="Los 3 dígitos en el reverso" value={formValues.cvv} onChange={handleChange}/></Grid>
-        </Grid>
-    );
-}
-
-function Review({ formValues, cart }) {
-    const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    return (
-        <Box>
-            <Typography variant="h6" gutterBottom>Resumen del Pedido</Typography>
-            <List disablePadding>{cart.map((item) => (<ListItem key={item.id} sx={{ py: 1, px: 0 }}><ListItemText primary={item.name} secondary={`Cantidad: ${item.quantity}`} /><Typography variant="body2">${(item.price * item.quantity).toFixed(2)}</Typography></ListItem>))}<ListItem sx={{ py: 1, px: 0 }}><ListItemText primary="Total" /><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>${totalAmount.toFixed(2)}</Typography></ListItem></List>
-            <Divider sx={{my: 2}}/>
-            <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}><Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Dirección de Envío</Typography><Typography gutterBottom>{formValues.firstName} {formValues.lastName}</Typography><Typography gutterBottom>{formValues.address}</Typography></Grid>
-                <Grid item container direction="column" xs={12} sm={6}><Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Detalles del Pago</Typography><Grid container><Grid item xs={6}><Typography gutterBottom>Titular:</Typography></Grid><Grid item xs={6}><Typography gutterBottom>{formValues.cardName}</Typography></Grid><Grid item xs={6}><Typography gutterBottom>Número:</Typography></Grid><Grid item xs={6}><Typography gutterBottom>xxxx-xxxx-xxxx-{formValues.cardNumber.slice(-4)}</Typography></Grid></Grid></Grid>
-            </Grid>
-        </Box>
-    )
-}
-
-function Checkout({ cart, setCart }) {
-    const { user } = useAuth();
+const Checkout = () => {
+    const { currentUser } = useAuth();
+    const { cart, clearCart } = useCart();
     const [activeStep, setActiveStep] = useState(0);
-    const [formData, setFormData] = useState({});
+    const [formValues, setFormValues] = useState({});
+    const [errors, setErrors] = useState({});
     const [isProcessing, setIsProcessing] = useState(false);
-    const [error, setError] = useState('');
+    const [serverError, setServerError] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
-        if(user) {
-            const [firstName, ...lastName] = (user.displayName || '').split(' ');
-            setFormData({
-                firstName: firstName || '', lastName: lastName.join(' ') || '', address: '', city: '', state: '', zip: '', country: '', 
-                cardName: '', cardNumber: '', expDate: '', cvv: ''
-            });
+        if (currentUser) {
+            const [firstName, ...lastName] = (currentUser.displayName || '').split(' ');
+            setFormValues(prev => ({ ...prev, firstName: firstName || '', lastName: lastName.join(' ') || '' }));
         }
-    }, [user]);
+    }, [currentUser]);
 
-    const handleChange = (e) => setFormData(prev => ({...prev, [e.target.name]: e.target.value}));
+    const validate = (step) => {
+        const newErrors = {};
+        if (step === 0) { // Shipping Address
+            if (!formValues.firstName) newErrors.firstName = 'El nombre es requerido.';
+            if (!formValues.lastName) newErrors.lastName = 'El apellido es requerido.';
+            if (!formValues.address) newErrors.address = 'La dirección es requerida.';
+            if (!formValues.city) newErrors.city = 'La ciudad es requerida.';
+            if (!formValues.zip) newErrors.zip = 'El código postal es requerido.';
+            if (!formValues.country) newErrors.country = 'El país es requerido.';
+        } else if (step === 1) { // Payment Form
+            if (!formValues.cardName) newErrors.cardName = 'El nombre en la tarjeta es requerido.';
+            if (!formValues.cardNumber || !/^(\d{4}\s?){3}\d{4}$/.test(formValues.cardNumber.replace(/\s/g, ''))) newErrors.cardNumber = 'Número de tarjeta inválido.';
+            if (!formValues.expDate || !/^(0[1-9]|1[0-2])\/([0-9]{2})$/.test(formValues.expDate)) newErrors.expDate = 'Fecha de expiración inválida (MM/AA).';
+            if (!formValues.cvv || !/^\d{3,4}$/.test(formValues.cvv)) newErrors.cvv = 'CVV inválido.';
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormValues(prev => ({ ...prev, [name]: value }));
+    };
 
     const handleNext = async () => {
+        if (!validate(activeStep)) return;
+
         if (activeStep === steps.length - 1) {
             setIsProcessing(true);
-            setError('');
+            setServerError('');
             try {
-                const orderId = generateOrderId();
+                const orderNumber = generateOrderNumber();
                 const orderTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+                // 1. Save order to Firestore
                 const orderData = {
-                    userId: user.uid,
-                    orderId: orderId,
+                    userId: currentUser.uid,
+                    orderNumber: orderNumber,
                     items: cart,
                     totalAmount: orderTotal,
-                    customerDetails: {
-                        firstName: formData.firstName,
-                        lastName: formData.lastName,
-                        address: formData.address,
-                        city: formData.city,
-                        state: formData.state,
-                        postalCode: formData.zip,
-                        country: formData.country,
-                        email: user.email
-                    },
-                    payment: { cardName: formData.cardName, cardNumberLast4: formData.cardNumber.slice(-4) },
+                    customerDetails: { firstName: formValues.firstName, lastName: formValues.lastName, address: formValues.address, city: formValues.city, state: formValues.state, postalCode: formValues.zip, country: formValues.country, email: currentUser.email },
+                    payment: { cardName: formValues.cardName, cardNumberLast4: formValues.cardNumber.slice(-4) },
                     status: 'Procesando',
                     createdAt: serverTimestamp()
                 };
-
                 await addDoc(collection(db, 'orders'), orderData);
                 
-                setCart([]);
-                navigate('/my-orders');
+                // 2. Log Firebase Analytics purchase event
+                logEvent(analytics, 'purchase', {
+                    transaction_id: orderNumber,
+                    value: orderTotal,
+                    currency: 'COP',
+                    shipping: 0, // Assuming free shipping
+                    tax: 0, // Assuming no tax calculation
+                    affiliation: 'MiTienda',
+                    items: cart.map(item => ({
+                        item_id: item.id,
+                        item_name: item.name,
+                        price: item.price,
+                        quantity: item.quantity
+                    }))
+                });
+
+                // 3. Clear cart and navigate
+                toast.success(`¡Pedido realizado con éxito! Tu N° de pedido es: ${orderNumber}`)
+                clearCart();
+                navigate('/account/orders');
 
             } catch (e) {
                 console.error("Error placing order: ", e);
-                setError('Hubo un problema al procesar tu pedido. Inténtalo de nuevo.');
+                setServerError('Hubo un problema al procesar tu pedido. Inténtalo de nuevo.');
+                toast.error('Error al procesar el pedido.');
             } finally {
                 setIsProcessing(false);
             }
@@ -121,9 +126,9 @@ function Checkout({ cart, setCart }) {
 
     function getStepContent(step) {
         switch (step) {
-            case 0: return <ShippingAddressForm formValues={formData} handleChange={handleChange} />;
-            case 1: return <PaymentForm formValues={formData} handleChange={handleChange} />;
-            case 2: return <Review formValues={formData} cart={cart} />;
+            case 0: return <ShippingAddressForm formValues={formValues} handleChange={handleChange} errors={errors} />;
+            case 1: return <PaymentForm formValues={formValues} handleChange={handleChange} errors={errors} />;
+            case 2: return <Review formValues={formValues} />;
             default: throw new Error('Paso desconocido');
         }
     }
@@ -134,12 +139,12 @@ function Checkout({ cart, setCart }) {
                 <Typography component="h1" variant="h4" align="center">Proceso de Pago</Typography>
                 <Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>{steps.map(l => (<Step key={l}><StepLabel>{l}</StepLabel></Step>))}</Stepper>
                 <React.Fragment>
-                    {error && <Alert severity="error" sx={{mb: 2}}>{error}</Alert>}
+                    {serverError && <Alert severity="error" sx={{mb: 2}}>{serverError}</Alert>}
                     {getStepContent(activeStep)}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                         {activeStep !== 0 && <Button onClick={handleBack} sx={{ mt: 3, ml: 1 }}>Atrás</Button>}
-                        <Button variant="contained" onClick={handleNext} sx={{ mt: 3, ml: 1 }} disabled={isProcessing || (cart.length === 0 && activeStep === steps.length - 1)}>
-                            {isProcessing ? <CircularProgress size={24} /> : (activeStep === steps.length - 1 ? 'Confirmar Pedido' : 'Siguiente')}
+                        <Button variant="contained" onClick={handleNext} sx={{ mt: 3, ml: 1 }} disabled={isProcessing || cart.length === 0}>
+                            {isProcessing ? <CircularProgress size={24} /> : (activeStep === steps.length - 1 ? 'Finalizar Compra' : 'Siguiente')}
                         </Button>
                     </Box>
                 </React.Fragment>

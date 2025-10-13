@@ -17,6 +17,6 @@
     "rules": "firestore.rules"
   },
   "storage": {
-    "rules": "storage.rules" 
+    "rules": "storage.rules"
   }
 }

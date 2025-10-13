@@ -16,18 +16,19 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase/config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import toast from 'react-hot-toast';
+import ImageWithFallback from '../components/ImageWithFallback'; // Import the new component
 
-function Cart({ cart, setCart, user, isLoggedIn }) {
+// Note: The main checkout logic has been moved to the Checkout.jsx page.
+// This component now focuses only on displaying and managing the cart items.
+
+function Cart({ cart, setCart }) {
   const navigate = useNavigate();
 
   const handleQuantityChange = (productId, newQuantity) => {
-    if (newQuantity < 1) return;
+    // Prevent quantity from going below 1
+    const quantity = Math.max(1, newQuantity);
     setCart(cart.map(item => 
-      item.id === productId ? { ...item, quantity: newQuantity } : item
+      item.id === productId ? { ...item, quantity } : item
     ));
   };
 
@@ -35,47 +36,12 @@ function Cart({ cart, setCart, user, isLoggedIn }) {
     setCart(cart.filter(item => item.id !== productId));
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingCost = subtotal > 100 ? 0 : 15;
-  const total = subtotal + shippingCost;
-
-  const handleCheckout = async () => {
-    if (!isLoggedIn) {
-      toast.error('Debes iniciar sesión para realizar la compra.');
-      navigate('/login');
-      return;
-    }
-
-    const loadingToast = toast.loading('Procesando tu pedido...');
-
-    try {
-      const orderData = {
-        userId: user.uid,
-        items: cart.map(item => ({ 
-          id: item.id, 
-          name: item.name, 
-          quantity: item.quantity, 
-          price: item.price 
-        })),
-        totalAmount: total,
-        createdAt: serverTimestamp(),
-        status: 'Procesando',
-      };
-
-      const docRef = await addDoc(collection(db, 'orders'), orderData);
-      
-      toast.dismiss(loadingToast);
-      toast.success(`¡Pedido #${docRef.id.substring(0, 6)} realizado con éxito!`);
-      
-      setCart([]);
-      navigate('/account/orders');
-
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      toast.error('Hubo un error al procesar tu pedido. Inténtalo de nuevo.');
-      console.error("Error creating order: ", error);
-    }
+  // Navigate to the dedicated checkout page
+  const handleCheckout = () => {
+    navigate('/checkout');
   };
+
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   if (cart.length === 0) {
     return (
@@ -87,8 +53,8 @@ function Cart({ cart, setCart, user, isLoggedIn }) {
         <Typography color="text.secondary" sx={{ my: 2 }}>
           Parece que todavía no has añadido nada. ¡Explora nuestros productos!
         </Typography>
-        <Button component={RouterLink} to="/" variant="contained" size="large">
-          Ir a la Tienda
+        <Button component={RouterLink} to="/products" variant="contained" size="large">
+          Explorar Productos
         </Button>
       </Container>
     );
@@ -103,18 +69,25 @@ function Cart({ cart, setCart, user, isLoggedIn }) {
         <Grid item xs={12} md={8}>
           {cart.map((item) => (
             <Paper key={item.id} elevation={2} sx={{ display: 'flex', mb: 2, p: 2, alignItems: 'center' }}>
-              <img src={item.imageUrl} alt={item.name} style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8 }} />
+              <ImageWithFallback 
+                src={item.images && item.images.length > 0 ? item.images[0] : ''}
+                alt={item.name} 
+                style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
+              />
               <Box sx={{ flexGrow: 1, mx: 2 }}>
                 <Link component={RouterLink} to={`/product/${item.id}`} sx={{ textDecoration: 'none', color: 'inherit'}}>
-                    <Typography variant="h6">{item.name}</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 500 }}>{item.name}</Typography>
                 </Link>
-                <Typography color="text.secondary">Precio: ${item.price.toFixed(2)}</Typography>
+                <Typography color="text.secondary">${new Intl.NumberFormat('es-CO').format(item.price)}</Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <IconButton size="small" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}><RemoveIcon /></IconButton>
-                <TextField value={item.quantity} size="small" sx={{ width: 50, mx: 1, textAlign: 'center' }} inputProps={{ readOnly: true }}/>
+                <Typography sx={{ width: 40, textAlign: 'center' }}>{item.quantity}</Typography>
                 <IconButton size="small" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}><AddIcon /></IconButton>
               </Box>
+              <Typography variant="h6" sx={{ width: 100, textAlign: 'right', fontWeight: 'bold' }}>
+                  ${new Intl.NumberFormat('es-CO').format(item.price * item.quantity)}
+              </Typography>
               <IconButton color="error" onClick={() => handleRemoveItem(item.id)} sx={{ ml: 2 }}>
                 <DeleteIcon />
               </IconButton>
@@ -123,24 +96,24 @@ function Cart({ cart, setCart, user, isLoggedIn }) {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Paper elevation={2} sx={{ p: 3 }}>
+          <Paper elevation={2} sx={{ p: 3, position: 'sticky', top: 88 }}>
             <Typography variant="h5" gutterBottom fontWeight="medium">Resumen del Pedido</Typography>
             <Divider sx={{ my: 2 }}/>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', my: 1 }}>
               <Typography>Subtotal</Typography>
-              <Typography fontWeight="medium">${subtotal.toFixed(2)}</Typography>
+              <Typography fontWeight="medium">${new Intl.NumberFormat('es-CO').format(subtotal)}</Typography>
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', my: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', my: 1, color: 'text.secondary' }}>
               <Typography>Envío</Typography>
-              <Typography fontWeight="medium">${shippingCost.toFixed(2)}</Typography>
+              <Typography>Calculado en el checkout</Typography>
             </Box>
             <Divider sx={{ my: 2 }}/>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', my: 2 }}>
-              <Typography variant="h6" fontWeight="bold">Total</Typography>
-              <Typography variant="h6" fontWeight="bold">${total.toFixed(2)}</Typography>
+              <Typography variant="h6" fontWeight="bold">Total Estimado</Typography>
+              <Typography variant="h6" fontWeight="bold">${new Intl.NumberFormat('es-CO').format(subtotal)}</Typography>
             </Box>
             <Button onClick={handleCheckout} variant="contained" size="large" fullWidth>
-              Finalizar Compra
+              Ir al Checkout
             </Button>
           </Paper>
         </Grid>

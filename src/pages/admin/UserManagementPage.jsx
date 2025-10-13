@@ -1,159 +1,200 @@
+
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Typography, Paper, InputBase, Select, MenuItem, FormControl, InputLabel, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, CircularProgress } from '@mui/material';
-import { Add, Edit, Delete } from '@mui/icons-material';
-import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import { functions } from '../../firebase/config';
+import { httpsCallable } from 'firebase/functions';
+import {
+    Box,
+    Typography,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    CircularProgress,
+    Alert,
+    IconButton,
+    Switch,
+    Button,
+    Tabs,
+    Tab,
+    TablePagination
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
 import UserFormModal from '../../components/admin/UserFormModal';
 
+// Placeholder for callable functions
+const listUsers = httpsCallable(functions, 'listUsers');
+const updateUserRole = httpsCallable(functions, 'updateUserRole');
+const toggleUserStatus = httpsCallable(functions, 'toggleUserStatus');
+
 const UserManagementPage = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Todos');
-  const [roleFilter, setRoleFilter] = useState('Todos');
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [tabIndex, setTabIndex] = useState(0);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const usersCollection = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setUsers(usersList);
-    } catch (error) {
-      console.error("Error fetching users: ", error);
+    // Pagination state
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
+
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            const result = await listUsers();
+            // Note: Ensure your 'listUsers' cloud function returns 'displayName'.
+            setUsers(result.data.users);
+            setError(null);
+        } catch (err) {
+            setError('Error al cargar los usuarios. Asegúrate de tener los permisos necesarios y que la función "listUsers" esté desplegada.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const handleOpenModal = (user) => {
+        setSelectedUser(user);
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setSelectedUser(null);
+        setModalOpen(false);
+    };
+
+    const handleRoleUpdate = async (uid, newRole) => {
+        try {
+            await updateUserRole({ uid, role: newRole });
+            fetchUsers();
+            handleCloseModal();
+        } catch (err) {
+            setError('Error al actualizar el rol del usuario.');
+            console.error(err);
+        }
+    };
+
+    const handleStatusToggle = async (uid, disabled) => {
+        try {
+            await toggleUserStatus({ uid, disabled: !disabled });
+            fetchUsers();
+        } catch (err) {
+            setError('Error al cambiar el estado del usuario.');
+            console.error(err);
+        }
+    };
+    
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
+    const paginatedUsers = users.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+    if (loading) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
     }
-    setLoading(false);
-  };
+    
+    return (
+        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+            <Paper elevation={3} sx={{ borderRadius: 2 }}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <Tabs value={tabIndex} onChange={(e, newValue) => setTabIndex(newValue)} aria-label="user management tabs">
+                        <Tab label="Usuarios" />
+                        <Tab label="Roles y Permisos" disabled />
+                    </Tabs>
+                </Box>
+                
+                {tabIndex === 0 && (
+                    <Box sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
+                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="h5" component="h2" gutterBottom sx={{ m: 0 }}>
+                                Gestión de Usuarios
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                // onClick={() => handleOpenModal(null)} // Adapt to create new user
+                            >
+                                Nuevo Usuario
+                            </Button>
+                        </Box>
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const handleOpenModal = (user = null) => {
-    setSelectedUser(user);
-    setModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
-    setSelectedUser(null);
-  };
-
-  const handleSubmit = async (formData, userId) => {
-    try {
-      if (userId) {
-        // Actualizar usuario existente
-        const userRef = doc(db, 'users', userId);
-        const { email, ...updateData } = formData; // El email no se puede cambiar
-        await updateDoc(userRef, updateData);
-      } else {
-        // Crear nuevo usuario (esto es simplificado, necesitaría Auth)
-        await addDoc(collection(db, 'users',), formData);
-      }
-      fetchUsers(); // Recargar la lista de usuarios
-    } catch (error) {
-      console.error("Error saving user: ", error);
-    }
-    handleCloseModal();
-  };
-
-  const handleDelete = async (userId) => {
-      if(window.confirm("¿Estás seguro de que quieres eliminar este usuario?")) {
-          try {
-              await deleteDoc(doc(db, 'users', userId));
-              fetchUsers();
-          } catch (error) {
-              console.error("Error deleting user: ", error)
-          }
-      }
-  }
-
-  const filteredUsers = users.filter(user => {
-      const searchMatch = user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || user.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const statusMatch = statusFilter === 'Todos' || (user.status || 'Activo') === statusFilter;
-      const roleMatch = roleFilter === 'Todos' || (user.role || 'Usuario') === roleFilter;
-      return searchMatch && statusMatch && roleMatch;
-  });
-
-  return (
-    <Paper sx={{ p: 2, margin: 'auto', flexGrow: 1 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h4" component="h1">
-                Gestión de Usuarios
-            </Typography>
-            <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenModal()}>
-                Añadir Nuevo Usuario
-            </Button>
+                        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                        
+                        <TableContainer>
+                            <Table>
+                                <TableHead>
+                                    <TableRow sx={{ '& .MuiTableCell-head': { fontWeight: 'bold' } }}>
+                                        <TableCell>Nombre</TableCell>
+                                        <TableCell>Email</TableCell>
+                                        <TableCell>Estado</TableCell>
+                                        <TableCell align="right">Acciones</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {paginatedUsers.map((user) => (
+                                        <TableRow key={user.uid} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                            <TableCell>{user.displayName || 'N/A'}</TableCell>
+                                            <TableCell>{user.email}</TableCell>
+                                            <TableCell>
+                                                <Switch
+                                                    checked={!user.disabled}
+                                                    onChange={() => handleStatusToggle(user.uid, user.disabled)}
+                                                    color="primary"
+                                                    size="small"
+                                                />
+                                                {user.disabled ? 'Inactivo' : 'Activo'}
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Tooltip title="Editar Rol">
+                                                    <IconButton size="small" onClick={() => handleOpenModal(user)}>
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                         <TablePagination
+                            rowsPerPageOptions={[5, 10, 25]}
+                            component="div"
+                            count={users.length}
+                            rowsPerPage={rowsPerPage}
+                            page={page}
+                            onPageChange={handleChangePage}
+                            onRowsPerPageChange={handleChangeRowsPerPage}
+                            labelRowsPerPage="Filas por página:"
+                            labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+                        />
+                    </Box>
+                )}
+            </Paper>
+            {selectedUser && (
+                <UserFormModal
+                    open={modalOpen}
+                    onClose={handleCloseModal}
+                    user={selectedUser}
+                    onSave={handleRoleUpdate}
+                />
+            )}
         </Box>
-        <Box display="flex" alignItems="center" mb={2}>
-            <InputBase
-                placeholder="Buscar usuarios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                sx={{ flexGrow: 1, mr: 2, border: '1px solid #ccc', borderRadius: 1, p: '2px 4px' }}
-            />
-             <FormControl size="small" sx={{ minWidth: 120, mr: 2 }}>
-                <InputLabel>Estado</InputLabel>
-                <Select value={statusFilter} label="Estado" onChange={(e) => setStatusFilter(e.target.value)}>
-                    <MenuItem value="Todos">Todos</MenuItem>
-                    <MenuItem value="Activo">Activo</MenuItem>
-                    <MenuItem value="Inactivo">Inactivo</MenuItem>
-                </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Rol</InputLabel>
-                <Select value={roleFilter} label="Rol" onChange={(e) => setRoleFilter(e.target.value)}>
-                    <MenuItem value="Todos">Todos</MenuItem>
-                    <MenuItem value="Admin">Admin</MenuItem>
-                    <MenuItem value="Usuario Básico">Usuario Básico</MenuItem>
-                </Select>
-            </FormControl>
-        </Box>
-        <TableContainer component={Paper}>
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        <TableCell>NOMBRE</TableCell>
-                        <TableCell>EMAIL</TableCell>
-                        <TableCell>ROL</TableCell>
-                        <TableCell>ESTADO</TableCell>
-                        <TableCell>REGISTRO</TableCell>
-                        <TableCell>ÚLTIMO ACCESO</TableCell>
-                        <TableCell align="right">ACCIONES</TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {loading ? (
-                        <TableRow>
-                            <TableCell colSpan={7} align="center"><CircularProgress /></TableCell>
-                        </TableRow>
-                    ) : (filteredUsers.map((user) => (
-                        <TableRow key={user.id}>
-                            <TableCell>{user.displayName || 'N/A'}</TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>{user.role || 'Usuario'}</TableCell>
-                            <TableCell>{user.status || 'Activo'}</TableCell>
-                            <TableCell>{user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</TableCell>
-                            <TableCell>{user.lastLogin ? new Date(user.lastLogin.seconds * 1000).toLocaleString() : 'N/A'}</TableCell>
-                            <TableCell align="right">
-                                <IconButton size="small" color="primary" onClick={() => handleOpenModal(user)}><Edit /></IconButton>
-                                <IconButton size="small" color="error" onClick={() => handleDelete(user.id)}><Delete /></IconButton>
-                            </TableCell>
-                        </TableRow>
-                    )))} 
-                </TableBody>
-            </Table>
-        </TableContainer>
-         <UserFormModal 
-            open={modalOpen} 
-            handleClose={handleCloseModal} 
-            user={selectedUser} 
-            handleSubmit={handleSubmit} 
-        />
-    </Paper>
-  );
+    );
 };
 
 export default UserManagementPage;
+

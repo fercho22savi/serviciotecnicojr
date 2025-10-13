@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext'; // ++ IMPORTAR useTheme
+import { useTheme } from '../context/ThemeContext';
 import {
   AppBar, Toolbar, Typography, Button, Box, Avatar, Menu, MenuItem, IconButton, Tooltip, Badge, InputBase, alpha, styled
 } from '@mui/material';
@@ -10,8 +10,8 @@ import StorefrontIcon from '@mui/icons-material/Storefront';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import SearchIcon from '@mui/icons-material/Search';
-import Brightness4Icon from '@mui/icons-material/Brightness4'; // ++ IMPORTAR ÍCONO DE LUNA
-import Brightness7Icon from '@mui/icons-material/Brightness7'; // ++ IMPORTAR ÍCONO DE SOL
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 // --- Componentes Estilizados (No se necesitan cambios) ---
 const Search = styled('div')(({ theme }) => ({ position: 'relative', borderRadius: theme.shape.borderRadius, backgroundColor: alpha(theme.palette.text.primary, 0.05), '&:hover': { backgroundColor: alpha(theme.palette.text.primary, 0.1) }, marginRight: theme.spacing(2), marginLeft: theme.spacing(3), width: 'auto' }));
@@ -21,7 +21,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({ color: 'inherit', '&
 
 function Navbar({ cartItemCount, setSearchTerm }) {
   const { currentUser, logout } = useAuth();
-  const { mode, toggleColorMode } = useTheme(); // ++ OBTENER EL CONTEXTO DEL TEMA
+  const { mode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
@@ -33,6 +33,11 @@ function Navbar({ cartItemCount, setSearchTerm }) {
     handleClose();
     try { await logout(); navigate('/login'); } catch (error) { console.error('Error al cerrar sesión', error); }
   };
+  
+  const handleProfileNavigation = () => {
+      navigate('/account/profile');
+      handleClose();
+  }
 
   return (
     <AppBar position="static" color="default" elevation={1}>
@@ -50,9 +55,8 @@ function Navbar({ cartItemCount, setSearchTerm }) {
         </Search>
         
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {/* ++ BOTÓN DE CAMBIO DE TEMA ++ */}
             <Tooltip title={mode === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}>
-              <IconButton onClick={toggleColorMode} color="inherit">
+              <IconButton onClick={toggleTheme} color="inherit">
                 {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
               </IconButton>
             </Tooltip>
@@ -71,11 +75,27 @@ function Navbar({ cartItemCount, setSearchTerm }) {
 
           {currentUser ? (
             <>
-              <Tooltip title="Abrir menú"><IconButton onClick={handleMenu} sx={{ p: 0 }}><Avatar alt={currentUser.displayName || 'Usuario'} src={currentUser.photoURL} /></IconButton></Tooltip>
-              <Menu id="menu-appbar" anchorEl={anchorEl} open={open} onClose={handleClose} sx={{ mt: '45px' }} anchorOrigin={{ vertical: 'top', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
-                <MenuItem onClick={() => { navigate(`/profile/${currentUser.uid}`); handleClose(); }}>Mi Perfil</MenuItem>
-                <MenuItem onClick={handleLogout}>Cerrar Sesión</MenuItem>
-              </Menu>
+                <Tooltip title="Mi Cuenta">
+                    <IconButton onClick={handleMenu} sx={{ p: 0, ml: 2 }}>
+                        <Avatar 
+                            alt={currentUser.displayName || 'Usuario'} 
+                            src={currentUser.photoURL}
+                        />
+                    </IconButton>
+                </Tooltip>
+                <Menu 
+                    id="menu-appbar" 
+                    anchorEl={anchorEl} 
+                    open={open} 
+                    onClose={handleClose} 
+                    sx={{ mt: '45px' }} 
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }} 
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                    <MenuItem onClick={handleProfileNavigation}>Mi Perfil</MenuItem>
+                    <MenuItem onClick={() => {navigate('/account/orders'); handleClose();}}>Mis Pedidos</MenuItem>
+                    <MenuItem onClick={handleLogout}>Cerrar Sesión</MenuItem>
+                </Menu>
             </>
           ) : (
             <>

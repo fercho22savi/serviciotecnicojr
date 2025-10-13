@@ -1,24 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { Link } from 'react-router-dom';
 import { 
     Container, Typography, Box, Paper, CircularProgress, 
-    Table, TableBody, TableCell, TableHead, TableRow, IconButton, Chip 
+    Table, TableBody, TableCell, TableHead, TableRow, IconButton, 
+    FormControl, Select, MenuItem
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
+import StatusBadge from '../../components/StatusBadge';
 
-const getStatusChipColor = (status) => {
-    switch (status) {
-        case 'Procesando': return 'warning';
-        case 'Enviado': return 'info';
-        case 'Completado': return 'success';
-        case 'Cancelado': return 'error';
-        default: return 'default';
-    }
-};
+const STATUS_OPTIONS = ['En proceso', 'Pagado', 'Enviado', 'Entregado', 'Cancelado'];
 
 function OrderManagement() {
   const [orders, setOrders] = useState([]);
@@ -30,7 +24,12 @@ function OrderManagement() {
       try {
         const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(ordersQuery);
-        const ordersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const ordersList = querySnapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data(),
+            // Asegurarse de que el estado por defecto sea 'En proceso' si no está definido
+            status: doc.data().status || 'En proceso' 
+        }));
         setOrders(ordersList);
       } catch (error) {
         console.error("Error fetching orders: ", error);
@@ -42,6 +41,22 @@ function OrderManagement() {
     fetchOrders();
   }, []);
 
+  const handleStatusChange = async (orderId, newStatus) => {
+    const orderRef = doc(db, 'orders', orderId);
+    try {
+        await updateDoc(orderRef, { status: newStatus });
+        setOrders(prevOrders =>
+            prevOrders.map(order =>
+                order.id === orderId ? { ...order, status: newStatus } : order
+            )
+        );
+        toast.success('Estado del pedido actualizado.');
+    } catch (error) {
+        console.error("Error updating order status: ", error);
+        toast.error('No se pudo actualizar el estado del pedido.');
+    }
+  };
+
   if (loading) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress /></Box>;
   }
@@ -52,8 +67,8 @@ function OrderManagement() {
         Gestión de Pedidos
       </Typography>
       
-      <Paper elevation={3}>
-        <Table sx={{ minWidth: 650 }}>
+      <Paper elevation={3} sx={{ overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 750 }}>
           <TableHead>
             <TableRow>
               <TableCell>ID Pedido</TableCell>
@@ -71,17 +86,30 @@ function OrderManagement() {
                   {order.id.substring(0, 6).toUpperCase()}
                 </TableCell>
                 <TableCell>
-                  {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd/MM/yyyy HH:mm') : 'N/A'}
+                  {order.createdAt?.seconds ? format(new Date(order.createdAt.seconds * 1000), 'dd/MM/yyyy HH:mm') : 'N/A'}
                 </TableCell>
-                <TableCell>{order.userId}</TableCell> {/* Displaying user ID for now, can be enriched with user name later */}
+                <TableCell sx={{fontFamily: 'monospace', fontSize: '0.75rem'}}>{order.userId}</TableCell>
                 <TableCell align="right">
-                  ${order.totalAmount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {(order.totalAmount * 1.21).toFixed(2)} €
                 </TableCell>
                 <TableCell align="center">
-                    <Chip label={order.status} color={getStatusChipColor(order.status)} size="small" />
+                    <FormControl fullWidth size="small">
+                        <Select
+                            value={order.status}
+                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                            renderValue={(selected) => <StatusBadge status={selected} />}
+                            sx={{ minWidth: 140 }}
+                        >
+                            {STATUS_OPTIONS.map((statusOption) => (
+                                <MenuItem key={statusOption} value={statusOption}>
+                                    <StatusBadge status={statusOption} />
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 </TableCell>
                 <TableCell align="center">
-                  <IconButton component={Link} to={`/admin/orders/${order.id}`} color="primary">
+                  <IconButton component={Link} to={`/admin/orders/${order.id}`} color="primary" title="Ver Detalle">
                     <VisibilityIcon />
                   </IconButton>
                 </TableCell>

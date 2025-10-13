@@ -39,7 +39,8 @@ const Footer = () => {
             <Typography variant="subtitle1" color="text.primary" gutterBottom>{t('footer.help')}</Typography>
             <Link component={RouterLink} to="/faq" variant="body2" display="block" color="text.secondary" sx={{ mb: 1 }}>{t('footer.faq')}</Link>
             <Link component={RouterLink} to="/contact" variant="body2" display="block" color="text.secondary" sx={{ mb: 1 }}>{t('footer.contact')}</Link>
-            <Link component={RouterLink} to="/shipping" variant="body2" display="block" color="text.secondary">{t('footer.shipping_returns')}</Link>
+            <Link component={RouterLink} to="/shipping-policy" variant="body2" display="block" color="text.secondary" sx={{ mb: 1 }}>{t('footer.shipping_returns')}</Link>
+            <Link component={RouterLink} to="/refund-policy" variant="body2" display="block" color="text.secondary">{t('footer.refund_policy')}</Link>
           </Grid>
           <Grid item xs={12} md={3} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
             <Typography variant="subtitle1" color="text.primary" gutterBottom>{t('footer.follow_us')}</Typography>

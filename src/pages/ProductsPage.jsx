@@ -1,156 +1,141 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Grid, Typography, Box, CircularProgress, Button, Stack } from '@mui/material';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Container, Grid, Typography, Box, CircularProgress, Pagination, Stack } from '@mui/material';
 import { SentimentVeryDissatisfied } from '@mui/icons-material';
 import ProductCard from '../components/ProductCard';
+import FilterSidebar from '../components/FilterSidebar';
 import { db } from '../firebase/config';
-import { collection, query, orderBy, startAfter, limit, getDocs, where } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
-const PAGE_SIZE = 8;
+const PRODUCTS_PER_PAGE = 9;
 
-const ProductsPage = ({ searchTerm, selectedCategory, addToCart, handleWishlist, wishlist, isLoggedIn }) => {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [lastVisible, setLastVisible] = useState(null);
-    const [firstVisibleStack, setFirstVisibleStack] = useState([]);
-    const [page, setPage] = useState(1);
-    const [isLastPage, setIsLastPage] = useState(false);
-    const navigate = useNavigate();
+const ProductsPage = ({ 
+    searchTerm, 
+    selectedCategory, 
+    addToCart, 
+    handleWishlist, 
+    wishlist, 
+    isLoggedIn, 
+    priceRange, 
+    setPriceRange, 
+    inStockOnly, 
+    setInStockOnly
+}) => {
+    const [allProducts, setAllProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
 
-    const fetchProducts = useCallback(async (direction = 'next') => {
-        setLoading(true);
-        try {
-            let productsQuery = query(
-                collection(db, "products"),
-                orderBy("name"),
-                limit(PAGE_SIZE)
-            );
-
-            if (direction === 'next' && lastVisible) {
-                productsQuery = query(productsQuery, startAfter(lastVisible));
-            }
-            
-            if (direction === 'prev' && firstVisibleStack.length > 1) {
-                 const previousFirst = firstVisibleStack[firstVisibleStack.length - 2];
-                 productsQuery = query(productsQuery, startAfter(previousFirst));
-            }
-            
-            // Apply filters
-            if (selectedCategory && selectedCategory !== 'Todas') {
-                productsQuery = query(productsQuery, where('category', '==', selectedCategory));
-            }
-            if (searchTerm) {
-                // Firestore does not support partial string matches natively.
-                // A common workaround is to have an array of keywords for each product.
-                // For simplicity here, we will filter after fetching, but this is not optimal for large datasets.
-            }
-
-            const documentSnapshots = await getDocs(productsQuery);
-            const newProducts = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            if (newProducts.length > 0) {
-                setProducts(newProducts);
-                const newLastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1];
-                const newFirstVisible = documentSnapshots.docs[0];
-                
-                setLastVisible(newLastVisible);
-
-                if (direction === 'next') {
-                    setPage(p => p + 1);
-                    setFirstVisibleStack(stack => [...stack, newFirstVisible]);
-                } else { // prev
-                    setPage(p => p - 1);
-                    setFirstVisibleStack(stack => stack.slice(0, -1));
-                }
-            } else if (direction === 'next') {
-                setIsLastPage(true);
-                toast.success("Has llegado al final del catálogo.");
-            }
-
-            if (documentSnapshots.docs.length < PAGE_SIZE) {
-                setIsLastPage(true);
-            }
-
-        } catch (error) {
-            console.error("Error fetching products: ", error);
-            toast.error("No se pudieron cargar los productos.");
-        } finally {
-            setLoading(false);
-        }
-    }, [lastVisible, selectedCategory, searchTerm, firstVisibleStack]);
-
+    // 1. Fetch ALL products from Firestore on component mount
     useEffect(() => {
-        // Reset and fetch when filters change
-        setProducts([]);
-        setLastVisible(null);
-        setFirstVisibleStack([]);
-        setPage(1);
-        setIsLastPage(false);
-        fetchProducts('next');
-    }, [selectedCategory, searchTerm]);
+        const fetchAllProducts = async () => {
+            setLoading(true);
+            try {
+                const productsQuery = query(collection(db, "products"), orderBy("name"));
+                const querySnapshot = await getDocs(productsQuery);
+                const productsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setAllProducts(productsData);
+            } catch (error) {
+                console.error("Error fetching all products: ", error);
+                toast.error("No se pudieron cargar los productos.");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const handleCardClick = (product) => {
-        navigate(`/product/${product.id}`);
+        fetchAllProducts();
+    }, []);
+
+    // 2. Memoize filtered products for performance
+    const filteredProducts = useMemo(() => {
+        // Reset to page 1 whenever filters change
+        setCurrentPage(1);
+        return allProducts.filter(product => {
+            if (selectedCategory && selectedCategory !== 'Todas' && product.category !== selectedCategory) return false;
+            if (searchTerm) {
+                const searchableText = `${product.name} ${product.description}`.toLowerCase();
+                if (!searchableText.includes(searchTerm.toLowerCase())) return false;
+            }
+            if (product.price < priceRange[0] || product.price > priceRange[1]) return false;
+            if (inStockOnly && product.stock <= 0) return false;
+            return true;
+        });
+    }, [allProducts, searchTerm, selectedCategory, priceRange, inStockOnly]);
+
+    // 3. Calculate max price for the slider from ALL products
+    const maxPrice = useMemo(() => {
+        if (allProducts.length === 0) return 5000000;
+        return Math.max(...allProducts.map(p => p.price));
+    }, [allProducts]);
+
+    // 4. Paginate the filtered results
+    const paginatedProducts = useMemo(() => {
+        const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+        const endIndex = startIndex + PRODUCTS_PER_PAGE;
+        return filteredProducts.slice(startIndex, endIndex);
+    }, [filteredProducts, currentPage]);
+
+    const handlePageChange = (event, value) => {
+        setCurrentPage(value);
+        window.scrollTo(0, 0); // Scroll to top on page change
     };
-
-    const handlePageChange = (direction) => {
-        fetchProducts(direction);
-    };
-
-    const finalProducts = searchTerm
-        ? products.filter(p => (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
-        : products;
 
     return (
-        <Container sx={{ py: 4 }} maxWidth="lg">
+        <Container sx={{ py: 4 }} maxWidth="xl">
             <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="text.primary">
                 {selectedCategory && selectedCategory !== 'Todas' ? selectedCategory : 'Catálogo de Productos'}
             </Typography>
             
-            {loading && (
-                 <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box>
-            )}
-
-            {!loading && finalProducts.length === 0 ? (
-                <Box sx={{ textAlign: 'center', mt: 8, color: 'text.secondary' }}>
-                    <SentimentVeryDissatisfied sx={{ fontSize: 60, mb: 2 }} />
-                    <Typography variant="h6">No se encontraron productos</Typography>
-                    <Typography>Intenta ajustar tu búsqueda o cambiar de categoría.</Typography>
-                </Box>
-            ) : (
-                <Grid container spacing={4} sx={{mt: 2}}>
-                    {finalProducts.map((product) => (
-                        <Grid key={product.id} item xs={12} sm={6} md={4} lg={3}>
-                            <ProductCard 
-                                product={product} 
-                                onCardClick={handleCardClick}
-                                addToCart={addToCart}
-                                handleWishlist={handleWishlist} 
-                                isInWishlist={wishlist.has(product.id)}
-                                isLoggedIn={isLoggedIn}
-                            />
-                        </Grid>
-                    ))}
+            <Grid container spacing={4}>
+                {/* --- Filter Sidebar --- */}
+                <Grid item xs={12} md={3}>
+                    <FilterSidebar 
+                        priceRange={priceRange}
+                        onPriceChange={setPriceRange}
+                        inStockOnly={inStockOnly}
+                        onInStockChange={setInStockOnly}
+                        maxPrice={maxPrice}
+                    />
                 </Grid>
-            )}
-            
-            <Stack direction="row" justifyContent="center" spacing={2} sx={{ mt: 4 }}>
-                <Button 
-                    variant="outlined" 
-                    onClick={() => handlePageChange('prev')} 
-                    disabled={page <= 1}
-                >
-                    Anterior
-                </Button>
-                <Button 
-                    variant="contained" 
-                    onClick={() => handlePageChange('next')} 
-                    disabled={isLastPage || loading}
-                >
-                    Siguiente
-                </Button>
-            </Stack>
+
+                {/* --- Products Grid --- */}
+                <Grid item xs={12} md={9}>
+                    {loading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box>
+                    ) : filteredProducts.length === 0 ? (
+                        <Box sx={{ textAlign: 'center', mt: 8, color: 'text.secondary', p: 3 }}>
+                            <SentimentVeryDissatisfied sx={{ fontSize: 60, mb: 2 }} />
+                            <Typography variant="h6">No se encontraron productos</Typography>
+                            <Typography>Intenta ajustar los filtros o la búsqueda.</Typography>
+                        </Box>
+                    ) : (
+                        <Stack spacing={4}>
+                            <Grid container spacing={3}>
+                                {paginatedProducts.map((product) => (
+                                    <Grid key={product.id} item xs={12} sm={6} md={4} lg={4}>
+                                        <ProductCard 
+                                            product={product} 
+                                            addToCart={addToCart}
+                                            handleWishlist={handleWishlist} 
+                                            isInWishlist={wishlist.has(product.id)}
+                                            isLoggedIn={isLoggedIn}
+                                        />
+                                    </Grid>
+                                ))}
+                            </Grid>
+                            {filteredProducts.length > PRODUCTS_PER_PAGE && (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', pt: 4 }}>
+                                    <Pagination 
+                                        count={Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE)}
+                                        page={currentPage}
+                                        onChange={handlePageChange}
+                                        color="primary"
+                                    />
+                                </Box>
+                            )}
+                        </Stack>
+                    )}
+                </Grid>
+            </Grid>
         </Container>
     );
 };

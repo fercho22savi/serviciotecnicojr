@@ -2,6 +2,7 @@
     "header": {
         "searchPlaceholder": "Buscar productos...",
         "products": "Productos",
+        "orders": "Pedidos",
         "wishlist": "Lista de deseos",
         "cart": "Carrito",
         "login": "Iniciar Sesión",
@@ -23,6 +24,7 @@
         "faq": "Preguntas Frecuentes",
         "contact": "Contacto",
         "shipping_returns": "Envíos y Devoluciones",
+        "refund_policy": "Política de Devoluciones y Reembolsos",
         "follow_us": "Síguenos",
         "copyright": "Copyright © TuTienda.com {{year}}. Ahorra con nosotros"
     },
@@ -114,12 +116,27 @@
         "status_label": "Estado",
         "view_details_button": "Ver Detalles",
         "status": {
-            "pendiente": "Pendiente",
-            "procesando": "Procesando",
+            "en_proceso": "En proceso",
+            "pagado": "Pagado",
+            "en_preparacion": "En preparación",
             "enviado": "Enviado",
             "entregado": "Entregado",
             "cancelado": "Cancelado"
-        }
+        },
+        "error_title": "Error al Cargar los Pedidos",
+        "index_fix_instruction": "Por favor, revisa la consola del navegador para obtener un enlace para crear el índice de base de datos requerido en Firebase.",
+        "search_label": "Buscar Pedidos"
+    },
+    "order_detail": {
+        "title": "Detalle del Pedido #{{id}}",
+        "title_simple": "Detalle del Pedido",
+        "not_found": "Pedido no encontrado",
+        "date_label": "Fecha",
+        "total_label": "Total",
+        "items_label": "Artículos",
+        "quantity_label": "Cantidad",
+        "price_label": "Precio",
+        "export_pdf_button": "Exportar a PDF"
     },
     "payment_methods": {
         "title": "Métodos de Pago",

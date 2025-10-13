@@ -1,193 +1,177 @@
+import React, { useState, Suspense, lazy } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Box, CircularProgress, Container, CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
+import toast from 'react-hot-toast';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+// --- CONTEXTS AND THEME ---
+import { useTheme } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { db } from './firebase/config';
-import { Toaster } from 'react-hot-toast';
+import { useCart } from './context/CartContext';
+import { useWishlist } from './context/WishlistContext';
+import { createMuiTheme } from './theme';
 
-// Import Pages and Components
+// --- CORE COMPONENTS ---
 import Header from './components/Header';
 import Footer from './components/Footer';
-import Home from './pages/Home';
-import ProductsPage from './pages/ProductsPage';
-import ProductDetail from './pages/ProductDetail';
-import Cart from './pages/Cart';
-import Wishlist from './pages/Wishlist';
-import Checkout from './pages/Checkout';
-import MyOrders from './pages/MyOrders';
-import Login from './pages/Login';
-import SignUp from './pages/SignUp';
-import ForgotPassword from './pages/ForgotPassword';
-import FaqPage from './pages/FaqPage';
-import ContactPage from './pages/ContactPage';
-import ShippingPolicyPage from './pages/ShippingPolicyPage';
-
-// Account Imports
-import Account from './pages/Account';
-import Profile from './pages/account/Profile';
-import Orders from './pages/account/Orders';
-import OrderDetail from './pages/account/OrderDetail';
-import Addresses from './pages/account/Addresses';
-import PaymentMethods from './pages/account/PaymentMethods';
-import Security from './pages/account/Security';
-import Preferences from './pages/account/Preferences';
-
-// Admin Pages
-import AdminLayout from './layouts/AdminLayout';
-import UserManagementPage from './pages/admin/UserManagementPage';
-import AdminDashboard from './pages/admin/Dashboard';
-import ProductManagement from './pages/admin/ProductManagement';
-import ProductForm from './pages/admin/ProductForm';
-import OrderManagement from './pages/admin/OrderManagement';
-import OrderDetailPage from './pages/admin/OrderDetailPage';
-import CouponManagement from './pages/admin/CouponManagement';
-import ReviewManagement from './pages/admin/ReviewManagement';
-
-// Import Routes
 import ProtectedRoute from './routes/ProtectedRoute';
 import AdminRoute from './routes/AdminRoute';
-import { CircularProgress, Box, Container } from '@mui/material';
 
-// Static categories list
-const CATEGORIES = ['Todas', 'Portátiles', 'Smartphones', 'Accesorios', 'Gaming', 'Oficina'];
+// --- LAZY LOADED PAGES ---
+const Home = lazy(() => import('./pages/Home'));
+const ProductsPage = lazy(() => import('./pages/ProductsPage'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Login = lazy(() => import('./pages/Login'));
+const SignUp = lazy(() => import('./pages/SignUp'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const FaqPage = lazy(() => import('./pages/FaqPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const ShippingPolicyPage = lazy(() => import('./pages/ShippingPolicyPage'));
+const RefundPolicyPage = lazy(() => import('./pages/RefundPolicyPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage')); // Nueva página
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage')); // Nueva página
 
-function AppContent() {
-  const { user, loading } = useAuth();
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState(new Set());
+// Account Pages
+const Account = lazy(() => import('./pages/Account'));
+const Profile = lazy(() => import('./pages/account/Profile'));
+const Orders = lazy(() => import('./pages/account/Orders'));
+const OrderDetail = lazy(() => import('./pages/account/OrderDetail'));
+const Addresses = lazy(() => import('./pages/account/Addresses'));
+const PaymentMethods = lazy(() => import('./pages/account/PaymentMethods'));
+const Security = lazy(() => import('./pages/account/Security'));
+const Preferences = lazy(() => import('./pages/account/Preferences'));
+
+// Admin Pages
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
+const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const ProductManagement = lazy(() => import('./pages/admin/ProductManagement'));
+const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
+const OrderManagement = lazy(() => import('./pages/admin/OrderManagement'));
+const OrderDetailPage = lazy(() => import('./pages/admin/OrderDetailPage'));
+const CouponManagement = lazy(() => import('./pages/admin/CouponManagement'));
+const ReviewManagement = lazy(() => import('./pages/admin/ReviewManagement'));
+
+
+const App = () => {
+  const { mode } = useTheme();
+  const theme = createMuiTheme(mode);
+  const navigate = useNavigate();
+
+  // --- CENTRALIZED STATE MANAGEMENT ---
+  const { currentUser, isAdmin } = useAuth();
+  const { cart, addToCart, removeFromCart, updateQuantity, cartItemCount } = useCart();
+  const { wishlistItems, toggleWishlistItem, wishlistItemCount } = useWishlist();
+
+  // State for search, category, and new filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const isLoggedIn = !!user;
+  const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [priceRange, setPriceRange] = useState([0, 5000000]);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  
+  const isLoggedIn = !!currentUser;
+  const wishlistSet = new Set(wishlistItems.map(item => item.id));
 
-  useEffect(() => {
-    let isMounted = true;
-    if (user) {
-      const userRef = doc(db, 'users', user.uid);
-      getDoc(userRef).then(docSnap => {
-        if (isMounted && docSnap.exists() && docSnap.data().wishlist) {
-          setWishlist(new Set(docSnap.data().wishlist));
-        }
-      });
+  const handleWishlistToggle = (product) => {
+    if (!isLoggedIn) {
+      toast.error('Inicia sesión para agregar productos a tu lista de deseos.');
+      navigate('/login', { state: { from: window.location.pathname } });
     } else {
-      setWishlist(new Set());
-      setCart([]);
+      toggleWishlistItem(product);
     }
-    return () => { isMounted = false; };
-  }, [user]);
-
-  const handleSearchChange = (event) => setSearchTerm(event.target.value);
-  const handleCategoryChange = (event) => setSelectedCategory(event.target.value);
-
-  const handleAddToCart = (productToAdd, quantity = 1) => {
-    setCart(prevCart => {
-      const isProductInCart = prevCart.find(item => item.id === productToAdd.id);
-      if (isProductInCart) {
-        return prevCart.map(item =>
-          item.id === productToAdd.id ? { ...item, quantity: item.quantity + quantity } : item
-        );
-      }
-      return [...prevCart, { ...productToAdd, quantity }];
-    });
   };
 
-  const handleWishlist = async (productId) => {
-    if (!user) return;
-    const userRef = doc(db, 'users', user.uid);
-    const newWishlist = new Set(wishlist);
-    let updatedWishlist;
-    if (newWishlist.has(productId)) {
-      newWishlist.delete(productId);
-      updatedWishlist = arrayRemove(productId);
-    } else {
-      newWishlist.add(productId);
-      updatedWishlist = arrayUnion(productId);
-    }
-    setWishlist(newWishlist);
-    await updateDoc(userRef, { wishlist: updatedWishlist });
-  };
-
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Toaster position="bottom-right" />
-      <Header
-        cartItemCount={cartItemCount}
-        wishlistCount={wishlist.size}
-        searchTerm={searchTerm}
-        handleSearchChange={handleSearchChange}
-        categories={CATEGORIES}
-        selectedCategory={selectedCategory}
-        handleCategoryChange={handleCategoryChange}
-      />
-      <Container component="main" sx={{ flex: '1 0 auto', pt: 4, pb: 4 }}>
-        <Routes>
-          <Route path="/" element={<Home addToCart={handleAddToCart} handleWishlist={handleWishlist} wishlist={wishlist} isLoggedIn={isLoggedIn} />} />
-          <Route path="/products" element={<ProductsPage searchTerm={searchTerm} selectedCategory={selectedCategory} addToCart={handleAddToCart} handleWishlist={handleWishlist} wishlist={wishlist} isLoggedIn={isLoggedIn} />} />
-          <Route path="/product/:productId" element={<ProductDetail addToCart={handleAddToCart} handleWishlist={handleWishlist} wishlist={wishlist} isLoggedIn={isLoggedIn} />} />
-          <Route path="/cart" element={<Cart cart={cart} setCart={setCart} user={user} isLoggedIn={isLoggedIn} />} />
-          <Route path="/wishlist" element={<Wishlist wishlist={wishlist} handleWishlist={handleWishlist} addToCart={handleAddToCart} isLoggedIn={isLoggedIn} />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/faq" element={<FaqPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+    <MuiThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <Header 
+          setSearchTerm={setSearchTerm}
+          setSelectedCategory={setSelectedCategory}
+          cartItemCount={cartItemCount}
+          wishlistItemCount={wishlistItemCount}
+        />
+        <Container component="main" sx={{ flex: '1 0 auto', pt: 4, pb: 4 }}>
+          <Suspense fallback={
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
+          }>
+            <Routes>
+              {/* --- PUBLIC ROUTES --- */}
+              <Route path="/" element={<Home addToCart={addToCart} handleWishlist={handleWishlistToggle} wishlist={wishlistSet} isLoggedIn={isLoggedIn} />} />
+              <Route path="/products" element={<ProductsPage 
+                  searchTerm={searchTerm} 
+                  selectedCategory={selectedCategory} 
+                  addToCart={addToCart} 
+                  handleWishlist={handleWishlistToggle} 
+                  wishlist={wishlistSet} 
+                  isLoggedIn={isLoggedIn}
+                  // Pass filter state and setters
+                  priceRange={priceRange}
+                  setPriceRange={setPriceRange}
+                  inStockOnly={inStockOnly}
+                  setInStockOnly={setInStockOnly}
+                />} 
+              />
+              <Route path="/product/:productId" element={<ProductDetail addToCart={addToCart} handleWishlist={handleWishlistToggle} wishlist={wishlistSet} isLoggedIn={isLoggedIn} />} />
+              <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} />} />
+              <Route path="/wishlist" element={<Wishlist wishlistItems={wishlistItems} addToCart={addToCart} handleWishlist={handleWishlistToggle} wishlist={wishlistSet} isLoggedIn={isLoggedIn} />} />
+              
+              {/* Auth Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="/account" element={<Account />}>
-              <Route index element={<Navigate to="profile" replace />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="orders" element={<Orders />} />
-              <Route path="orders/:orderId" element={<OrderDetail />} />
-              <Route path="addresses" element={<Addresses />} />
-              <Route path="payment-methods" element={<PaymentMethods />} />
-              <Route path="security" element={<Security />} />
-              <Route path="preferences" element={<Preferences />} />
-            </Route>
-            <Route path="/checkout" element={<Checkout cart={cart} setCart={setCart} />} />
-            <Route path="/my-orders" element={<MyOrders />} />
-          </Route>
+              {/* Static Pages */}
+              <Route path="/faq" element={<FaqPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
 
-          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-            <Route index element={<Navigate to="dashboard" />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="users" element={<UserManagementPage />} />
-            <Route path="products" element={<ProductManagement />} />
-            <Route path="products/new" element={<ProductForm />} />
-            <Route path="products/edit/:id" element={<ProductForm />} />
-            <Route path="orders" element={<OrderManagement />} />
-            <Route path="orders/:orderId" element={<OrderDetailPage />} />
-            <Route path="coupons" element={<CouponManagement />} />
-            <Route path="reviews" element={<ReviewManagement />} />
-          </Route>
+              {/* --- PROTECTED USER ROUTES --- */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/account" element={<Account />}>
+                  <Route index element={<Navigate to="profile" replace />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="orders" element={<Orders />} />
+                  <Route path="orders/:orderId" element={<OrderDetail />} />
+                  <Route path="addresses" element={<Addresses />} />
+                  <Route path="payment-methods" element={<PaymentMethods />} />
+                  <Route path="security" element={<Security />} />
+                  <Route path="preferences" element={<Preferences />} />
+                </Route>
+                <Route path="/checkout" element={<Checkout />} />
+              </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Container>
-      <Footer />
-    </Box>
-  );
-}
+              {/* --- PROTECTED ADMIN ROUTES --- */}
+              <Route path="/admin" element={<AdminRoute />}>
+                <Route element={<AdminLayout />}>
+                    <Route index element={<Navigate to="dashboard" />} />
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="users" element={<UserManagementPage />} />
+                    <Route path="products" element={<ProductManagement />} />
+                    <Route path="products/new" element={<ProductForm />} />
+                    <Route path="products/edit/:id" element={<ProductForm />} />
+                    <Route path="orders" element={<OrderManagement />} />
+                    <Route path="orders/:orderId" element={<OrderDetailPage />} />
+                    <Route path="coupons" element={<CouponManagement />} />
+                    <Route path="reviews" element={<ReviewManagement />} />
+                </Route>
+              </Route>
 
-function App() {
-  return (
-    <Suspense fallback={
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <CircularProgress />
+              {/* Not Found Redirect */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </Container>
+        <Footer />
       </Box>
-    }>
-      <AppContent />
-    </Suspense>
+    </MuiThemeProvider>
   );
 }
 

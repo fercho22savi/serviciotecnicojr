@@ -54,6 +54,16 @@ export const WishlistProvider = ({ children }) => {
         return wishlistItems.some(item => item.id === productId);
     };
 
+    // Función para limpiar la lista de deseos (para el logout)
+    const clearWishlist = () => {
+        setWishlistItems([]);
+        try {
+            localStorage.removeItem('wishlist');
+        } catch (error) {
+            console.error("Error al limpiar la lista de deseos en localStorage", error);
+        }
+    };
+
     // Contar los artículos en la lista de deseos
     const wishlistItemCount = wishlistItems.length;
 
@@ -61,7 +71,8 @@ export const WishlistProvider = ({ children }) => {
         wishlistItems,
         toggleWishlistItem,
         isInWishlist,
-        wishlistItemCount
+        wishlistItemCount,
+        clearWishlist // <-- Exportar la nueva función
     };
 
     return (

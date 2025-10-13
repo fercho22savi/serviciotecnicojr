@@ -1,69 +1,199 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link as RouterLink } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { Typography, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider } from '@mui/material';
+import { useAuth } from '../../context/AuthContext';
+import jspdf from 'jspdf';
+import html2canvas from 'html2canvas';
+import {
+    Container, Typography, Box, CircularProgress, Alert, Paper, Grid, Divider, Table, 
+    TableBody, TableCell, TableContainer, TableHead, TableRow, ListItemText, Button
+} from '@mui/material';
+import StoreIcon from '@mui/icons-material/Store';
+import DownloadIcon from '@mui/icons-material/Download';
+import ImageWithFallback from '../../components/ImageWithFallback';
 
-function OrderDetail() {
-  const { orderId } = useParams();
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
+const OrderDetail = () => {
+    const { orderId } = useParams();
+    const [order, setOrder] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const { currentUser } = useAuth();
+    const invoiceRef = useRef();
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const docRef = doc(db, 'orders', orderId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setOrder({ id: docSnap.id, ...docSnap.data() });
-        } else {
-          console.log("No such document!");
+    useEffect(() => {
+        if (!currentUser) {
+            setError("Debes iniciar sesión para ver los detalles de un pedido.");
+            setLoading(false);
+            return;
         }
-      } catch (error) {
-        console.error("Error fetching order: ", error);
-      }
-      setLoading(false);
+
+        const getOrder = async () => {
+            setLoading(true);
+            try {
+                const orderRef = doc(db, 'orders', orderId);
+                const orderSnap = await getDoc(orderRef);
+
+                if (orderSnap.exists() && orderSnap.data().userId === currentUser.uid) {
+                    const orderData = {
+                        ...orderSnap.data(),
+                        id: orderSnap.id,
+                        createdAt: orderSnap.data().createdAt?.toDate(),
+                        orderNumber: orderSnap.data().orderNumber || orderId.substring(0, 8).toUpperCase()
+                    };
+                    setOrder(orderData);
+                } else {
+                    setError("Factura no encontrada o no tienes permiso para verla.");
+                }
+            } catch (err) {
+                console.error("Error fetching order details:", err);
+                setError("No se pudo cargar el detalle de la factura.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        getOrder();
+    }, [orderId, currentUser]);
+
+    const handleExportToPdf = () => {
+        const input = invoiceRef.current;
+        if (!input) return;
+
+        html2canvas(input, { scale: 2 }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jspdf('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / canvasHeight;
+            const width = pdfWidth;
+            const height = width / ratio;
+
+            let position = 0;
+            pdf.addImage(imgData, 'PNG', 0, position, width, height);
+            pdf.save(`factura-${order.orderNumber}.pdf`);
+        });
     };
 
-    fetchOrder();
-  }, [orderId]);
+    if (loading) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>;
+    }
 
-  if (loading) {
-    return <CircularProgress />;
-  }
+    if (error) {
+        return <Alert severity="error" sx={{ mt: 2, mx: 2 }}>{error}</Alert>;
+    }
 
-  if (!order) {
-    return <Typography>No se encontró el pedido.</Typography>;
-  }
+    if (!order) {
+        return null;
+    }
 
-  return (
-    <Paper elevation={3} sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Detalle del Pedido #{order.orderId}
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Fecha: {new Date(order.createdAt.seconds * 1000).toLocaleString()}
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Total: ${order.totalAmount.toFixed(2)}
-      </Typography>
-      <Divider sx={{ my: 2 }} />
-      <Typography variant="h6" gutterBottom>
-        Artículos
-      </Typography>
-      <List>
-        {order.items.map((item, index) => (
-          <ListItem key={index}>
-            <ListItemText 
-              primary={item.name}
-              secondary={`Cantidad: ${item.quantity} - Precio: $${item.price.toFixed(2)}`}
-            />
-          </ListItem>
-        ))}
-      </List>
-    </Paper>
-  );
-}
+    const { customerDetails, items, totalAmount, createdAt, orderNumber } = order;
+
+    return (
+        <Container maxWidth="lg" sx={{ my: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                 <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
+                    Detalle del Pedido
+                </Typography>
+                <Button 
+                    variant="contained" 
+                    startIcon={<DownloadIcon />} 
+                    onClick={handleExportToPdf}
+                >
+                    Exportar a PDF
+                </Button>
+            </Box>
+            
+            <Paper ref={invoiceRef} sx={{ p: { xs: 2, md: 4 }, border: '1px solid', borderColor: 'divider' }}>
+                <Grid container justifyContent="space-between" alignItems="flex-start" sx={{ mb: 4 }}>
+                    <Grid item>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                            <StoreIcon color="primary" sx={{ fontSize: 50 }}/>
+                            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>MiTienda</Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary">Calle Falsa 123, Ciudad Principal</Typography>
+                        <Typography variant="body2" color="text.secondary">contact@mitienda.com</Typography>
+                    </Grid>
+                    <Grid item sx={{ textAlign: 'right' }}>
+                        <Typography variant="h5" component="h2" sx={{ fontWeight: '500' }}>FACTURA</Typography>
+                        <Typography color="text.secondary">Nº: {orderNumber}</Typography>
+                        <Typography color="text.secondary">Fecha: {createdAt ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'long' }).format(createdAt) : '--'}</Typography>
+                    </Grid>
+                </Grid>
+                <Divider sx={{ mb: 3 }} />
+
+                <Grid container spacing={3} sx={{ mb: 4 }}>
+                    <Grid item xs={12} sm={6}>
+                        <Typography variant="overline" color="text.secondary">FACTURADO A</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>{customerDetails.firstName} {customerDetails.lastName}</Typography>
+                        <Typography variant="body2">{customerDetails.address}</Typography>
+                        <Typography variant="body2">{customerDetails.city}, {customerDetails.postalCode}</Typography>
+                        <Typography variant="body2">{customerDetails.email}</Typography>
+                    </Grid>
+                </Grid>
+
+                <TableContainer>
+                    <Table>
+                        <TableHead>
+                            <TableRow sx={{ bgcolor: 'grey.100' }}>
+                                <TableCell sx={{ fontWeight: 'bold' }}>PRODUCTO</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold' }}>CANT.</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>PRECIO UNIT.</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>TOTAL</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {items.map((item) => (
+                                <TableRow key={item.id}>
+                                    <TableCell>
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <ImageWithFallback 
+                                                src={item.image || item.images?.[0]}
+                                                alt={item.name}
+                                                style={{ width: 40, height: 40, marginRight: '16px', borderRadius: '4px', objectFit: 'cover' }}
+                                            />
+                                            <ListItemText
+                                                primary={item.name}
+                                                primaryTypographyProps={{ variant: 'body2', fontWeight: 500, color: 'text.primary' }}
+                                            />
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="center">{item.quantity}</TableCell>
+                                    <TableCell align="right">${new Intl.NumberFormat('es-CO').format(item.price)}</TableCell>
+                                    <TableCell align="right">${new Intl.NumberFormat('es-CO').format(item.price * item.quantity)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+                <Divider />
+
+                <Grid container justifyContent="flex-end" sx={{ mt: 3 }}>
+                    <Grid item xs={12} sm={6} md={4}>
+                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography color="text.secondary">Subtotal:</Typography>
+                            <Typography sx={{ fontWeight: 500 }}>${new Intl.NumberFormat('es-CO').format(totalAmount)}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography color="text.secondary">Envío:</Typography>
+                            <Typography sx={{ fontWeight: 500 }}>Gratis</Typography>
+                        </Box>
+                        <Divider sx={{ my: 1 }} />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Total:</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>${new Intl.NumberFormat('es-CO').format(totalAmount)}</Typography>
+                        </Box>
+                    </Grid>
+                </Grid>
+
+                <Box sx={{ textAlign: 'center', mt: 5, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+                    <Typography variant="body2" color="text.secondary">¡Gracias por tu compra!</Typography>
+                </Box>
+            </Paper>
+        </Container>
+    );
+};
 
 export default OrderDetail;

@@ -6,18 +6,22 @@ import {
 } from '@mui/material';
 import {
   ShoppingCart, FavoriteBorder, AccountCircle, Logout, Search, Store, Storefront, Dashboard, 
-  LightMode, DarkMode, ReceiptLong as OrdersIcon 
+  LightMode, DarkMode, ReceiptLong as OrdersIcon
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext'; 
-import { auth } from '../firebase/config';
+import { useTheme } from '../context/ThemeContext';
 
-function Header({ cartItemCount, searchTerm, handleSearchChange, wishlistCount, categories = [], selectedCategory, handleCategoryChange }) {
+// Categories are passed as a prop from App.jsx now
+const Header = ({ setSearchTerm, setSelectedCategory, cartItemCount, wishlistItemCount }) => {
   const { t } = useTranslation();
-  const { currentUser } = useAuth();
-  const { mode, toggleColorMode } = useTheme();
+  const { currentUser, isAdmin, logout } = useAuth();
+  const { mode, toggleTheme } = useTheme();
+  
   const [anchorEl, setAnchorEl] = useState(null);
+  const [localSearch, setLocalSearch] = useState('');
+  const [localCategory, setLocalCategory] = useState('Todas');
+
   const navigate = useNavigate();
   const open = Boolean(anchorEl);
 
@@ -29,17 +33,27 @@ function Header({ cartItemCount, searchTerm, handleSearchChange, wishlistCount, 
     handleClose();
   };
 
-  const handleLogoutClick = async () => {
-    try {
-      await auth.signOut();
-      handleClose();
-      navigate('/');
-    } catch (error) {
-      console.error(t('header.logout_error'), error);
-    }
+  const handleAccountClick = () => {
+    handleNavigate(isAdmin ? '/admin/dashboard' : '/account/profile');
   };
 
-  const isAdmin = currentUser && (currentUser.role === 'Admin' || currentUser.role === 'admin');
+  const handleLogoutClick = async () => {
+    await logout();
+    handleClose();
+    navigate('/');
+  };
+  
+  const handleSearchChange = (event) => {
+    const newSearchTerm = event.target.value;
+    setLocalSearch(newSearchTerm);
+    setSearchTerm(newSearchTerm); // Update parent state on every keystroke
+  };
+  
+  const handleCategoryChange = (event) => {
+    const newCategory = event.target.value;
+    setLocalCategory(newCategory);
+    setSelectedCategory(newCategory); // Update parent state
+  };
 
   return (
     <AppBar position="sticky" elevation={1} sx={{ bgcolor: 'background.paper', color: 'text.primary' }}>
@@ -50,32 +64,22 @@ function Header({ cartItemCount, searchTerm, handleSearchChange, wishlistCount, 
             variant="h5"
             component={Link}
             to="/"
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              textDecoration: 'none',
-              fontWeight: 'bold',
-              color: 'text.primary',
-            }}
+            sx={{ textDecoration: 'none', fontWeight: 'bold', color: 'text.primary', display: 'flex', alignItems: 'center' }}
           >
             <Store sx={{ mr: 1, color: 'primary.main' }} />
             MiTienda
           </Typography>
 
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
+          {/* Search and category filters */}
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1, maxWidth: 600 }}>
             <FormControl size="small" sx={{ minWidth: 150 }}>
-              <Select
-                value={selectedCategory || ''}
-                onChange={handleCategoryChange}
-                displayEmpty
-                variant="outlined"
-                sx={{ borderRadius: '25px' }}
-              >
-                {categories.map(category => (
-                  <MenuItem key={category} value={category === 'Todas' ? '' : category}>
-                    {category}
-                  </MenuItem>
-                ))}
+              <Select value={localCategory} onChange={handleCategoryChange} displayEmpty variant="outlined" sx={{ borderRadius: '25px' }}>
+                <MenuItem value="Todas"><em>Todas las categorías</em></MenuItem>
+                <MenuItem value="Portátiles">Portátiles</MenuItem>
+                <MenuItem value="Smartphones">Smartphones</MenuItem>
+                <MenuItem value="Accesorios">Accesorios</MenuItem>
+                <MenuItem value="Gaming">Gaming</MenuItem>
+                <MenuItem value="Oficina">Oficina</MenuItem>
               </Select>
             </FormControl>
             <TextField
@@ -83,89 +87,54 @@ function Header({ cartItemCount, searchTerm, handleSearchChange, wishlistCount, 
               variant="outlined"
               size="small"
               placeholder={t('header.searchPlaceholder')}
-              value={searchTerm}
+              value={localSearch}
               onChange={handleSearchChange}
+              onKeyPress={(e) => e.key === 'Enter' && navigate(`/products`)}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '25px' } }}
               InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search color="action" />
-                  </InputAdornment>
-                ),
+                startAdornment: <InputAdornment position="start"><Search color="action" /></InputAdornment>,
               }}
             />
           </Box>
 
+          {/* Action Icons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Tooltip title={mode === 'light' ? t('header.darkModeTooltip') : t('header.lightModeTooltip')}>
-                <IconButton color="inherit" onClick={toggleColorMode}>
+                <IconButton color="inherit" onClick={toggleTheme}>
                     {mode === 'light' ? <DarkMode /> : <LightMode />}
                 </IconButton>
             </Tooltip>
-            <Tooltip title={t('header.products')}>
-              <IconButton color="inherit" component={Link} to="/products">
-                <Storefront />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t('header.wishlist')}>
-              <IconButton color="inherit" component={Link} to="/wishlist">
-                <Badge badgeContent={wishlistCount} color="error">
-                  <FavoriteBorder />
-                </Badge>
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t('header.cart')}>
-              <IconButton color="inherit" component={Link} to="/cart">
-                <Badge badgeContent={cartItemCount} color="error">
-                  <ShoppingCart />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+            <Tooltip title={t('header.products')}><IconButton color="inherit" component={Link} to="/products"><Storefront /></IconButton></Tooltip>
+            <Tooltip title={t('header.wishlist')}><IconButton color="inherit" component={Link} to="/wishlist"><Badge badgeContent={wishlistItemCount} color="error"><FavoriteBorder /></Badge></IconButton></Tooltip>
+            <Tooltip title={t('header.cart')}><IconButton color="inherit" component={Link} to="/cart"><Badge badgeContent={cartItemCount} color="error"><ShoppingCart /></Badge></IconButton></Tooltip>
 
+            {/* User Profile / Login Buttons */}
             {currentUser ? (
               <>
                 <IconButton onClick={handleMenu} size="small" sx={{ ml: 1 }}>
-                  <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main' }} src={currentUser.photoURL}>
-                    {currentUser.displayName?.charAt(0).toUpperCase()}
-                  </Avatar>
+                  <Avatar sx={{ width: 34, height: 34 }} src={currentUser.photoURL}>{currentUser.displayName?.charAt(0).toUpperCase()}</Avatar>
                 </IconButton>
                 <Menu
                   anchorEl={anchorEl}
                   open={open}
                   onClose={handleClose}
-                  PaperProps={{ sx: { mt: 1.5 } }}
+                  PaperProps={{ sx: { mt: 1.5, minWidth: 180 } }}
                   transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                   anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                 >
-                  <MenuItem onClick={() => handleNavigate('/account/profile')}>
-                    <ListItemIcon><AccountCircle fontSize="small" /></ListItemIcon>
-                    {t('header.account')}
+                  <MenuItem onClick={handleAccountClick}>
+                    <ListItemIcon>{isAdmin ? <Dashboard fontSize="small" /> : <AccountCircle fontSize="small" />}</ListItemIcon>
+                    {isAdmin ? 'Dashboard' : t('header.account')}
                   </MenuItem>
-                   <MenuItem onClick={() => handleNavigate('/my-orders')}>
-                    <ListItemIcon><OrdersIcon fontSize="small" /></ListItemIcon>
-                    {t('header.my_orders')}
-                  </MenuItem>
-                  {isAdmin && (
-                    <MenuItem onClick={() => handleNavigate('/admin')}>
-                      <ListItemIcon><Dashboard fontSize="small" /></ListItemIcon>
-                      {t('header.dashboard')}
-                    </MenuItem>
-                  )}
+                  <MenuItem onClick={() => handleNavigate('/account/orders')}><ListItemIcon><OrdersIcon fontSize="small" /></ListItemIcon>{t('header.orders')}</MenuItem>
                   <Divider />
-                  <MenuItem onClick={handleLogoutClick}>
-                    <ListItemIcon><Logout fontSize="small" /></ListItemIcon>
-                    {t('header.logout')}
-                  </MenuItem>
+                  <MenuItem onClick={handleLogoutClick}><ListItemIcon><Logout fontSize="small" /></ListItemIcon>{t('header.logout')}</MenuItem>
                 </Menu>
               </>
             ) : (
               <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1, ml: 1 }}>
-                <Button variant="outlined" component={Link} to="/login">
-                  {t('header.login')}
-                </Button>
-                <Button variant="contained" disableElevation component={Link} to="/signup">
-                  {t('header.signup')}
-                </Button>
+                <Button variant="outlined" component={Link} to="/login">{t('header.login')}</Button>
+                <Button variant="contained" disableElevation component={Link} to="/signup">{t('header.signup')}</Button>
               </Box>
             )}
           </Box>

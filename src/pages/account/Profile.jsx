@@ -1,158 +1,192 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { db } from '../../firebase/config';
+import { db, storage } from '../../firebase/config';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { Box, Typography, TextField, Button, Grid } from '@mui/material';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateProfile } from 'firebase/auth';
+import {
+    Avatar, Box, Typography, TextField, Button, Grid, CircularProgress, IconButton, Paper, useTheme
+} from '@mui/material';
+import { PhotoCamera } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
 function Profile() {
-  const { t } = useTranslation();
-  const { user } = useAuth();
-  const [profile, setProfile] = useState({
-    nombre: '',
-    apellido: '',
-    telefono: '',
-    documento_identidad: '',
-    fecha_nacimiento: '',
-  });
-  const [loading, setLoading] = useState(true);
+    const { t } = useTranslation();
+    const theme = useTheme();
+    const { currentUser, setCurrentUser } = useAuth(); 
+    const [profile, setProfile] = useState({
+        displayName: '',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        birthDate: '',
+        photoURL: ''
+    });
+    const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      const userDocRef = doc(db, 'users', user.uid);
-      getDoc(userDocRef)
-        .then((docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setProfile({
-              nombre: data.personal_info?.nombre || user.displayName || '',
-              apellido: data.personal_info?.apellido || '',
-              telefono: data.contact_info?.telefono || '',
-              documento_identidad: data.personal_info?.documento_identidad || '',
-              fecha_nacimiento: data.personal_info?.fecha_nacimiento || '',
-            });
-          }
-          setLoading(false);
-        })
-        .catch((error) => {
-          console.error("Error fetching user profile:", error);
-          toast.error(t('profile.errors.load_profile'));
-          setLoading(false);
-        });
+    useEffect(() => {
+        let isMounted = true;
+        const fetchProfile = async () => {
+            if (!currentUser) {
+                if (isMounted) setLoading(false);
+                return;
+            }
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            try {
+                const docSnap = await getDoc(userDocRef);
+                if (isMounted) {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setProfile({
+                            displayName: data.displayName || currentUser.displayName || '',
+                            firstName: data.firstName || '',
+                            lastName: data.lastName || '',
+                            phone: data.phone || currentUser.phoneNumber || '',
+                            birthDate: data.birthDate || '',
+                            photoURL: data.photoURL || currentUser.photoURL || ''
+                        });
+                    }
+                    setLoading(false);
+                }
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                toast.error(t('profile.errors.load_profile'));
+                if (isMounted) setLoading(false);
+            }
+        };
+        fetchProfile();
+        return () => { isMounted = false; };
+    }, [currentUser, t]);
+
+    const handlePhotoChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file || !currentUser) return;
+
+        setUploading(true);
+        const toastId = toast.loading('Subiendo imagen...');
+
+        try {
+            const storageRef = ref(storage, `profile_images/${currentUser.uid}/${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const photoURL = await getDownloadURL(snapshot.ref);
+
+            await updateProfile(currentUser, { photoURL });
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            await updateDoc(userDocRef, { photoURL });
+
+            setProfile(prev => ({ ...prev, photoURL }));
+            setCurrentUser(prevUser => ({...prevUser, photoURL}));
+
+            toast.success('¡Foto de perfil actualizada!', { id: toastId });
+        } catch (error) {
+            console.error("Error updating profile photo:", error);
+            toast.error('Error al subir la imagen.', { id: toastId });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setProfile(prevState => ({ ...prevState, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!currentUser) return;
+
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const toastId = toast.loading(t('profile.toast.updating'));
+
+        try {
+            if (profile.displayName !== currentUser.displayName) {
+                await updateProfile(currentUser, { displayName: profile.displayName });
+            }
+            await updateDoc(userDocRef, { 
+                displayName: profile.displayName, firstName: profile.firstName, lastName: profile.lastName, 
+                phone: profile.phone, birthDate: profile.birthDate 
+            }, { merge: true });
+            setCurrentUser(prevUser => ({...prevUser, displayName: profile.displayName}));
+            toast.success(t('profile.toast.success'), { id: toastId });
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            toast.error(t('profile.errors.update_profile'), { id: toastId });
+        }
+    };
+
+    if (loading) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
     }
-  }, [user, t]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProfile(prevState => ({ ...prevState, [name]: value }));
-  };
+    return (
+        <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: 800, mx: 'auto' }} elevation={3}>
+            <Box component="form" onSubmit={handleSubmit}>
+                <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>{t('profile.title')}</Typography>
+                <Typography color="text.secondary" sx={{ mb: 4 }}>{t('profile.subtitle')}</Typography>
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user) return;
+                <Grid container spacing={3} alignItems="center">
+                    <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+                         <Box sx={{ position: 'relative', width: 'fit-content' }}>
+                            <Avatar
+                                src={profile.photoURL}
+                                sx={{ width: 128, height: 128, fontSize: '4rem' }}
+                            >
+                                {profile.displayName ? profile.displayName.charAt(0).toUpperCase() : ''}
+                            </Avatar>
+                            <IconButton
+                                aria-label="upload picture"
+                                component="label"
+                                disabled={uploading}
+                                sx={{
+                                    position: 'absolute',
+                                    bottom: 8,
+                                    right: 8,
+                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    color: 'black',
+                                    boxShadow: theme.shadows[3],
+                                    backdropFilter: 'blur(4px)',
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(255, 255, 255, 1)',
+                                    }
+                                }}
+                            >
+                                <input type="file" accept="image/*" hidden onChange={handlePhotoChange} />
+                                {uploading ? <CircularProgress size={24} color="inherit" /> : <PhotoCamera sx={{ fontSize: 24 }}/>}
+                            </IconButton>
+                        </Box>
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                        <TextField name="displayName" label={t('profile.form.displayName')} value={profile.displayName} onChange={handleChange} fullWidth />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <TextField name="firstName" label={t('profile.form.first_name')} value={profile.firstName} onChange={handleChange} fullWidth />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <TextField name="lastName" label={t('profile.form.last_name')} value={profile.lastName} onChange={handleChange} fullWidth />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <TextField name="email" label="Email" value={currentUser?.email || ''} fullWidth disabled helperText={t('profile.form.email_helper')} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <TextField name="phone" label={t('profile.form.phone')} value={profile.phone} onChange={handleChange} fullWidth />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <TextField name="birthDate" label={t('profile.form.birth_date')} type="date" value={profile.birthDate} onChange={handleChange} fullWidth InputLabelProps={{ shrink: true }} />
+                    </Grid>
+                </Grid>
 
-    const userDocRef = doc(db, 'users', user.uid);
-    const toastId = toast.loading(t('profile.toast.updating'));
-
-    try {
-      await updateDoc(userDocRef, {
-        'personal_info.nombre': profile.nombre,
-        'personal_info.apellido': profile.apellido,
-        'personal_info.documento_identidad': profile.documento_identidad,
-        'personal_info.fecha_nacimiento': profile.fecha_nacimiento,
-        'contact_info.telefono': profile.telefono,
-      }, { merge: true });
-
-      toast.success(t('profile.toast.success'), { id: toastId });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error(t('profile.errors.update_profile'), { id: toastId });
-    }
-  };
-
-  if (loading) {
-    return <Typography>{t('profile.loading')}</Typography>;
-  }
-
-  return (
-    <Box component="form" onSubmit={handleSubmit}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-        {t('profile.title')}
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
-        {t('profile.subtitle')}
-      </Typography>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="nombre"
-            label={t('profile.form.first_name')}
-            value={profile.nombre}
-            onChange={handleChange}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="apellido"
-            label={t('profile.form.last_name')}
-            value={profile.apellido}
-            onChange={handleChange}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <TextField
-            name="email"
-            label="Email"
-            value={user?.email || ''}
-            fullWidth
-            disabled
-            helperText={t('profile.form.email_helper')}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            name="telefono"
-            label={t('profile.form.phone')}
-            value={profile.telefono}
-            onChange={handleChange}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-            <TextField
-                name="documento_identidad"
-                label={t('profile.form.id_document')}
-                value={profile.documento_identidad}
-                onChange={handleChange}
-                fullWidth
-            />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-            <TextField
-                name="fecha_nacimiento"
-                label={t('profile.form.birth_date')}
-                type="date"
-                value={profile.fecha_nacimiento}
-                onChange={handleChange}
-                fullWidth
-                InputLabelProps={{
-                    shrink: true,
-                }}
-            />
-        </Grid>
-      </Grid>
-
-      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button type="submit" variant="contained" size="large">
-          {t('profile.button.save')}
-        </Button>
-      </Box>
-    </Box>
-  );
+                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button type="submit" variant="contained" size="large" disabled={uploading}>
+                        {t('profile.button.save')}
+                    </Button>
+                </Box>
+            </Box>
+        </Paper>
+    );
 }
 
 export default Profile;

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Typography, Box, Button, CircularProgress, Paper, Grid, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/config';
@@ -18,13 +19,12 @@ const initialCardState = {
 
 function PaymentMethods() {
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { currentUser } = useAuth(); // Correctly using currentUser
     const [paymentMethods, setPaymentMethods] = useState([]);
     const [loading, setLoading] = useState(true);
     const [open, setOpen] = useState(false);
     const [newCard, setNewCard] = useState(initialCardState);
 
-    // --- Simulación de Tokenización ---
     const createMockToken = (cardDetails) => {
         const last4 = cardDetails.cardNumber.slice(-4);
         let brand = t('payment_methods.unknown_brand');
@@ -44,11 +44,14 @@ function PaymentMethods() {
         });
     };
 
-    const fetchPaymentMethods = async () => {
-        if (!user) return;
+    const fetchPaymentMethods = useCallback(async () => {
+        if (!currentUser) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         try {
-            const methodsColRef = collection(db, 'users', user.uid, 'payment_methods');
+            const methodsColRef = collection(db, 'users', currentUser.uid, 'payment_methods');
             const querySnapshot = await getDocs(methodsColRef);
             const userMethods = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setPaymentMethods(userMethods);
@@ -58,11 +61,11 @@ function PaymentMethods() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser, t]);
 
     useEffect(() => {
         fetchPaymentMethods();
-    }, [user, t]);
+    }, [fetchPaymentMethods]);
 
     const handleOpen = () => setOpen(true);
     const handleClose = () => {
@@ -76,11 +79,11 @@ function PaymentMethods() {
     };
 
     const handleSubmit = async () => {
+        if (!currentUser) return;
         const toastId = toast.loading(t('payment_methods.saving_toast'));
         try {
             const { token, card } = await createMockToken(newCard);
-            
-            const methodsColRef = collection(db, 'users', user.uid, 'payment_methods');
+            const methodsColRef = collection(db, 'users', currentUser.uid, 'payment_methods');
             await addDoc(methodsColRef, {
                 ...card,
                 tokenId: token,
@@ -88,7 +91,7 @@ function PaymentMethods() {
 
             toast.success(t('payment_methods.save_success'), { id: toastId });
             handleClose();
-            fetchPaymentMethods();
+            fetchPaymentMethods(); // Refresh the list
         } catch (error) {
             toast.error(t('payment_methods.save_error'), { id: toastId });
             console.error("Error saving payment method: ", error);
@@ -97,20 +100,27 @@ function PaymentMethods() {
 
     const handleDelete = async (methodId) => {
         if (window.confirm(t('payment_methods.delete_confirm'))) {
+            if (!currentUser) return;
             const toastId = toast.loading(t('payment_methods.deleting_toast'));
             try {
-                const methodDocRef = doc(db, 'users', user.uid, 'payment_methods', methodId);
+                const methodDocRef = doc(db, 'users', currentUser.uid, 'payment_methods', methodId);
                 await deleteDoc(methodDocRef);
                 toast.success(t('payment_methods.delete_success'), { id: toastId });
-                fetchPaymentMethods();
+                fetchPaymentMethods(); // Refresh the list
             } catch (error) {
                 toast.error(t('payment_methods.delete_error'), { id: toastId });
+                console.error("Error deleting payment method: ", error);
             }
         }
     };
 
     if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4, minHeight: '200px' }}>
+                <CircularProgress />
+                <Typography sx={{ ml: 2 }}>{t('payment_methods.loading_text')}</Typography>
+            </Box>
+        );
     }
 
     return (

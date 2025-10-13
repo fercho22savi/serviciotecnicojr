@@ -1,67 +1,54 @@
-import React, { createContext, useState, useMemo, useEffect } from 'react';
-import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
+import React, { createContext, useState, useMemo, useEffect, useContext } from 'react';
+import { useMediaQuery } from '@mui/material';
 
-// Crear el contexto
+// 1. Create the context for theme state management
 export const ThemeContext = createContext();
 
-// Hook para consumir el contexto
-export const useTheme = () => React.useContext(ThemeContext);
+// 2. Custom hook to easily consume the theme state and functions
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeContextProvider');
+  }
+  return context;
+};
 
-// Proveedor del tema
-export const ThemeProvider = ({ children }) => {
-  // Intenta obtener el modo desde localStorage, o usa 'light' como predeterminado
+// 3. Create the provider component that will ONLY manage the state
+export const ThemeContextProvider = ({ children }) => {
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+  
+  // State logic to determine the current mode (light/dark)
   const [mode, setMode] = useState(() => {
-    const storedMode = localStorage.getItem('themeMode');
-    return storedMode || 'light';
+    try {
+        const savedMode = localStorage.getItem('themeMode');
+        return savedMode ? savedMode : (prefersDarkMode ? 'dark' : 'light');
+    } catch (error) {
+        console.error("Could not access localStorage. Defaulting to system preference.");
+        return prefersDarkMode ? 'dark' : 'light';
+    }
   });
 
-  // Guardar el modo en localStorage cada vez que cambie
+  // Effect to save the theme mode to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('themeMode', mode);
+    try {
+        localStorage.setItem('themeMode', mode);
+    } catch (error) {
+        console.error("Could not access localStorage to save theme mode.");
+    }
   }, [mode]);
 
-  // Función para cambiar el tema
-  const toggleTheme = (newMode) => {
-    if (newMode) {
-      setMode(newMode);
-    } else {
-      setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
-    }
+  // Function to toggle the theme
+  const toggleTheme = () => {
+    setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
 
-  // Crear el tema de MUI basado en el modo actual
-  const theme = useMemo(() => createTheme({
-    palette: {
-      mode,
-      ...(mode === 'light' ? {
-        // Paleta para el modo claro
-        primary: {
-          main: '#1976d2',
-        },
-        background: {
-          default: '#f5f5f5',
-          paper: '#ffffff',
-        },
-      } : {
-        // Paleta para el modo oscuro
-        primary: {
-          main: '#90caf9',
-        },
-        background: {
-          default: '#121212',
-          paper: '#1e1e1e',
-        },
-      }),
-    },
-  }), [mode]);
+  // The value provided by the context: the current mode and the function to change it.
+  // useMemo ensures this object doesn't get recreated on every render.
+  const value = useMemo(() => ({ mode, toggleTheme, setMode }), [mode]);
 
   return (
-    <ThemeContext.Provider value={{ mode, toggleTheme }}>
-      <MuiThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </MuiThemeProvider>
+    <ThemeContext.Provider value={value}>
+      {children}
     </ThemeContext.Provider>
   );
 };

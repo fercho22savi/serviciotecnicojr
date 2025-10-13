@@ -1,197 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db as firestore } from '../../firebase/config';
-import DatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
-import { 
-    Container, Typography, Box, Paper, CircularProgress, Fab, Tooltip, 
-    Table, TableBody, TableCell, TableHead, TableRow, IconButton, Chip, Dialog, 
-    DialogActions, DialogContent, DialogTitle, Button, TextField, Select, MenuItem, FormControl, InputLabel, Grid
+import React, { useState, useEffect, useCallback } from 'react';
+import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { db } from '../../firebase/config';
+import toast from 'react-hot-toast';
+
+import {
+    Container, Typography, Box, Paper, CircularProgress, Fab, Tooltip, Switch,
+    Table, TableBody, TableCell, TableHead, TableRow, IconButton, Chip, Dialog,
+    DialogContent, DialogTitle, Button
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { toast } from 'react-hot-toast';
 
-// --- CouponFormDialog Component ---
-const CouponFormDialog = ({ open, onClose, onSave, coupon }) => {
-  const [formState, setFormState] = useState({ code: '', type: 'percentage', value: '', expiresAt: null });
+import CouponForm from './CouponForm';
 
-  useEffect(() => {
-    if (coupon) {
-      setFormState({
-        code: coupon.code || '',
-        type: coupon.type || 'percentage',
-        value: coupon.value || '',
-        expiresAt: coupon.expiresAt ? coupon.expiresAt.toDate() : null
-      });
-    } else {
-      setFormState({ code: '', type: 'percentage', value: '', expiresAt: null });
-    }
-  }, [coupon, open]);
-
-  const handleChange = (e) => {
-    setFormState({ ...formState, [e.target.name]: e.target.value });
-  };
-
-  const handleDateChange = (date) => {
-    setFormState({ ...formState, expiresAt: date });
-  };
-
-  const handleSave = () => {
-    onSave(formState);
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{coupon ? 'Editar Cupón' : 'Crear Nuevo Cupón'}</DialogTitle>
-      <DialogContent>
-        <Grid container spacing={2} sx={{mt: 1}}>
-            <Grid xs={12}><TextField label="Código del Cupón" name="code" value={formState.code} onChange={handleChange} fullWidth required autoFocus/></Grid>
-            <Grid xs={12} sm={6}>
-                <FormControl fullWidth required>
-                    <InputLabel>Tipo</InputLabel>
-                    <Select name="type" value={formState.type} label="Tipo" onChange={handleChange}>
-                        <MenuItem value="percentage">Porcentaje (%)</MenuItem>
-                        <MenuItem value="fixed">Fijo ($)</MenuItem>
-                    </Select>
-                </FormControl>
-            </Grid>
-            <Grid xs={12} sm={6}><TextField label="Valor" name="value" type="number" value={formState.value} onChange={handleChange} fullWidth required/></Grid>
-            <Grid xs={12}>
-              <DatePicker selected={formState.expiresAt} onChange={handleDateChange} dateFormat="MMMM d, yyyy" placeholderText="Seleccionar fecha de expiración" className="MuiInputBase-input MuiOutlinedInput-input" customInput={<TextField label="Fecha de Expiración" fullWidth />}/>
-            </Grid>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button onClick={handleSave} variant="contained">Guardar</Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
-// --- Main CouponManagement Component ---
 function CouponManagement() {
-  const [coupons, setCoupons] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [openForm, setOpenForm] = useState(false);
-  const [openDelete, setOpenDelete] = useState(false);
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
+    const [coupons, setCoupons] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [selectedCoupon, setSelectedCoupon] = useState(null);
 
-  const fetchCoupons = async () => {
-    setLoading(true);
-    try {
-      const querySnapshot = await getDocs(collection(firestore, 'coupons'));
-      const couponsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setCoupons(couponsList);
-    } catch (error) { 
-        console.error(error);
-        toast.error("Error al cargar los cupones."); 
-    } finally { 
-        setLoading(false); 
-    }
-  };
+    const fetchCoupons = useCallback(async () => {
+        setLoading(true);
+        try {
+            const q = query(collection(db, 'coupons'), orderBy('createdAt', 'desc'));
+            const querySnapshot = await getDocs(q);
+            const couponsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setCoupons(couponsList);
+        } catch (error) {
+            console.error("Error fetching coupons:", error);
+            toast.error("Error al cargar los cupones.");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  useEffect(() => { fetchCoupons(); }, []);
+    useEffect(() => {
+        fetchCoupons();
+    }, [fetchCoupons]);
 
-  const handleOpenForm = (coupon = null) => {
-    setSelectedCoupon(coupon);
-    setOpenForm(true);
-  };
-
-  const handleCloseForm = () => {
-    setOpenForm(false);
-    setSelectedCoupon(null);
-  };
-
-  const handleOpenDelete = (coupon) => {
-    setSelectedCoupon(coupon);
-    setOpenDelete(true);
-  };
-
-  const handleCloseDelete = () => {
-    setOpenDelete(false);
-    setSelectedCoupon(null);
-  };
-
-  const handleSaveCoupon = async (formData) => {
-    const dataToSave = {
-        ...formData,
-        value: parseFloat(formData.value),
-        expiresAt: formData.expiresAt ? Timestamp.fromDate(formData.expiresAt) : null,
-        updatedAt: serverTimestamp()
+    const handleOpenForm = (coupon = null) => {
+        setSelectedCoupon(coupon);
+        setIsFormOpen(true);
     };
 
-    try {
-      if (selectedCoupon) {
-        await updateDoc(doc(firestore, 'coupons', selectedCoupon.id), dataToSave);
-        toast.success("Cupón actualizado.");
-      } else {
-        await addDoc(collection(firestore, 'coupons'), { ...dataToSave, createdAt: serverTimestamp() });
-        toast.success("Cupón creado.");
-      }
-      fetchCoupons();
-    } catch (error) { 
-        console.error(error);
-        toast.error("Error al guardar el cupón."); 
-    } finally { 
-        handleCloseForm(); 
+    const handleCloseForm = () => {
+        setIsFormOpen(false);
+        setSelectedCoupon(null);
+    };
+
+    const handleToggleActive = async (coupon) => {
+        const couponRef = doc(db, 'coupons', coupon.id);
+        try {
+            await updateDoc(couponRef, { isActive: !coupon.isActive });
+            toast.success(`Cupón "${coupon.code}" ${!coupon.isActive ? 'activado' : 'desactivado'}.`);
+            // Optimistically update UI
+            setCoupons(prev => prev.map(c => c.id === coupon.id ? {...c, isActive: !c.isActive} : c));
+        } catch (error) {
+            console.error("Error toggling coupon status:", error);
+            toast.error("No se pudo cambiar el estado del cupón.");
+        }
+    };
+
+    const handleCouponSubmit = async (formData) => {
+        const dataToSave = {
+            ...formData,
+            discountValue: Number(formData.discountValue),
+            expiresAt: formData.expiresAt ? Timestamp.fromDate(formData.expiresAt) : null,
+        };
+
+        try {
+            if (selectedCoupon) {
+                // Update existing coupon
+                const couponRef = doc(db, 'coupons', selectedCoupon.id);
+                await updateDoc(couponRef, dataToSave);
+            } else {
+                // Create new coupon
+                await addDoc(collection(db, 'coupons'), { ...dataToSave, createdAt: serverTimestamp() });
+            }
+            await fetchCoupons(); // Refresh the list
+            handleCloseForm();
+        } catch (error) {
+            throw error; // Let CouponForm handle the error toast
+        }
+    };
+
+    const formatValue = (type, value) => {
+        return type === 'percentage' ? `${value}%` : `$${value.toLocaleString('es-CO')}`;
     }
-  };
 
-  const handleDeleteCoupon = async () => {
-    try {
-      await deleteDoc(doc(firestore, 'coupons', selectedCoupon.id));
-      toast.success("Cupón eliminado.");
-      fetchCoupons();
-    } catch (error) { 
-        console.error(error);
-        toast.error("Error al eliminar el cupón."); 
-    } finally { 
-        handleCloseDelete(); 
-    }
-  };
+    return (
+        <Container maxWidth="lg" sx={{ my: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">Gestión de Cupones</Typography>
+            
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center'}}><CircularProgress /></Box>
+            ) : (
+                <Paper elevation={3} sx={{ overflow: 'hidden' }}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Código</TableCell>
+                                <TableCell>Tipo</TableCell>
+                                <TableCell>Valor</TableCell>
+                                <TableCell>Expira</TableCell>
+                                <TableCell align="center">Activo</TableCell>
+                                <TableCell align="right">Acciones</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {coupons.map((coupon) => (
+                                <TableRow key={coupon.id} hover>
+                                    <TableCell><Chip label={coupon.code} color="primary" size="small" /></TableCell>
+                                    <TableCell>{coupon.discountType === 'percentage' ? 'Porcentaje' : 'Fijo'}</TableCell>
+                                    <TableCell>{formatValue(coupon.discountType, coupon.discountValue)}</TableCell>
+                                    <TableCell>{coupon.expiresAt ? coupon.expiresAt.toDate().toLocaleDateString() : 'Nunca'}</TableCell>
+                                    <TableCell align="center">
+                                        <Switch
+                                            checked={coupon.isActive}
+                                            onChange={() => handleToggleActive(coupon)}
+                                            color="success"
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Tooltip title="Editar Cupón">
+                                            <IconButton onClick={() => handleOpenForm(coupon)} size="small">
+                                                <EditIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </Paper>
+            )}
 
-  return (
-    <Container maxWidth="lg" sx={{ my: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>Gestión de Cupones</Typography>
-      {loading ? <CircularProgress /> : (
-        <Paper elevation={3}>
-          <Table>
-            <TableHead><TableRow><TableCell>Código</TableCell><TableCell>Tipo</TableCell><TableCell>Valor</TableCell><TableCell>Expira</TableCell><TableCell align="center">Acciones</TableCell></TableRow></TableHead>
-            <TableBody>
-              {coupons.map((coupon) => (
-                <TableRow key={coupon.id} hover>
-                  <TableCell><Chip label={coupon.code} color="primary" /></TableCell>
-                  <TableCell>{coupon.type}</TableCell>
-                  <TableCell>{coupon.type === 'percentage' ? `${coupon.value}%` : `$${coupon.value}`}</TableCell>
-                  <TableCell>{coupon.expiresAt ? coupon.expiresAt.toDate().toLocaleDateString() : 'Nunca'}</TableCell>
-                  <TableCell align="center">
-                    <IconButton onClick={() => handleOpenForm(coupon)}><EditIcon /></IconButton>
-                    <IconButton onClick={() => handleOpenDelete(coupon)} color="error"><DeleteIcon /></IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Paper>
-      )}
+            <Tooltip title="Añadir Nuevo Cupón">
+                <Fab color="primary" sx={{ position: 'fixed', bottom: { xs: 72, md: 32 }, right: { xs: 16, md: 32 } }} onClick={() => handleOpenForm()}>
+                    <AddIcon />
+                </Fab>
+            </Tooltip>
 
-      <Tooltip title="Añadir Cupón"><Fab color="primary" sx={{ position: 'fixed', bottom: 32, right: 32 }} onClick={() => handleOpenForm()}><AddIcon /></Fab></Tooltip>
-
-      <CouponFormDialog open={openForm} onClose={handleCloseForm} onSave={handleSaveCoupon} coupon={selectedCoupon} />
-      
-      <Dialog open={openDelete} onClose={handleCloseDelete}>
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
-        <DialogContent><Typography>¿Seguro que quieres eliminar el cupón "{selectedCoupon?.code}"?</Typography></DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDelete}>Cancelar</Button>
-          <Button onClick={handleDeleteCoupon} color="error">Eliminar</Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
-  );
+            <Dialog open={isFormOpen} onClose={handleCloseForm} maxWidth="sm" fullWidth>
+                <DialogTitle>{selectedCoupon ? 'Editar Cupón' : 'Crear Nuevo Cupón'}</DialogTitle>
+                <DialogContent>
+                    <CouponForm coupon={selectedCoupon} onSubmit={handleCouponSubmit} />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseForm}>Cancelar</Button>
+                </DialogActions>
+            </Dialog>
+        </Container>
+    );
 }
 
 export default CouponManagement;

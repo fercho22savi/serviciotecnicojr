@@ -1,98 +1,72 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import toast from 'react-hot-toast';
 
-// 1. Crear el contexto
-export const CartContext = createContext();
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Hook para usar el contexto del carrito
-export const useCart = () => {
-    return useContext(CartContext);
-};
+const CartContext = createContext();
 
-// 2. Crear el proveedor del contexto
+export const useCart = () => useContext(CartContext);
+
 export const CartProvider = ({ children }) => {
-    const [cartItems, setCartItems] = useState([]);
+    // Initialize state from localStorage or with an empty array
+    const [cart, setCart] = useState(() => {
+        try {
+            const localData = localStorage.getItem('cart');
+            return localData ? JSON.parse(localData) : [];
+        } catch (error) {
+            console.error("Error reading cart from localStorage", error);
+            return [];
+        }
+    });
 
-    // Cargar el carrito desde localStorage al iniciar
+    // Persist state to localStorage whenever the cart changes
     useEffect(() => {
         try {
-            const storedCart = localStorage.getItem('cart');
-            if (storedCart) {
-                setCartItems(JSON.parse(storedCart));
-            }
+            localStorage.setItem('cart', JSON.stringify(cart));
         } catch (error) {
-            console.error("Error al cargar el carrito desde localStorage", error);
-            setCartItems([]);
+            console.error("Error saving cart to localStorage", error);
         }
-    }, []);
+    }, [cart]);
 
-    // Guardar el carrito en localStorage cada vez que cambie
-    useEffect(() => {
-        try {
-            localStorage.setItem('cart', JSON.stringify(cartItems));
-        } catch (error) {
-            console.error("Error al guardar el carrito en localStorage", error);
-        }
-    }, [cartItems]);
-
-    // Añadir un producto al carrito
     const addToCart = (product, quantity = 1) => {
-        setCartItems(prevItems => {
-            const existingItem = prevItems.find(item => item.id === product.id);
+        setCart(prevCart => {
+            const existingItem = prevCart.find(item => item.id === product.id);
             if (existingItem) {
-                toast.success('Producto actualizado en el carrito');
-                return prevItems.map(item =>
+                return prevCart.map(item =>
                     item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
                 );
             } else {
-                toast.success('Producto añadido al carrito');
-                return [...prevItems, { ...product, quantity }];
+                return [...prevCart, { ...product, quantity }];
             }
         });
     };
 
-    // Eliminar un producto del carrito
     const removeFromCart = (productId) => {
-        setCartItems(prevItems => {
-            toast.error('Producto eliminado del carrito');
-            return prevItems.filter(item => item.id !== productId);
-        });
+        setCart(prevCart => prevCart.filter(item => item.id !== productId));
     };
 
-    // Actualizar la cantidad de un producto
     const updateQuantity = (productId, quantity) => {
-        if (quantity <= 0) {
-            removeFromCart(productId);
-        } else {
-            setCartItems(prevItems => {
-                toast.success('Cantidad actualizada');
-                return prevItems.map(item =>
-                    item.id === productId ? { ...item, quantity } : item
-                );
-            });
+        setCart(prevCart => prevCart.map(item =>
+            item.id === productId ? { ...item, quantity: Math.max(1, quantity) } : item
+        ));
+    };
+
+    const clearCart = () => {
+        setCart([]);
+        try {
+            localStorage.removeItem('cart');
+        } catch (error) {
+            console.error("Error clearing cart from localStorage", error);
         }
     };
 
-    // Vaciar el carrito
-    const clearCart = () => {
-        setCartItems([]);
-        toast.success('El carrito se ha vaciado');
-    };
-
-    // Calcular el total de artículos
-    const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
-
-    // Calcular el precio total
-    const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    const cartItemCount = cart.reduce((count, item) => count + item.quantity, 0);
 
     const value = {
-        cartItems,
-        cartCount,
-        cartTotal,
+        cart,
         addToCart,
         removeFromCart,
         updateQuantity,
         clearCart,
+        cartItemCount,
     };
 
     return (
