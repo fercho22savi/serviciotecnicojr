@@ -5,6 +5,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { db } from '../firebase/config';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import RecentlyViewedProducts from '../components/RecentlyViewedProducts'; // Import the new component
 
 function Home({ addToCart, handleWishlist, wishlist, isLoggedIn }) {
     const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -83,10 +84,14 @@ function Home({ addToCart, handleWishlist, wishlist, isLoggedIn }) {
                     </Button>
                 </Container>
             </Box>
-
-            {/* Featured Products Section */}
+            
+            {/* Main Content Area */}
             <Container sx={{ py: 8 }} maxWidth="lg">
-                <Typography variant="h4" component="h2" fontWeight="bold" gutterBottom sx={{ mb: 4, textAlign: 'center' }}>
+                {/* Recently Viewed Products Section */}
+                <RecentlyViewedProducts />
+
+                {/* Featured Products Section */}
+                <Typography variant="h4" component="h2" fontWeight="bold" gutterBottom sx={{ mt: 6, mb: 4, textAlign: 'center' }}>
                     Nuestros Productos Destacados
                 </Typography>
                 {loading ? (

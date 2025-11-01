@@ -2,9 +2,9 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-// Import translations directly to bundle them with the app
-import translationEN from '../public/locales/en/translation.json';
-import translationES from '../public/locales/es/translation.json';
+// Import translations from the correct src directory
+import translationEN from './locales/en/translation.json';
+import translationES from './locales/es/translation.json';
 
 // Prepare the resources object for i18next
 const resources = {

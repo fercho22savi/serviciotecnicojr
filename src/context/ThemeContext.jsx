@@ -1,54 +1,73 @@
-import React, { createContext, useState, useMemo, useEffect, useContext } from 'react';
-import { useMediaQuery } from '@mui/material';
+import React, { createContext, useState, useMemo, useContext } from 'react';
+import { createTheme, ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
 
-// 1. Create the context for theme state management
-export const ThemeContext = createContext();
+const CustomThemeContext = createContext({
+  mode: 'light',
+  toggleTheme: () => {},
+});
 
-// 2. Custom hook to easily consume the theme state and functions
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeContextProvider');
-  }
-  return context;
-};
+export const useCustomTheme = () => useContext(CustomThemeContext);
 
-// 3. Create the provider component that will ONLY manage the state
-export const ThemeContextProvider = ({ children }) => {
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-  
-  // State logic to determine the current mode (light/dark)
-  const [mode, setMode] = useState(() => {
-    try {
-        const savedMode = localStorage.getItem('themeMode');
-        return savedMode ? savedMode : (prefersDarkMode ? 'dark' : 'light');
-    } catch (error) {
-        console.error("Could not access localStorage. Defaulting to system preference.");
-        return prefersDarkMode ? 'dark' : 'light';
-    }
-  });
+export const CustomThemeProvider = ({ children }) => {
+  const [mode, setMode] = useState('light');
 
-  // Effect to save the theme mode to localStorage whenever it changes
-  useEffect(() => {
-    try {
-        localStorage.setItem('themeMode', mode);
-    } catch (error) {
-        console.error("Could not access localStorage to save theme mode.");
-    }
-  }, [mode]);
-
-  // Function to toggle the theme
   const toggleTheme = () => {
     setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
 
-  // The value provided by the context: the current mode and the function to change it.
-  // useMemo ensures this object doesn't get recreated on every render.
-  const value = useMemo(() => ({ mode, toggleTheme, setMode }), [mode]);
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
+          ...(mode === 'light'
+            ? {
+                primary: { main: '#2C3E50' },
+                secondary: { main: '#E67E22' },
+                background: { default: '#F4F6F8', paper: '#FFFFFF' },
+                text: { primary: '#34495E', secondary: '#5D6D7E' },
+              }
+            : {
+                primary: { main: '#5DADE2' },
+                secondary: { main: '#F5B041' },
+                background: { default: '#1C2833', paper: '#283747' },
+                text: { primary: '#EAECEE', secondary: '#ABB2B9' },
+              }),
+        },
+        typography: {
+          fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+          h4: { fontWeight: 700 },
+          h5: { fontWeight: 600 },
+          button: { textTransform: 'none', fontWeight: '600' },
+        },
+        components: {
+            MuiPaper: {
+                styleOverrides: {
+                    root: {
+                        boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.08)',
+                        borderRadius: '12px',
+                    }
+                }
+            },
+            MuiButton: {
+                styleOverrides: {
+                    root: { borderRadius: '8px' }
+                }
+            }
+        }
+      }),
+    [mode]
+  );
+
+  const contextValue = useMemo(() => ({ mode, toggleTheme }), [mode]);
 
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <CustomThemeContext.Provider value={contextValue}>
+      <MUIThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </MUIThemeProvider>
+    </CustomThemeContext.Provider>
   );
 };

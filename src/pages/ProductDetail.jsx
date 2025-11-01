@@ -1,36 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, limit, getDocs, runTransaction, serverTimestamp, orderBy } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, limit, getDocs, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { useRecentlyViewed } from '../context/RecentlyViewedContext';
 import toast from 'react-hot-toast';
 import {
-  Container,
-  Grid,
-  Box,
-  Typography,
-  Button,
-  Rating,
-  Breadcrumbs,
-  Link,
-  Paper,
-  Divider,
-  IconButton,
-  CircularProgress,
-  Alert
+  Container, Grid, Box, Typography, Button, Rating, Breadcrumbs, Link, Paper, Divider,
+  IconButton, CircularProgress, Alert, TextField, Tabs, Tab
 } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+
+import ImageGallery from 'react-image-gallery';
+import "react-image-gallery/styles/css/image-gallery.css";
 
 import ProductCard from '../components/ProductCard';
 import ReviewList from '../components/ReviewList';
 import ReviewForm from '../components/ReviewForm';
-import ImageWithFallback from '../components/ImageWithFallback'; // Import the new component
+import RatingSummary from '../components/RatingSummary';
 
-function ProductDetail({ addToCart, wishlist, handleWishlist, isLoggedIn }) {
+function CustomTabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: {xs: 2, md: 3} }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+function ProductDetail() {
   const { productId } = useParams();
   const { currentUser } = useAuth();
+  const { addToCart } = useCart();
+  const { wishlist, handleWishlist } = useWishlist();
+  const { addProduct } = useRecentlyViewed(); // <-- CORREGIDO
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +58,10 @@ function ProductDetail({ addToCart, wishlist, handleWishlist, isLoggedIn }) {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [purchaseCheckLoading, setPurchaseCheckLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -48,7 +72,9 @@ function ProductDetail({ addToCart, wishlist, handleWishlist, isLoggedIn }) {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          setProduct({ id: docSnap.id, ...docSnap.data() });
+          const productData = { id: docSnap.id, ...docSnap.data() };
+          setProduct(productData);
+          addProduct(productId); // <-- CORREGIDO
         } else {
           setError("Producto no encontrado");
         }
@@ -59,98 +85,84 @@ function ProductDetail({ addToCart, wishlist, handleWishlist, isLoggedIn }) {
         setLoading(false);
       }
     };
-
     fetchProduct();
-  }, [productId]);
+    window.scrollTo(0, 0);
+  }, [productId, addProduct]);
 
   useEffect(() => {
+    if (!product) return;
+
     const fetchReviewsAndRelated = async () => {
-        if (!product) return;
-        
-        setReviewsLoading(true);
-        try {
-            const reviewsQuery = query(collection(db, `products/${productId}/reviews`), orderBy('createdAt', 'desc'));
-            const reviewsSnapshot = await getDocs(reviewsQuery);
-            setReviews(reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        } catch (error) {
-            console.error("Error fetching reviews:", error);
-        }
-        setReviewsLoading(false);
-
-        try {
-            const relatedQuery = query(
-                collection(db, "products"), 
-                where('category', '==', product.category), 
-                where('__name__', '!=', product.id),
-                limit(4)
-            );
-            const relatedSnapshot = await getDocs(relatedQuery);
-            setRelatedProducts(relatedSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
-        } catch (error) {
-            console.error("Error fetching related products:", error);
-        }
-    }
-
-    if (product) {
-        fetchReviewsAndRelated();
-    }
-  }, [product, productId]);
-
-  const handleReviewSubmit = async ({ rating, comment }) => {
-      if (!currentUser) {
-          toast.error("Debes iniciar sesión para dejar una opinión.");
-          return;
-      }
-
-      const productRef = doc(db, "products", productId);
-      const reviewRef = doc(collection(db, `products/${productId}/reviews`));
+      setReviewsLoading(true);
+      try {
+        const reviewsQuery = query(collection(db, `products/${productId}/reviews`), where('status', '==', 'approved'), orderBy('createdAt', 'desc'));
+        const reviewsSnapshot = await getDocs(reviewsQuery);
+        setReviews(reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (err) { console.error("Error fetching reviews:", err); }
+      setReviewsLoading(false);
 
       try {
-          await runTransaction(db, async (transaction) => {
-              const productDoc = await transaction.get(productRef);
-              if (!productDoc.exists()) {
-                  throw "Product does not exist!";
-              }
+        const relatedQuery = query(collection(db, "products"), where('category', '==', product.category), where('__name__', '!=', product.id), limit(4));
+        const relatedSnapshot = await getDocs(relatedQuery);
+        setRelatedProducts(relatedSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+      } catch (err) { console.error("Error fetching related products:", err); }
+    }
 
-              const currentData = productDoc.data();
-              const currentRating = currentData.averageRating || 0;
-              const currentNumReviews = currentData.numReviews || 0;
-
-              const newNumReviews = currentNumReviews + 1;
-              const newAverageRating = (currentRating * currentNumReviews + rating) / newNumReviews;
-
-              transaction.update(productRef, { 
-                  averageRating: newAverageRating,
-                  numReviews: newNumReviews 
-              });
-
-              transaction.set(reviewRef, { 
-                  userId: currentUser.uid,
-                  userName: currentUser.displayName || 'Usuario Anónimo',
-                  userAvatar: currentUser.photoURL,
-                  rating,
-                  comment,
-                  createdAt: serverTimestamp()
-              });
-          });
-
-          const newReview = { id: reviewRef.id, userId: currentUser.uid, userName: currentUser.displayName || 'Usuario Anónimo', userAvatar: currentUser.photoURL, rating, comment, createdAt: new Date() };
-          setReviews([newReview, ...reviews]);
-          setProduct(prev => ({
-              ...prev,
-              averageRating: (prev.averageRating * prev.numReviews + rating) / (prev.numReviews + 1),
-              numReviews: prev.numReviews + 1
-          }));
-
-          toast.success("¡Gracias por tu opinión!");
-
-      } catch (error) {
-          console.error("Error submitting review: ", error);
-          toast.error("No se pudo enviar tu opinión.");
+    const checkPurchaseStatus = async () => {
+      if (!currentUser) {
+          setPurchaseCheckLoading(false);
+          return;
       }
+      setPurchaseCheckLoading(true);
+      try {
+        const ordersQuery = query(collection(db, 'orders'), where('userId', '==', currentUser.uid));
+        const querySnapshot = await getDocs(ordersQuery);
+        const purchased = querySnapshot.docs.some(doc => doc.data().items.some(item => item.id === productId));
+        setHasPurchased(purchased);
+      } catch (err) { console.error("Error checking purchase status:", err); }
+      finally { setPurchaseCheckLoading(false); }
+    };
+
+    fetchReviewsAndRelated();
+    checkPurchaseStatus();
+
+  }, [product, productId, currentUser]);
+
+  const handleReviewSubmit = async ({ rating, comment }) => {
+    if (!currentUser) return toast.error("Debes iniciar sesión para dejar una opinión.");
+    if (!hasPurchased) return toast.error("Debes haber comprado este producto para dejar una reseña.");
+
+    const reviewRef = doc(collection(db, `products/${productId}/reviews`));
+    try {
+        await setDoc(reviewRef, { 
+            userId: currentUser.uid,
+            userName: currentUser.displayName || 'Anónimo',
+            userAvatar: currentUser.photoURL,
+            rating,
+            comment,
+            createdAt: serverTimestamp(),
+            status: 'pending'
+        });
+        toast.success("¡Gracias! Tu opinión está pendiente de aprobación.");
+    } catch (err) {
+        console.error("Error submitting review: ", err);
+        toast.error("No se pudo enviar tu opinión.");
+    }
   };
 
-  const isWishlisted = product && wishlist.has(product.id);
+  const handleQuantityChange = (amount) => {
+    setQuantity((prev) => {
+        const newQuantity = prev + amount;
+        if (newQuantity < 1) return 1;
+        if (newQuantity > product.stock) return product.stock;
+        return newQuantity;
+    });
+  };
+
+  const handleAddToCart = () => {
+      addToCart(product, quantity);
+  }
+
   const userHasReviewed = reviews.some(review => review.userId === currentUser?.uid);
 
   if (loading) {
@@ -168,69 +180,123 @@ function ProductDetail({ addToCart, wishlist, handleWishlist, isLoggedIn }) {
   
   if (!product) return null;
 
+  const images = product.images?.length > 0 
+    ? product.images.map(img => ({ original: img, thumbnail: img }))
+    : [{ original: 'https://via.placeholder.com/600x600.png?text=No+Image', thumbnail: 'https://via.placeholder.com/150x150.png?text=No+Image' }];
+
+  const isWishlisted = wishlist.has(product.id);
+
   return (
-    <Container maxWidth="lg" sx={{ my: 4 }}>
+    <Box sx={{ bgcolor: 'background.default' }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 3 }}>
         <Link underline="hover" color="inherit" component={RouterLink} to="/">Inicio</Link>
         <Link underline="hover" color="inherit" component={RouterLink} to="/products">Productos</Link>
-        <Typography color="text.primary">{product.name}</Typography>
+        <Typography color="text.primary" sx={{maxWidth: '200px', overflow: 'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{product.name}</Typography>
       </Breadcrumbs>
 
-      <Paper elevation={3} sx={{ p: { xs: 2, md: 4 } }}>
-        <Grid container spacing={{ xs: 2, md: 6 }}>
+      <Paper sx={{ p: { xs: 2, md: 4 }, borderRadius: 4 }}>
+        <Grid container spacing={{ xs: 3, md: 5 }}>
            <Grid item xs={12} md={6}>
-             <Box sx={{ borderRadius: 2, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <ImageWithFallback 
-                  src={product.images && product.images.length > 0 ? product.images[0] : ''} 
-                  alt={product.name} 
-                  style={{ width: '100%', height: 'auto', maxHeight: '550px', objectFit: 'cover', display: 'block' }} 
-                />
-            </Box>
+             <ImageGallery 
+                items={images} 
+                showNav={false}
+                showPlayButton={false}
+                showFullscreenButton={true}
+                thumbnailPosition="bottom"
+             />
           </Grid>
           <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>{product.name}</Typography>
-            <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2 }}>Categoría: {product.category}</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Rating name="read-only" value={product.averageRating || 0} precision={0.5} readOnly />
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>({product.numReviews || 0} valoraciones)</Typography>
+            <Typography variant="h4" component="h1" fontWeight="700" gutterBottom>{product.name}</Typography>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, cursor:'pointer' }} onClick={() => setTabValue(1)}>
+              <Rating value={product.averageRating || 0} precision={0.5} readOnly />
+              <Typography variant="body2" color="text.secondary" sx={{ ml: 1, textDecoration: 'underline' }}>({product.numReviews || 0} valoraciones)</Typography>
             </Box>
-            <Typography variant="body1" paragraph sx={{ lineHeight: 1.7, flexGrow: 1 }}>{product.description}</Typography>
-            <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-              <Typography variant="h3" fontWeight="500" sx={{ my: 2 }}>{`$${product.price.toLocaleString('es-CO')}`}</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-                <Button variant="contained" color="primary" size="large" sx={{ px: 6, py: 1.5, flexGrow: { xs: 1, md: 0 } }} onClick={() => addToCart(product)}>
-                    Agregar al Carrito
-                </Button>
-                <IconButton onClick={() => handleWishlist(product)} aria-label="add to wishlist" sx={{ border: '1px solid', borderColor: 'grey.300', p: 1.5, borderRadius: '12px' }}>
-                  {isWishlisted ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
-                </IconButton>
-              </Box>
+            
+            <Box sx={{ my: 2 }}>
+                {product.originalPrice && product.originalPrice > product.price && (
+                    <Typography variant="h6" color="text.secondary" sx={{ textDecoration: 'line-through', mr: 1, display: 'inline' }}>
+                        ${Number(product.originalPrice).toLocaleString('es-CO')}
+                    </Typography>
+                )}
+                <Typography variant="h4" color="text.primary" sx={{ fontWeight: 'bold', display: 'inline' }}>
+                    ${Number(product.price).toLocaleString('es-CO')}
+                </Typography>
             </Box>
+
+            <Typography variant="body1" paragraph sx={{ my: 2 }}>{product.shortDescription || ''}</Typography>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Add to Cart Section */}
+            <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight:'bold' }}>Cantidad:</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <IconButton size="small" onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1}><RemoveIcon /></IconButton>
+                    <Typography sx={{ mx: 2, width: '40px', textAlign:'center', fontWeight:'bold'}}>{quantity}</Typography>
+                    <IconButton size="small" onClick={() => handleQuantityChange(1)} disabled={quantity >= product.stock}><AddIcon /></IconButton>
+                    <Typography variant="body2" color="text.secondary" sx={{ml: 2}}>{product.stock} disponibles</Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 3 }}>
+                    <Button 
+                        variant="contained" 
+                        color="secondary" 
+                        size="large" 
+                        onClick={handleAddToCart}
+                        disabled={product.stock === 0}
+                        sx={{ flexGrow: 1, py: 1.5, fontWeight:'bold' }}
+                    >
+                        {product.stock === 0 ? 'Agotado' : 'Añadir al carrito'}
+                    </Button>
+                    <IconButton onClick={() => handleWishlist(product)} aria-label="add to wishlist" sx={{ border: '1px solid', borderColor: 'grey.300', p: 1.5, borderRadius: 2 }}>
+                        {isWishlisted ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
+                    </IconButton>
+                </Box>
+            </Box>
+
           </Grid>
         </Grid>
       </Paper>
 
-      <Divider sx={{ my: 6 }} />
-
-      {/* Reviews Section */}
-      <Box>
-          {reviewsLoading ? (
-            <CircularProgress />
-          ) : (
-            <ReviewList reviews={reviews} />
-          )}
-
-          {isLoggedIn && !userHasReviewed && (
-              <ReviewForm onSubmit={handleReviewSubmit} />
-          )}
-          {isLoggedIn && userHasReviewed && (
-              <Alert severity="info" sx={{ mt: 4 }}>Ya has dejado una opinión para este producto.</Alert>
-          )}
-          {!isLoggedIn && (
-              <Alert severity="warning" sx={{ mt: 4 }}>
-                  <Link component={RouterLink} to={`/login?redirect=/product/${productId}`}>Inicia sesión</Link> para dejar tu opinión.
-              </Alert>
-          )}
+      {/* Info Tabs */}
+      <Box sx={{ width: '100%', mt: 6 }}>
+        <Paper>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} aria-label="info tabs" centered>
+                    <Tab label="Descripción" id="tab-0" />
+                    <Tab label={`Opiniones (${product.numReviews || 0})`} id="tab-1" />
+                </Tabs>
+            </Box>
+            <CustomTabPanel value={tabValue} index={0}>
+                <Typography paragraph>{product.description || "No hay descripción detallada disponible."}</Typography>
+            </CustomTabPanel>
+            <CustomTabPanel value={tabValue} index={1}>
+                {reviewsLoading ? <CircularProgress /> :
+                <Grid container spacing={4}>
+                    <Grid item xs={12}>
+                        <RatingSummary 
+                            reviews={reviews} 
+                            averageRating={product.averageRating || 0} 
+                            totalReviews={product.numReviews || 0} 
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <ReviewList reviews={reviews} />
+                    </Grid>
+                    <Grid item xs={12}>
+                        {purchaseCheckLoading ? <CircularProgress /> :
+                          !currentUser ? <Alert severity="info"><Link component={RouterLink} to={`/login?redirect=/product/${productId}`}>Inicia sesión</Link> para dejar tu opinión.</Alert> :
+                          userHasReviewed ? <Alert severity="success">Ya has dejado una opinión para este producto.</Alert> :
+                          hasPurchased ? <ReviewForm onSubmit={handleReviewSubmit} /> :
+                          <Alert severity="info">Debes haber comprado este producto para poder dejar una opinión.</Alert>
+                        }
+                    </Grid>
+                </Grid>
+                }
+            </CustomTabPanel>
+        </Paper>
       </Box>
 
       {/* Related Products Section */}
@@ -238,21 +304,12 @@ function ProductDetail({ addToCart, wishlist, handleWishlist, isLoggedIn }) {
         <Box sx={{ mt: 6 }}>
           <Typography variant="h5" component="h2" fontWeight="bold" gutterBottom>También te podría interesar</Typography>
           <Grid container spacing={3}>
-            {relatedProducts.map((relatedProduct) => (
-              <Grid key={relatedProduct.id} item xs={12} sm={6} md={3}>
-                <ProductCard
-                  product={relatedProduct}
-                  addToCart={addToCart}
-                  handleWishlist={handleWishlist}
-                  isInWishlist={wishlist.has(relatedProduct.id)}
-                  isLoggedIn={isLoggedIn}
-                />
-              </Grid>
-            ))}
+            {relatedProducts.map((p) => <Grid key={p.id} item xs={12} sm={6} md={3}><ProductCard product={p} /></Grid>)}
           </Grid>
         </Box>
       )}
     </Container>
+    </Box>
   );
 }
 

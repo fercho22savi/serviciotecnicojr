@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation, useOutletContext } from 'react-router-dom';
 import { Container, Grid, Typography, Box, CircularProgress, Pagination, Stack } from '@mui/material';
 import { SentimentVeryDissatisfied } from '@mui/icons-material';
 import ProductCard from '../components/ProductCard';
@@ -7,23 +8,39 @@ import { db } from '../firebase/config';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
+// --- CONTEXT HOOKS ---
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+
 const PRODUCTS_PER_PAGE = 9;
 
-const ProductsPage = ({ 
-    searchTerm, 
-    selectedCategory, 
-    addToCart, 
-    handleWishlist, 
-    wishlist, 
-    isLoggedIn, 
-    priceRange, 
-    setPriceRange, 
-    inStockOnly, 
-    setInStockOnly
-}) => {
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
+
+const ProductsPage = () => {
+    // --- STATE FROM PARENT (MainLayout) ---
+    const { 
+        searchTerm, 
+        priceRange, 
+        setPriceRange, 
+        inStockOnly, 
+        setInStockOnly,
+        maxPrice
+    } = useOutletContext();
+
+    // --- CONTEXT VALUES ---
+    const { currentUser } = useAuth();
+    const { addToCart } = useCart();
+    const { wishlist, handleWishlist } = useWishlist();
+
+    // --- COMPONENT STATE ---
     const [allProducts, setAllProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
+    const searchParams = useQuery();
+    const selectedCategory = searchParams.get('category');
 
     // 1. Fetch ALL products from Firestore on component mount
     useEffect(() => {
@@ -47,27 +64,22 @@ const ProductsPage = ({
 
     // 2. Memoize filtered products for performance
     const filteredProducts = useMemo(() => {
-        // Reset to page 1 whenever filters change
-        setCurrentPage(1);
+        setCurrentPage(1); // Reset to page 1 whenever filters change
         return allProducts.filter(product => {
-            if (selectedCategory && selectedCategory !== 'Todas' && product.category !== selectedCategory) return false;
+            if (selectedCategory && product.category !== selectedCategory) return false;
             if (searchTerm) {
                 const searchableText = `${product.name} ${product.description}`.toLowerCase();
                 if (!searchableText.includes(searchTerm.toLowerCase())) return false;
             }
+            // This check is now safe because priceRange is initialized in MainLayout
             if (product.price < priceRange[0] || product.price > priceRange[1]) return false;
             if (inStockOnly && product.stock <= 0) return false;
             return true;
         });
     }, [allProducts, searchTerm, selectedCategory, priceRange, inStockOnly]);
 
-    // 3. Calculate max price for the slider from ALL products
-    const maxPrice = useMemo(() => {
-        if (allProducts.length === 0) return 5000000;
-        return Math.max(...allProducts.map(p => p.price));
-    }, [allProducts]);
 
-    // 4. Paginate the filtered results
+    // 3. Paginate the filtered results
     const paginatedProducts = useMemo(() => {
         const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
         const endIndex = startIndex + PRODUCTS_PER_PAGE;
@@ -82,7 +94,7 @@ const ProductsPage = ({
     return (
         <Container sx={{ py: 4 }} maxWidth="xl">
             <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="text.primary">
-                {selectedCategory && selectedCategory !== 'Todas' ? selectedCategory : 'Catálogo de Productos'}
+                {selectedCategory ? selectedCategory : 'Catálogo de Productos'}
             </Typography>
             
             <Grid container spacing={4}>
@@ -93,7 +105,7 @@ const ProductsPage = ({
                         onPriceChange={setPriceRange}
                         inStockOnly={inStockOnly}
                         onInStockChange={setInStockOnly}
-                        maxPrice={maxPrice}
+                        maxPrice={maxPrice} // Pass the maxPrice from MainLayout
                     />
                 </Grid>
 
@@ -117,7 +129,7 @@ const ProductsPage = ({
                                             addToCart={addToCart}
                                             handleWishlist={handleWishlist} 
                                             isInWishlist={wishlist.has(product.id)}
-                                            isLoggedIn={isLoggedIn}
+                                            isLoggedIn={!!currentUser}
                                         />
                                     </Grid>
                                 ))}

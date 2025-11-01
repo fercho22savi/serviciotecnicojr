@@ -25,11 +25,11 @@
         "shipping_returns": "Shipping & Returns",
         "refund_policy": "Refund & Return Policy",
         "follow_us": "Follow Us",
-        "copyright": "Copyright © YourStore.com {{year}}. Save with us"
+        "copyright": "Copyright © YourStore.com {{year}}. All rights reserved."
     },
     "preferences": {
         "title": "Preferences",
-        "subtitle": "Customize your in-app experience.",
+        "subtitle": "Customize your experience in the application.",
         "notifications": "Notifications",
         "email_offers": "Email offers and news",
         "sms_updates": "SMS order updates",
@@ -86,7 +86,7 @@
         "delete_error": "Error deleting the address.",
         "no_addresses_title": "You have no saved addresses.",
         "no_addresses_subtitle": "Add an address to make your future purchases easier.",
-        "phone_label": "Tel",
+        "phone_label": "Phone",
         "edit_dialog_title": "Edit Address",
         "add_dialog_title": "Add New Address",
         "cancel_button": "Cancel",
@@ -147,8 +147,8 @@
         "save_error": "There was an error saving the payment method.",
         "delete_confirm": "Are you sure you want to delete this payment method?",
         "deleting_toast": "Deleting...",
-        "delete_success": "Payment method deleted",
-        "delete_error": "Error deleting.",
+        "delete_success": "Payment method deleted successfully",
+        "delete_error": "There was an error deleting the payment method.",
         "no_methods_title": "You have no saved payment methods.",
         "no_methods_subtitle": "Add one for a faster checkout process.",
         "card_ending_in": "{{brand}} ending in {{last4}}",
@@ -160,7 +160,7 @@
         "form": {
             "cardholder_name": "Name on Card",
             "card_number": "Card Number",
-            "expiry": "Expiry (MM/YY)",
+            "expiry": "MM/YY",
             "cvc": "CVC",
             "security_note": "Your payment information is secure. We do not store your full card details."
         }
@@ -178,7 +178,7 @@
         },
         "toast": {
             "changing_password": "Changing password...",
-            "success": "Password updated successfully"
+            "success": "Password has been updated successfully"
         },
         "errors": {
             "fill_all_fields": "Please fill in all fields.",
@@ -239,7 +239,7 @@
             },
             "process": {
                 "title": "Return Process",
-                "description": "To initiate a 'return', please contact our support team through the contact page with your order number. We will provide you with instructions and the shipping address.",
+                "description": "To initiate a return, please contact our support team through the contact page with your order number. We will provide you with instructions and the shipping address.",
                 "shipping_costs": "Return shipping costs are the responsibility of the customer, unless the reason for the return is an error on our part (incorrect or defective product)."
             }
         },
@@ -259,6 +259,30 @@
             "subject": "Subject",
             "message": "Message",
             "send_button": "Send Message"
+        }
+    },
+    "checkout": {
+        "review": {
+            "title": "Order Summary",
+            "items": "Items in your cart",
+            "shipping_to": "Shipping to",
+            "order_summary": "Purchase Summary",
+            "subtotal": "Subtotal",
+            "shipping": "Shipping",
+            "discount": "Discount",
+            "total": "Total",
+            "coupon_placeholder": "Coupon Code",
+            "apply_button": "Apply",
+            "coupon_applied": "Coupon applied!",
+            "free_shipping": "FREE",
+            "quantity": "Quantity",
+            "coupon_code_label": "Code:",
+            "discount_code_title": "Discount Code"
+        },
+        "payment": {
+            "title_simulated": "Payment Details (Simulated)",
+            "cardholder": "Cardholder:",
+            "card_number_label": "Number:"
         }
     }
 }

@@ -160,7 +160,7 @@
         "form": {
             "cardholder_name": "Nombre en la Tarjeta",
             "card_number": "Número de Tarjeta",
-            "expiry": "Expira (MM/AA)",
+            "expiry": "MM/AA",
             "cvc": "CVC",
             "security_note": "Tu información de pago está segura. No almacenamos los detalles completos de tu tarjeta."
         }
@@ -259,6 +259,30 @@
             "subject": "Asunto",
             "message": "Mensaje",
             "send_button": "Enviar Mensaje"
+        }
+    },
+    "checkout": {
+        "review": {
+            "title": "Resumen del Pedido",
+            "items": "Artículos en tu carrito",
+            "shipping_to": "Enviar a",
+            "order_summary": "Resumen de la Compra",
+            "subtotal": "Subtotal",
+            "shipping": "Envío",
+            "discount": "Descuento",
+            "total": "Total",
+            "coupon_placeholder": "Código de Cupón",
+            "apply_button": "Aplicar",
+            "coupon_applied": "¡Cupón aplicado!",
+            "free_shipping": "GRATIS",
+            "quantity": "Cantidad",
+            "coupon_code_label": "Código:",
+            "discount_code_title": "Código de Descuento"
+        },
+        "payment": {
+            "title_simulated": "Detalles del Pago (Simulado)",
+            "cardholder": "Titular:",
+            "card_number_label": "Número:"
         }
     }
 }

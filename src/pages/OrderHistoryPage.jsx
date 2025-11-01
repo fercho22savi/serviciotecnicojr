@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
@@ -16,32 +16,76 @@ import {
     Paper,
     Button,
     Alert,
-    TablePagination
+    TablePagination,
+    Collapse, // <-- Importar Collapse
+    IconButton // <-- Importar IconButton
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import OrderDetailView from '../components/orders/OrderDetailView'; // <-- Importar el nuevo componente
+
+// Componente para una fila de la tabla
+const OrderRow = ({ order }) => {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <Fragment>
+            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+                <TableCell>
+                    <IconButton
+                        aria-label="expand row"
+                        size="small"
+                        onClick={() => setOpen(!open)}
+                    >
+                        {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                    </IconButton>
+                </TableCell>
+                <TableCell component="th" scope="row">
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        #{order.id.substring(0, 6).toUpperCase()}
+                    </Typography>
+                </TableCell>
+                <TableCell>
+                    {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd/MM/yyyy') : 'Fecha no disponible'}
+                </TableCell>
+                <TableCell align="right">
+                    ${order.totalAmount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </TableCell>
+            </TableRow>
+            <TableRow>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        {/* Aquí se renderizan los detalles del pedido */}
+                        <OrderDetailView orderId={order.id} />
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </Fragment>
+    );
+};
+
 
 const OrderHistoryPage = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { user } = useAuth(); // Corrected: useAuth provides 'user', not 'currentUser'
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5); // <-- Cambiado a 5 para una mejor visualización con el acordeón
 
     useEffect(() => {
         const fetchOrders = async () => {
             if (!user) {
                 setLoading(false);
-                // No need to set an error, the component will just show the empty state
                 return;
             }
             try {
                 setLoading(true);
                 const ordersRef = collection(db, 'orders');
-                // Query orders for the current user, ordered by creation date
                 const q = query(ordersRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 const userOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -65,11 +109,8 @@ const OrderHistoryPage = () => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     };
-
-    // Corrected navigation path
-    const handleViewOrder = (orderId) => {
-        navigate(`/account/orders/${orderId}`);
-    };
+    
+    const paginatedOrders = orders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     if (loading) {
         return (
@@ -78,8 +119,6 @@ const OrderHistoryPage = () => {
             </Box>
         );
     }
-
-    const paginatedOrders = orders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
         <Container maxWidth="lg" sx={{ my: 4 }}>
@@ -109,37 +148,15 @@ const OrderHistoryPage = () => {
                         <Table stickyHeader>
                             <TableHead>
                                 <TableRow>
+                                    <TableCell />
                                     <TableCell sx={{ fontWeight: 'bold' }}>Número de Pedido</TableCell>
                                     <TableCell sx={{ fontWeight: 'bold' }}>Fecha</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>Total</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Acciones</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {paginatedOrders.map((order) => (
-                                    <TableRow key={order.id} hover>
-                                        <TableCell component="th" scope="row">
-                                            <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                                                #{order.id.substring(0, 6).toUpperCase()}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd/MM/yyyy') : 'Fecha no disponible'}
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            {/* Corrected field name from total to totalAmount */}
-                                            ${order.totalAmount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                onClick={() => handleViewOrder(order.id)}
-                                            >
-                                                Ver Pedido
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
+                                    <OrderRow key={order.id} order={order} />
                                 ))}
                             </TableBody>
                         </Table>

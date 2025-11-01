@@ -1,178 +1,127 @@
-import React, { useState, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { Box, CircularProgress, Container, CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
-import toast from 'react-hot-toast';
 
-// --- CONTEXTS AND THEME ---
-import { useTheme } from './context/ThemeContext';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Typography } from '@mui/material';
+
+// Firebase
+import { auth, db } from './firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
+
+// Context
 import { useAuth } from './context/AuthContext';
-import { useCart } from './context/CartContext';
-import { useWishlist } from './context/WishlistContext';
-import { createMuiTheme } from './theme';
+import { RecentlyViewedProvider } from './context/RecentlyViewedContext'; // <-- Importado
 
-// --- CORE COMPONENTS ---
-import Header from './components/Header';
-import Footer from './components/Footer';
-import ProtectedRoute from './routes/ProtectedRoute';
-import AdminRoute from './routes/AdminRoute';
+// Layouts
+import MainLayout from './components/MainLayout';
+import AccountLayout from './components/AccountLayout';
+import AdminLayout from './components/AdminLayout';
 
-// --- LAZY LOADED PAGES ---
-const Home = lazy(() => import('./pages/Home'));
-const ProductsPage = lazy(() => import('./pages/ProductsPage'));
-const ProductDetail = lazy(() => import('./pages/ProductDetail'));
-const Cart = lazy(() => import('./pages/Cart'));
-const Wishlist = lazy(() => import('./pages/Wishlist'));
-const Checkout = lazy(() => import('./pages/Checkout'));
-const Login = lazy(() => import('./pages/Login'));
-const SignUp = lazy(() => import('./pages/SignUp'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const FaqPage = lazy(() => import('./pages/FaqPage'));
-const ContactPage = lazy(() => import('./pages/ContactPage'));
-const ShippingPolicyPage = lazy(() => import('./pages/ShippingPolicyPage'));
-const RefundPolicyPage = lazy(() => import('./pages/RefundPolicyPage'));
-const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage')); // Nueva página
-const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage')); // Nueva página
+// Public Pages
+import HomePage from './pages/HomePage.jsx';
+import ProductsPage from './pages/ProductsPage.jsx';
+import ProductDetail from './pages/ProductDetail.jsx';
+import AboutPage from './pages/AboutPage.jsx';
+import ContactPage from './pages/ContactPage.jsx';
+import LoginPage from './pages/Login.jsx';
+import RegisterPage from './pages/SignUp.jsx';
+import CartPage from './pages/Cart.jsx';
+import CheckoutPage from './pages/Checkout.jsx';
+import OrderConfirmationPage from './pages/OrderConfirmationPage.jsx';
 
 // Account Pages
-const Account = lazy(() => import('./pages/Account'));
-const Profile = lazy(() => import('./pages/account/Profile'));
-const Orders = lazy(() => import('./pages/account/Orders'));
-const OrderDetail = lazy(() => import('./pages/account/OrderDetail'));
-const Addresses = lazy(() => import('./pages/account/Addresses'));
-const PaymentMethods = lazy(() => import('./pages/account/PaymentMethods'));
-const Security = lazy(() => import('./pages/account/Security'));
-const Preferences = lazy(() => import('./pages/account/Preferences'));
+import AccountDashboard from './pages/account/AccountDashboard.jsx';
+import OrderHistory from './pages/account/Orders.jsx';
+import OrderDetail from './pages/account/OrderDetail.jsx';
+import WishlistPage from './pages/account/WishlistPage.jsx';
+import RecentlyViewedPage from './pages/account/RecentlyViewedPage.jsx';
+import UserProfile from './pages/UserProfile.jsx';
 
 // Admin Pages
-const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
-const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'));
-const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
-const ProductManagement = lazy(() => import('./pages/admin/ProductManagement'));
-const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
-const OrderManagement = lazy(() => import('./pages/admin/OrderManagement'));
-const OrderDetailPage = lazy(() => import('./pages/admin/OrderDetailPage'));
-const CouponManagement = lazy(() => import('./pages/admin/CouponManagement'));
-const ReviewManagement = lazy(() => import('./pages/admin/ReviewManagement'));
-
+import AdminDashboard from './pages/admin/Dashboard.jsx';
+import ProductManagement from './pages/admin/ProductManagement.jsx';
+import CategoryManagement from './pages/admin/CategoryManagement.jsx';
+import OrderManagement from './pages/admin/OrderManagement.jsx';
+import OrderDetailPage from './pages/admin/OrderDetailPage.jsx';
+import UserManagement from './pages/admin/UserManagementPage.jsx';
+import CouponManagement from './pages/admin/CouponManagement.jsx';
+import ReviewManagementPage from './pages/admin/ReviewManagementPage.jsx';
 
 const App = () => {
-  const { mode } = useTheme();
-  const theme = createMuiTheme(mode);
-  const navigate = useNavigate();
+  const { currentUser, loading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
-  // --- CENTRALIZED STATE MANAGEMENT ---
-  const { currentUser, isAdmin } = useAuth();
-  const { cart, addToCart, removeFromCart, updateQuantity, cartItemCount } = useCart();
-  const { wishlistItems, toggleWishlistItem, wishlistItemCount } = useWishlist();
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          setIsAdmin(userDoc.exists() && userDoc.data().role === 'admin');
+        } catch (error) {
+          console.error("Error checking admin status:", error);
+          setIsAdmin(false);
+        }
+      }
+      setCheckingAdmin(false);
+    };
+    if (!loading) checkAdminStatus();
+  }, [currentUser, loading]);
 
-  // State for search, category, and new filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Todas');
-  const [priceRange, setPriceRange] = useState([0, 5000000]);
-  const [inStockOnly, setInStockOnly] = useState(false);
-  
-  const isLoggedIn = !!currentUser;
-  const wishlistSet = new Set(wishlistItems.map(item => item.id));
+  if (loading || checkingAdmin) {
+    return <div>Cargando...</div>; // Replace with a proper spinner component
+  }
 
-  const handleWishlistToggle = (product) => {
-    if (!isLoggedIn) {
-      toast.error('Inicia sesión para agregar productos a tu lista de deseos.');
-      navigate('/login', { state: { from: window.location.pathname } });
-    } else {
-      toggleWishlistItem(product);
-    }
-  };
+  const AdminRoute = ({ children }) => (isAdmin ? children : <Navigate to="/" />);
+  const AuthenticatedRoute = ({ children }) => (currentUser ? children : <Navigate to="/login" />);
 
   return (
-    <MuiThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Header 
-          setSearchTerm={setSearchTerm}
-          setSelectedCategory={setSelectedCategory}
-          cartItemCount={cartItemCount}
-          wishlistItemCount={wishlistItemCount}
-        />
-        <Container component="main" sx={{ flex: '1 0 auto', pt: 4, pb: 4 }}>
-          <Suspense fallback={
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
-              <CircularProgress />
-            </Box>
-          }>
-            <Routes>
-              {/* --- PUBLIC ROUTES --- */}
-              <Route path="/" element={<Home addToCart={addToCart} handleWishlist={handleWishlistToggle} wishlist={wishlistSet} isLoggedIn={isLoggedIn} />} />
-              <Route path="/products" element={<ProductsPage 
-                  searchTerm={searchTerm} 
-                  selectedCategory={selectedCategory} 
-                  addToCart={addToCart} 
-                  handleWishlist={handleWishlistToggle} 
-                  wishlist={wishlistSet} 
-                  isLoggedIn={isLoggedIn}
-                  // Pass filter state and setters
-                  priceRange={priceRange}
-                  setPriceRange={setPriceRange}
-                  inStockOnly={inStockOnly}
-                  setInStockOnly={setInStockOnly}
-                />} 
-              />
-              <Route path="/product/:productId" element={<ProductDetail addToCart={addToCart} handleWishlist={handleWishlistToggle} wishlist={wishlistSet} isLoggedIn={isLoggedIn} />} />
-              <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} />} />
-              <Route path="/wishlist" element={<Wishlist wishlistItems={wishlistItems} addToCart={addToCart} handleWishlist={handleWishlistToggle} wishlist={wishlistSet} isLoggedIn={isLoggedIn} />} />
-              
-              {/* Auth Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+    <RecentlyViewedProvider> { /* <-- Envuelve la aplicación */}
+      <Routes>
+        {/* Main Layout for public pages */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/product/:productId" element={<ProductDetail />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<AuthenticatedRoute><CheckoutPage /></AuthenticatedRoute>} />
+          <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
+        </Route>
 
-              {/* Static Pages */}
-              <Route path="/faq" element={<FaqPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
-              <Route path="/refund-policy" element={<RefundPolicyPage />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+        {/* Standalone pages */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-              {/* --- PROTECTED USER ROUTES --- */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/account" element={<Account />}>
-                  <Route index element={<Navigate to="profile" replace />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="orders" element={<Orders />} />
-                  <Route path="orders/:orderId" element={<OrderDetail />} />
-                  <Route path="addresses" element={<Addresses />} />
-                  <Route path="payment-methods" element={<PaymentMethods />} />
-                  <Route path="security" element={<Security />} />
-                  <Route path="preferences" element={<Preferences />} />
-                </Route>
-                <Route path="/checkout" element={<Checkout />} />
-              </Route>
+        {/* Account Layout */}
+        <Route path="/account" element={<AuthenticatedRoute><AccountLayout /></AuthenticatedRoute>}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AccountDashboard />} />
+            <Route path="orders" element={<OrderHistory />} />
+            <Route path="orders/:orderId" element={<OrderDetail />} />
+            <Route path="wishlist" element={<WishlistPage />} />
+            <Route path="profile" element={<UserProfile />} />
+            <Route path="recently-viewed" element={<RecentlyViewedPage />} />
+        </Route>
 
-              {/* --- PROTECTED ADMIN ROUTES --- */}
-              <Route path="/admin" element={<AdminRoute />}>
-                <Route element={<AdminLayout />}>
-                    <Route index element={<Navigate to="dashboard" />} />
-                    <Route path="dashboard" element={<AdminDashboard />} />
-                    <Route path="users" element={<UserManagementPage />} />
-                    <Route path="products" element={<ProductManagement />} />
-                    <Route path="products/new" element={<ProductForm />} />
-                    <Route path="products/edit/:id" element={<ProductForm />} />
-                    <Route path="orders" element={<OrderManagement />} />
-                    <Route path="orders/:orderId" element={<OrderDetailPage />} />
-                    <Route path="coupons" element={<CouponManagement />} />
-                    <Route path="reviews" element={<ReviewManagement />} />
-                </Route>
-              </Route>
+        {/* Admin Layout */}
+        <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="products" element={<ProductManagement />} />
+            <Route path="categories" element={<CategoryManagement />} />
+            <Route path="orders" element={<OrderManagement />} />
+            <Route path="orders/:orderId" element={<OrderDetailPage />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="coupons" element={<CouponManagement />} />
+            <Route path="reviews" element={<ReviewManagementPage />} />
+        </Route>
 
-              {/* Not Found Redirect */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </Container>
-        <Footer />
-      </Box>
-    </MuiThemeProvider>
+        {/* Not Found Page */}
+        <Route path="*" element={<Typography variant="h4" align="center" sx={{ mt: 5 }}>404 - Página no encontrada</Typography>} />
+      </Routes>
+    </RecentlyViewedProvider>
   );
-}
+};
 
 export default App;

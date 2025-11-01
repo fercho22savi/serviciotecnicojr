@@ -1,25 +1,46 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write their own documents (e.g., theme preference)
-    match /users/{userId} {
+    
+    // Allow public read access to products for browsing
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null; // Only authenticated users can write
+    }
+
+    // Users can only manage their own documents
+    match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow users to read their own orders and create new ones
+    // Cart items can be managed by the owner
+    match /users/{userId}/cart/{cartId} {
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Wishlist items can be managed by the owner
+    match /users/{userId}/wishlist/{wishlistId} {
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Reviews can be created by authenticated users and read by anyone
+    match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Orders can only be accessed by the user who created them or an admin
     match /orders/{orderId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read, update: if request.auth != null && 
+                          (request.resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
       allow create: if request.auth != null;
     }
 
-    // Allow anyone to read products
-    match /products/{productId} {
-        allow read: if true;
-    }
-
-    // Allow admins to manage coupons
-    match /coupons/{couponId} {
-      allow read, write: if request.auth.token.role == 'admin';
+    // Allow admin full access to specific collections
+    match /users/{userId} {
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
   }
 }

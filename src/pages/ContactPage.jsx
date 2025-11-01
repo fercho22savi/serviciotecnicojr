@@ -1,82 +1,105 @@
-import React from 'react';
-import { Container, Typography, Box, Grid, TextField, Button, Paper } from '@mui/material';
+import React, { useState } from 'react';
+import { Container, Typography, Grid, Paper, TextField, Button, Box, CircularProgress, Icon } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 
-function ContactPage() {
-  const { t } = useTranslation();
+const ContactPage = () => {
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+    });
+    const [loading, setLoading] = useState(false);
 
-  return (
-    <Container maxWidth="lg" sx={{ py: { xs: 4, md: 8 } }}>
-      <Typography variant="h2" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold', mb: 6 }}>
-        {t('contact_page.title')}
-      </Typography>
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
-      <Grid container spacing={5}>
-        {/* Columna de Información de Contacto */}
-        <Grid item xs={12} md={5}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 500 }}>
-                {t('contact_page.get_in_touch')}
-            </Typography>
-            <Typography color="text.secondary" sx={{ mb: 4 }}>
-                {t('contact_page.form_intro')}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <PhoneIcon color="primary" sx={{ mr: 2 }} />
-                <Typography>+1 (555) 123-4567</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <EmailIcon color="primary" sx={{ mr: 2 }} />
-                <Typography>soporte@tutienda.com</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <LocationOnIcon color="primary" sx={{ mr: 2 }} />
-                <Typography>123 Calle Falsa, Springfield, SP 12345</Typography>
-            </Box>
-        </Grid>
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        // Basic validation
+        if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+            toast.error("Por favor, completa todos los campos.");
+            return;
+        }
 
-        {/* Columna del Formulario */}
-        <Grid item xs={12} md={7}>
-            <Paper sx={{ p: { xs: 3, md: 4 }, borderRadius: '12px' }}>
-                <Box component="form" noValidate autoComplete="off">
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6}>
-                            <TextField required id="firstName" name="firstName" label={t('contact_page.form.first_name')} fullWidth />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <TextField required id="lastName" name="lastName" label={t('contact_page.form.last_name')} fullWidth />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField required id="email" name="email" label={t('contact_page.form.email')} type="email" fullWidth />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField required id="subject" name="subject" label={t('contact_page.form.subject')} fullWidth />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                required
-                                id="message"
-                                name="message"
-                                label={t('contact_page.form.message')}
-                                fullWidth
-                                multiline
-                                rows={5}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Button type="submit" variant="contained" size="large" fullWidth>
-                                {t('contact_page.form.send_button')}
-                            </Button>
-                        </Grid>
+        setLoading(true);
+        // Simulate a network request
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        console.log("Contact Form Data:", formData);
+        setLoading(false);
+        toast.success("¡Gracias por tu mensaje! Nos pondremos en contacto contigo pronto.");
+
+        // Reset form
+        setFormData({ name: '', email: '', subject: '', message: '' });
+    };
+
+    return (
+        <Container maxWidth="lg" sx={{ my: 8 }}>
+            <Paper sx={{ p: { xs: 3, md: 6 }, borderRadius: '16px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
+                <Grid container spacing={6}>
+                    {/* Contact Info Section */}
+                    <Grid item xs={12} md={5}>
+                        <Typography variant="h4" fontWeight="bold" gutterBottom>Contáctanos</Typography>
+                        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                            ¿Tienes alguna pregunta o necesitas ayuda? Completa el formulario y nuestro equipo te responderá lo antes posible.
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Icon component={EmailIcon} sx={{ mr: 2, color: 'primary.main' }} />
+                            <Box>
+                                <Typography fontWeight="bold">Correo Electrónico</Typography>
+                                <Typography variant="body2" color="text.secondary">soporte@mitienda.com</Typography>
+                            </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Icon component={PhoneIcon} sx={{ mr: 2, color: 'primary.main' }} />
+                            <Box>
+                                <Typography fontWeight="bold">Teléfono</Typography>
+                                <Typography variant="body2" color="text.secondary">+57 300 123 4567</Typography>
+                            </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                             <Icon component={LocationOnIcon} sx={{ mr: 2, color: 'primary.main' }} />
+                            <Box>
+                                <Typography fontWeight="bold">Ubicación</Typography>
+                                <Typography variant="body2" color="text.secondary">Bogotá, Colombia</Typography>
+                            </Box>
+                        </Box>
                     </Grid>
-                </Box>
+
+                    {/* Contact Form Section */}
+                    <Grid item xs={12} md={7}>
+                        <Box component="form" onSubmit={handleSubmit} noValidate>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} sm={6}>
+                                    <TextField fullWidth required id="name" name="name" label="Nombre Completo" value={formData.name} onChange={handleChange} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <TextField fullWidth required id="email" name="email" type="email" label="Correo Electrónico" value={formData.email} onChange={handleChange} />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <TextField fullWidth required id="subject" name="subject" label="Asunto" value={formData.subject} onChange={handleChange} />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <TextField fullWidth required id="message" name="message" label="Tu Mensaje" multiline rows={6} value={formData.message} onChange={handleChange} />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <Button type="submit" variant="contained" size="large" fullWidth disabled={loading} sx={{ py: 1.5 }}>
+                                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Enviar Mensaje'}
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    </Grid>
+                </Grid>
             </Paper>
-        </Grid>
-      </Grid>
-    </Container>
-  );
-}
+        </Container>
+    );
+};
 
 export default ContactPage;

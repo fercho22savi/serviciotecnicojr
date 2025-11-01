@@ -1,78 +1,117 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { db } from '../firebase/config';
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
 
-// 1. Crear el contexto
-export const WishlistContext = createContext();
+const WishlistContext = createContext();
 
-// Hook para usar el contexto de la lista de deseos
-export const useWishlist = () => {
-    return useContext(WishlistContext);
-};
+export const useWishlist = () => useContext(WishlistContext);
 
-// 2. Crear el proveedor del contexto
 export const WishlistProvider = ({ children }) => {
-    const [wishlistItems, setWishlistItems] = useState([]);
+    const [wishlist, setWishlist] = useState(new Set());
+    const [loading, setLoading] = useState(true);
+    const { currentUser } = useAuth();
 
-    // Cargar la lista de deseos desde localStorage al iniciar
+    // Fetch wishlist from Firestore when user logs in
+    const fetchWishlist = useCallback(async () => {
+        if (!currentUser) {
+            setWishlist(new Set());
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        try {
+            const wishlistColRef = collection(db, 'users', currentUser.uid, 'wishlist');
+            const wishlistSnapshot = await getDocs(wishlistColRef);
+            const productIds = wishlistSnapshot.docs.map(doc => doc.id);
+            setWishlist(new Set(productIds));
+        } catch (error) {
+            console.error("Error fetching wishlist: ", error);
+            toast.error("Could not fetch wishlist.");
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUser]);
+
     useEffect(() => {
-        try {
-            const storedWishlist = localStorage.getItem('wishlist');
-            if (storedWishlist) {
-                setWishlistItems(JSON.parse(storedWishlist));
-            }
-        } catch (error) {
-            console.error("Error al cargar la lista de deseos desde localStorage", error);
-            setWishlistItems([]);
-        }
-    }, []);
+        fetchWishlist();
+    }, [fetchWishlist]);
 
-    // Guardar la lista de deseos en localStorage cada vez que cambie
+    // Clear local wishlist on logout
     useEffect(() => {
-        try {
-            localStorage.setItem('wishlist', JSON.stringify(wishlistItems));
-        } catch (error) {
-            console.error("Error al guardar la lista de deseos en localStorage", error);
+        if (!currentUser) {
+            setWishlist(new Set());
         }
-    }, [wishlistItems]);
+    }, [currentUser]);
 
-    // Añadir o quitar un producto de la lista de deseos
-    const toggleWishlistItem = (product) => {
-        setWishlistItems(prevItems => {
-            const existingItem = prevItems.find(item => item.id === product.id);
-            if (existingItem) {
-                toast.success('Producto eliminado de la lista de deseos');
-                return prevItems.filter(item => item.id !== product.id);
-            } else {
-                toast.success('Producto añadido a la lista de deseos');
-                return [...prevItems, product];
-            }
-        });
-    };
-
-    // Comprobar si un producto está en la lista de deseos
-    const isInWishlist = (productId) => {
-        return wishlistItems.some(item => item.id === productId);
-    };
-
-    // Función para limpiar la lista de deseos (para el logout)
-    const clearWishlist = () => {
-        setWishlistItems([]);
+    const addToWishlist = async (productId) => {
+        if (!currentUser) {
+            toast.error("Please log in to add items to your wishlist.");
+            return;
+        }
         try {
-            localStorage.removeItem('wishlist');
+            // Optimistic UI update: update state before async operation
+            setWishlist(prevWishlist => {
+                if (prevWishlist.has(productId)) return prevWishlist; // Already in wishlist, do nothing
+                // Create a new Set to ensure React detects the state change
+                const newWishlist = new Set(prevWishlist);
+                newWishlist.add(productId);
+                return newWishlist;
+            });
+            await setDoc(doc(db, 'users', currentUser.uid, 'wishlist', productId), { productId });
+            toast.success("Added to wishlist!");
         } catch (error) {
-            console.error("Error al limpiar la lista de deseos en localStorage", error);
+            console.error("Error adding to wishlist: ", error);
+            toast.error("Could not add to wishlist.");
+            // Revert UI on error
+            setWishlist(prev => {
+                const newWishlist = new Set(prev);
+                newWishlist.delete(productId);
+                return newWishlist;
+            });
         }
     };
 
-    // Contar los artículos en la lista de deseos
-    const wishlistItemCount = wishlistItems.length;
+    const removeFromWishlist = async (productId) => {
+        if (!currentUser) return;
+        try {
+            // Optimistic UI update
+            setWishlist(prevWishlist => {
+                if (!prevWishlist.has(productId)) return prevWishlist; // Not in wishlist, do nothing
+                // Create a new Set for re-render
+                const newWishlist = new Set(prevWishlist);
+                newWishlist.delete(productId);
+                return newWishlist;
+            });
+            await deleteDoc(doc(db, 'users', currentUser.uid, 'wishlist', productId));
+            toast.success("Removed from wishlist!");
+        } catch (error) {
+            console.error("Error removing from wishlist: ", error);
+            toast.error("Could not remove from wishlist.");
+            // Revert UI on error
+            setWishlist(prev => {
+                const newWishlist = new Set(prev);
+                newWishlist.add(productId);
+                return newWishlist;
+            });
+        }
+    };
+    
+    // Single handler for toggling an item
+    const handleWishlist = (productId) => {
+        if (wishlist.has(productId)) {
+            removeFromWishlist(productId);
+        } else {
+            addToWishlist(productId);
+        }
+    };
 
     const value = {
-        wishlistItems,
-        toggleWishlistItem,
-        isInWishlist,
-        wishlistItemCount,
-        clearWishlist // <-- Exportar la nueva función
+        wishlist,
+        loading,
+        handleWishlist,
+        itemCount: wishlist.size
     };
 
     return (

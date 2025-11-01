@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AppBar, Toolbar, Typography, Badge, IconButton, Box, Button, Avatar, Menu, MenuItem, 
-  ListItemIcon, Divider, TextField, InputAdornment, Tooltip, Select, FormControl, Container
+  ListItemIcon, Divider, TextField, InputAdornment, Tooltip, Container
 } from '@mui/material';
 import {
   ShoppingCart, FavoriteBorder, AccountCircle, Logout, Search, Store, Storefront, Dashboard, 
@@ -11,16 +11,18 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 
-// Categories are passed as a prop from App.jsx now
-const Header = ({ setSearchTerm, setSelectedCategory, cartItemCount, wishlistItemCount }) => {
+const Header = () => {
   const { t } = useTranslation();
   const { currentUser, isAdmin, logout } = useAuth();
   const { mode, toggleTheme } = useTheme();
+  const { cartItemCount } = useCart();
+  const { itemCount: wishlistItemCount } = useWishlist();
   
   const [anchorEl, setAnchorEl] = useState(null);
-  const [localSearch, setLocalSearch] = useState('');
-  const [localCategory, setLocalCategory] = useState('Todas');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const navigate = useNavigate();
   const open = Boolean(anchorEl);
@@ -43,16 +45,12 @@ const Header = ({ setSearchTerm, setSelectedCategory, cartItemCount, wishlistIte
     navigate('/');
   };
   
-  const handleSearchChange = (event) => {
-    const newSearchTerm = event.target.value;
-    setLocalSearch(newSearchTerm);
-    setSearchTerm(newSearchTerm); // Update parent state on every keystroke
-  };
-  
-  const handleCategoryChange = (event) => {
-    const newCategory = event.target.value;
-    setLocalCategory(newCategory);
-    setSelectedCategory(newCategory); // Update parent state
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm('');
+    }
   };
 
   return (
@@ -70,26 +68,15 @@ const Header = ({ setSearchTerm, setSelectedCategory, cartItemCount, wishlistIte
             MiTienda
           </Typography>
 
-          {/* Search and category filters */}
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1, maxWidth: 600 }}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <Select value={localCategory} onChange={handleCategoryChange} displayEmpty variant="outlined" sx={{ borderRadius: '25px' }}>
-                <MenuItem value="Todas"><em>Todas las categorías</em></MenuItem>
-                <MenuItem value="Portátiles">Portátiles</MenuItem>
-                <MenuItem value="Smartphones">Smartphones</MenuItem>
-                <MenuItem value="Accesorios">Accesorios</MenuItem>
-                <MenuItem value="Gaming">Gaming</MenuItem>
-                <MenuItem value="Oficina">Oficina</MenuItem>
-              </Select>
-            </FormControl>
+          {/* Search form */}
+          <Box component="form" onSubmit={handleSearchSubmit} sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, maxWidth: 500 }}>
             <TextField
               fullWidth
               variant="outlined"
               size="small"
               placeholder={t('header.searchPlaceholder')}
-              value={localSearch}
-              onChange={handleSearchChange}
-              onKeyPress={(e) => e.key === 'Enter' && navigate(`/products`)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '25px' } }}
               InputProps={{
                 startAdornment: <InputAdornment position="start"><Search color="action" /></InputAdornment>,

@@ -9,27 +9,26 @@ import {
     signInWithPopup,
     sendPasswordResetEmail,
     setPersistence,
-    browserSessionPersistence, // Sesión dura hasta que se cierra el navegador
-    browserLocalPersistence    // Sesión persiste incluso después de cerrar el navegador
+    browserSessionPersistence, 
+    browserLocalPersistence    
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { CircularProgress, Box } from '@mui/material';
-// Import hooks from other contexts
-import { useCart } from './CartContext';
-import { useWishlist } from './WishlistContext';
 
 export const AuthContext = createContext();
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};
 
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
-    
-    // Get cleanup functions from other contexts
-    const { clearCart } = useCart();
-    const { clearWishlist } = useWishlist();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -63,18 +62,8 @@ export const AuthProvider = ({ children }) => {
         return signInWithPopup(auth, provider);
     };
 
-    const logout = async () => {
-        try {
-            await signOut(auth);
-            // Clear user-specific data upon logout
-            clearCart();
-            clearWishlist();
-        } catch (error) {
-            console.error("Error during logout:", error);
-            // Still attempt to clear local data even if signOut fails
-            clearCart();
-            clearWishlist();
-        }
+    const logout = () => {
+        return signOut(auth);
     };
 
     const resetPassword = (email) => {
@@ -90,18 +79,16 @@ export const AuthProvider = ({ children }) => {
         logout,
         resetPassword
     };
-
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-
+    
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                    <CircularProgress />
+                </Box>
+            ) : ( 
+                children 
+            )}
         </AuthContext.Provider>
     );
 };

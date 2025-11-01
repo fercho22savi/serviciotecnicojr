@@ -8,7 +8,6 @@ import {
   Paper,
   Box,
   IconButton,
-  TextField,
   Divider,
   Link
 } from '@mui/material';
@@ -16,34 +15,23 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import ImageWithFallback from '../components/ImageWithFallback'; // Import the new component
+import ImageWithFallback from '../components/ImageWithFallback';
+import { useCart } from '../context/CartContext';
 
-// Note: The main checkout logic has been moved to the Checkout.jsx page.
-// This component now focuses only on displaying and managing the cart items.
-
-function Cart({ cart, setCart }) {
+function Cart() {
   const navigate = useNavigate();
+  const { cart, updateQuantity, removeFromCart } = useCart();
 
-  const handleQuantityChange = (productId, newQuantity) => {
-    // Prevent quantity from going below 1
-    const quantity = Math.max(1, newQuantity);
-    setCart(cart.map(item => 
-      item.id === productId ? { ...item, quantity } : item
-    ));
-  };
+  // Convert the Map to an array of items
+  const cartItems = Array.from(cart.values());
 
-  const handleRemoveItem = (productId) => {
-    setCart(cart.filter(item => item.id !== productId));
-  };
-
-  // Navigate to the dedicated checkout page
   const handleCheckout = () => {
     navigate('/checkout');
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  if (cart.length === 0) {
+  if (cartItems.length === 0) {
     return (
       <Container sx={{ textAlign: 'center', py: 8 }}>
         <ShoppingCartIcon sx={{ fontSize: 80, color: 'text.secondary' }} />
@@ -67,7 +55,7 @@ function Cart({ cart, setCart }) {
       </Typography>
       <Grid container spacing={4}>
         <Grid item xs={12} md={8}>
-          {cart.map((item) => (
+          {cartItems.map((item) => (
             <Paper key={item.id} elevation={2} sx={{ display: 'flex', mb: 2, p: 2, alignItems: 'center' }}>
               <ImageWithFallback 
                 src={item.images && item.images.length > 0 ? item.images[0] : ''}
@@ -81,14 +69,14 @@ function Cart({ cart, setCart }) {
                 <Typography color="text.secondary">${new Intl.NumberFormat('es-CO').format(item.price)}</Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <IconButton size="small" onClick={() => handleQuantityChange(item.id, item.quantity - 1)}><RemoveIcon /></IconButton>
+                <IconButton size="small" onClick={() => updateQuantity(item.id, item.quantity - 1)}><RemoveIcon /></IconButton>
                 <Typography sx={{ width: 40, textAlign: 'center' }}>{item.quantity}</Typography>
-                <IconButton size="small" onClick={() => handleQuantityChange(item.id, item.quantity + 1)}><AddIcon /></IconButton>
+                <IconButton size="small" onClick={() => updateQuantity(item.id, item.quantity + 1)}><AddIcon /></IconButton>
               </Box>
               <Typography variant="h6" sx={{ width: 100, textAlign: 'right', fontWeight: 'bold' }}>
                   ${new Intl.NumberFormat('es-CO').format(item.price * item.quantity)}
               </Typography>
-              <IconButton color="error" onClick={() => handleRemoveItem(item.id)} sx={{ ml: 2 }}>
+              <IconButton color="error" onClick={() => removeFromCart(item.id)} sx={{ ml: 2 }}>
                 <DeleteIcon />
               </IconButton>
             </Paper>
