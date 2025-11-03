@@ -1,7 +1,6 @@
 
 import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
 import App from './App';
@@ -24,18 +23,16 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Suspense fallback={<GlobalSuspenseFallback />}>
       <CustomThemeProvider> {/* Restore the custom theme provider */}
-        <BrowserRouter>
-          <AuthProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <RecentlyViewedProvider>
-                  <App />
-                  <Toaster position="bottom-right" reverseOrder={false} />
-                </RecentlyViewedProvider>
-              </WishlistProvider>
-            </CartProvider>
-          </AuthProvider>
-        </BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <RecentlyViewedProvider>
+                <App />
+                <Toaster position="bottom-right" reverseOrder={false} />
+              </RecentlyViewedProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
       </CustomThemeProvider>
     </Suspense>
   </React.StrictMode>

@@ -1,7 +1,8 @@
-
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, Suspense } from 'react';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { Typography } from '@mui/material';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 
 // Firebase
 import { auth, db } from './firebase/config';
@@ -9,7 +10,8 @@ import { doc, getDoc } from 'firebase/firestore';
 
 // Context
 import { useAuth } from './context/AuthContext';
-import { RecentlyViewedProvider } from './context/RecentlyViewedContext'; // <-- Importado
+import { RecentlyViewedProvider } from './context/RecentlyViewedContext';
+import { CustomThemeProvider } from './context/ThemeContext';
 
 // Layouts
 import MainLayout from './components/MainLayout';
@@ -17,111 +19,146 @@ import AccountLayout from './components/AccountLayout';
 import AdminLayout from './components/AdminLayout';
 
 // Public Pages
-import HomePage from './pages/HomePage.jsx';
-import ProductsPage from './pages/ProductsPage.jsx';
-import ProductDetail from './pages/ProductDetail.jsx';
-import AboutPage from './pages/AboutPage.jsx';
-import ContactPage from './pages/ContactPage.jsx';
-import LoginPage from './pages/Login.jsx';
-import RegisterPage from './pages/SignUp.jsx';
-import CartPage from './pages/Cart.jsx';
-import CheckoutPage from './pages/Checkout.jsx';
-import OrderConfirmationPage from './pages/OrderConfirmationPage.jsx';
+const HomePage = React.lazy(() => import('./pages/HomePage.jsx'));
+const ProductsPage = React.lazy(() => import('./pages/ProductsPage.jsx'));
+const ProductDetail = React.lazy(() => import('./pages/ProductDetail.jsx'));
+const AboutPage = React.lazy(() => import('./pages/AboutPage.jsx'));
+const ContactPage = React.lazy(() => import('./pages/ContactPage.jsx'));
+const LoginPage = React.lazy(() => import('./pages/Login.jsx'));
+const RegisterPage = React.lazy(() => import('./pages/SignUp.jsx'));
+const CartPage = React.lazy(() => import('./pages/Cart.jsx'));
+const CheckoutForm = React.lazy(() => import('./pages/CheckoutForm.jsx'));
+const OrderConfirmationPage = React.lazy(() => import('./pages/OrderConfirmationPage.jsx'));
+const WishlistPage = React.lazy(() => import('./pages/Wishlist.jsx'));
 
 // Account Pages
-import AccountDashboard from './pages/account/AccountDashboard.jsx';
-import OrderHistory from './pages/account/Orders.jsx';
-import OrderDetail from './pages/account/OrderDetail.jsx';
-import WishlistPage from './pages/account/WishlistPage.jsx';
-import RecentlyViewedPage from './pages/account/RecentlyViewedPage.jsx';
-import UserProfile from './pages/UserProfile.jsx';
+const AccountDashboard = React.lazy(() => import('./pages/account/AccountDashboard.jsx'));
+const OrderHistory = React.lazy(() => import('./pages/account/Orders.jsx'));
+const OrderDetail = React.lazy(() => import('./pages/account/OrderDetail.jsx'));
+const RecentlyViewedPage = React.lazy(() => import('./pages/account/RecentlyViewedPage.jsx'));
+const UserProfile = React.lazy(() => import('./pages/account/Profile.jsx'));
+const SettingsPage = React.lazy(() => import('./pages/account/SettingsPage.jsx'));
 
 // Admin Pages
-import AdminDashboard from './pages/admin/Dashboard.jsx';
-import ProductManagement from './pages/admin/ProductManagement.jsx';
-import CategoryManagement from './pages/admin/CategoryManagement.jsx';
-import OrderManagement from './pages/admin/OrderManagement.jsx';
-import OrderDetailPage from './pages/admin/OrderDetailPage.jsx';
-import UserManagement from './pages/admin/UserManagementPage.jsx';
-import CouponManagement from './pages/admin/CouponManagement.jsx';
-import ReviewManagementPage from './pages/admin/ReviewManagementPage.jsx';
+const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard.jsx'));
+const ProductManagement = React.lazy(() => import('./pages/admin/ProductManagement.jsx'));
+const CategoryManagement = React.lazy(() => import('./pages/admin/CategoryManagement.jsx'));
+const OrderManagement = React.lazy(() => import('./pages/admin/OrderManagement.jsx'));
+const OrderDetailPage = React.lazy(() => import('./pages/admin/OrderDetailPage.jsx'));
+const UserManagement = React.lazy(() => import('./pages/admin/UserManagementPage.jsx'));
+const CouponManagement = React.lazy(() => import('./pages/admin/CouponManagement.jsx'));
+const ReviewManagementPage = React.lazy(() => import('./pages/admin/ReviewManagementPage.jsx'));
+
+// Stripe Promise
+const stripePromise = loadStripe('pk_test_51SPG2ACheyYwcT4lBqCBmxCJvvGALzBrQOzkVvtTsdcX19vxrlWSE6Fnyr6iVHvFydne9Y0kAmaFwjahivQLlizk00sccB4WuB');
 
 const App = () => {
-  const { currentUser, loading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingAdmin, setCheckingAdmin] = useState(true);
+    const { currentUser, loading } = useAuth();
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [checkingAdmin, setCheckingAdmin] = useState(true);
 
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (currentUser) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          setIsAdmin(userDoc.exists() && userDoc.data().role === 'admin');
-        } catch (error) {
-          console.error("Error checking admin status:", error);
-          setIsAdmin(false);
-        }
-      }
-      setCheckingAdmin(false);
-    };
-    if (!loading) checkAdminStatus();
-  }, [currentUser, loading]);
+    useEffect(() => {
+        const checkAdminStatus = async () => {
+            if (currentUser) {
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                    setIsAdmin(userDoc.exists() && userDoc.data().role === 'admin');
+                } catch (error) {
+                    console.error("Error checking admin status:", error);
+                    setIsAdmin(false);
+                }
+            }
+            setCheckingAdmin(false);
+        };
+        if (!loading) checkAdminStatus();
+    }, [currentUser, loading]);
 
-  if (loading || checkingAdmin) {
-    return <div>Cargando...</div>; // Replace with a proper spinner component
-  }
+    const AdminRoute = ({ children }) => (isAdmin ? children : <Navigate to="/" />);
+    const AuthenticatedRoute = ({ children }) => (currentUser ? children : <Navigate to="/login" />);
 
-  const AdminRoute = ({ children }) => (isAdmin ? children : <Navigate to="/" />);
-  const AuthenticatedRoute = ({ children }) => (currentUser ? children : <Navigate to="/login" />);
+    if (loading || checkingAdmin) {
+        return <div>Cargando aplicación...</div>; // Consider a global spinner
+    }
 
-  return (
-    <RecentlyViewedProvider> { /* <-- Envuelve la aplicación */}
-      <Routes>
-        {/* Main Layout for public pages */}
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/product/:productId" element={<ProductDetail />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<AuthenticatedRoute><CheckoutPage /></AuthenticatedRoute>} />
-          <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
-        </Route>
+    const router = createBrowserRouter([
+        {
+            element: <MainLayout />,
+            children: [
+                { path: "/", element: <HomePage /> },
+                { path: "/products", element: <ProductsPage /> },
+                { path: "/product/:productId", element: <ProductDetail /> },
+                { path: "/about", element: <AboutPage /> },
+                { path: "/contact", element: <ContactPage /> },
+                { path: "/cart", element: <CartPage /> },
+                {
+                    path: "/checkout",
+                    element: (
+                        <AuthenticatedRoute>
+                            <Elements stripe={stripePromise}><CheckoutForm /></Elements>
+                        </AuthenticatedRoute>
+                    ),
+                },
+                { path: "/order-confirmation/:orderId", element: <OrderConfirmationPage /> },
+            ],
+        },
+        {
+            path: "/login",
+            element: <LoginPage />,
+        },
+        {
+            path: "/register",
+            element: <RegisterPage />,
+        },
+        {
+            path: "/account",
+            element: <AuthenticatedRoute><AccountLayout /></AuthenticatedRoute>,
+            children: [
+                { index: true, element: <Navigate to="dashboard" replace /> },
+                { path: "dashboard", element: <AccountDashboard /> },
+                { path: "orders", element: <OrderHistory /> },
+                { path: "orders/:orderId", element: <OrderDetail /> },
+                { path: "wishlist", element: <WishlistPage /> },
+                { path: "profile", element: <UserProfile /> },
+                { path: "recently-viewed", element: <RecentlyViewedPage /> },
+                { path: "settings", element: <SettingsPage /> },
+            ],
+        },
+        {
+            path: "/admin",
+            element: <AdminRoute><AdminLayout /></AdminRoute>,
+            children: [
+                { index: true, element: <Navigate to="dashboard" replace /> },
+                { path: "dashboard", element: <AdminDashboard /> },
+                { path: "products", element: <ProductManagement /> },
+                { path: "categories", element: <CategoryManagement /> },
+                { path: "orders", element: <OrderManagement /> },
+                { path: "orders/:orderId", element: <OrderDetailPage /> },
+                { path: "users", element: <UserManagement /> },
+                { path: "coupons", element: <CouponManagement /> },
+                { path: "reviews", element: <ReviewManagementPage /> },
+            ],
+        },
+        {
+            path: "*",
+            element: <Typography variant="h4" align="center" sx={{ mt: 5 }}>404 - Página no encontrada</Typography>,
+        },
+    ], {
+        // Activating Future Flags for React Router v7 compatibility
+        future: {
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+        },
+    });
 
-        {/* Standalone pages */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-
-        {/* Account Layout */}
-        <Route path="/account" element={<AuthenticatedRoute><AccountLayout /></AuthenticatedRoute>}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<AccountDashboard />} />
-            <Route path="orders" element={<OrderHistory />} />
-            <Route path="orders/:orderId" element={<OrderDetail />} />
-            <Route path="wishlist" element={<WishlistPage />} />
-            <Route path="profile" element={<UserProfile />} />
-            <Route path="recently-viewed" element={<RecentlyViewedPage />} />
-        </Route>
-
-        {/* Admin Layout */}
-        <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="products" element={<ProductManagement />} />
-            <Route path="categories" element={<CategoryManagement />} />
-            <Route path="orders" element={<OrderManagement />} />
-            <Route path="orders/:orderId" element={<OrderDetailPage />} />
-            <Route path="users" element={<UserManagement />} />
-            <Route path="coupons" element={<CouponManagement />} />
-            <Route path="reviews" element={<ReviewManagementPage />} />
-        </Route>
-
-        {/* Not Found Page */}
-        <Route path="*" element={<Typography variant="h4" align="center" sx={{ mt: 5 }}>404 - Página no encontrada</Typography>} />
-      </Routes>
-    </RecentlyViewedProvider>
-  );
+    return (
+        <CustomThemeProvider>
+            <RecentlyViewedProvider>
+                <Suspense fallback={<div>Cargando página...</div>}>
+                    <RouterProvider router={router} />
+                </Suspense>
+            </RecentlyViewedProvider>
+        </CustomThemeProvider>
+    );
 };
 
 export default App;

@@ -2,14 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useRecentlyViewed } from '../../context/RecentlyViewedContext';
 import { db } from '../../firebase/config';
 import { doc, getDoc, collection, getDocs, query, where, documentId } from 'firebase/firestore';
-import { Typography, Grid, Box, CircularProgress, Paper, Alert } from '@mui/material';
+import { Typography, Grid, Box, CircularProgress, Paper, Alert, Link } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import ProductCard from '../../components/ProductCard';
 
 const RecentlyViewedPage = () => {
-  const { recentlyViewedIds } = useRecentlyViewed();
+  const { recentlyViewedIds, forceReload } = useRecentlyViewed();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Force a reload from localStorage every time the page is focused
+  useEffect(() => {
+    const handleFocus = () => {
+        forceReload();
+    };
+    window.addEventListener('focus', handleFocus);
+    // Also reload on initial mount
+    forceReload(); 
+    return () => {
+        window.removeEventListener('focus', handleFocus);
+    };
+  }, [forceReload]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -21,7 +35,6 @@ const RecentlyViewedPage = () => {
         setLoading(true);
         setError(null);
         try {
-            // Firestore 'in' query can take up to 30 elements. If we have more, we split it.
             const productChunks = [];
             for (let i = 0; i < recentlyViewedIds.length; i += 30) {
                 productChunks.push(recentlyViewedIds.slice(i, i + 30));
@@ -41,10 +54,9 @@ const RecentlyViewedPage = () => {
                 });
             });
 
-            // The order from Firestore is not guaranteed, so we re-order based on our recentlyViewedIds list.
             const orderedProducts = recentlyViewedIds
                 .map(id => fetchedProducts.find(p => p.id === id))
-                .filter(p => p); // Filter out any undefined products that might not exist anymore
+                .filter(p => p); 
 
             setProducts(orderedProducts);
 
@@ -84,7 +96,7 @@ const RecentlyViewedPage = () => {
         </Grid>
       ) : (
         <Alert severity="info">
-            Aún no has visto ningún producto. ¡Empieza a explorar nuestro catálogo para ver algo aquí!
+            Aún no has visto ningún producto. ¡Empieza a explorar nuestro <Link component={RouterLink} to="/products">catálogo</Link> para ver algo aquí!
         </Alert>
       )}
     </Paper>

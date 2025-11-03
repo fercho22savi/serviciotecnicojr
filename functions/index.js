@@ -1,33 +1,64 @@
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const stripe = require("stripe")(functions.config().stripe.secret);
+const cors = require("cors")({ origin: true });
 
 admin.initializeApp();
 
-// ✅ Asignar rol de administrador a un usuario
-exports.setAdminRole = functions.https.onCall(async (data, context) => {
-  // Verificar que quien llama sea administrador
-  // Esto es CRUCIAL para la seguridad. Solo los admins pueden asignar roles.
-  if (context.auth?.token?.role !== "admin") {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Solo los administradores pueden cambiar roles."
-    );
-  }
+exports.createPaymentIntent = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    const { amount, currency } = req.body;
 
-  // Obtener el UID del usuario y el rol a asignar desde la app cliente
-  const { uid, role } = data;
+    if (!amount || !currency) {
+      return res.status(400).send({ error: "Missing 'amount' and 'currency' in request body." });
+    }
 
-  try {
-    // Usar el Admin SDK para establecer la "custom claim" (rol) en el usuario
-    await admin.auth().setCustomUserClaims(uid, { role });
-    // Devolver un mensaje de éxito
-    return { message: `Rol '${role}' asignado correctamente al usuario ${uid}` };
-  } catch (error) {
-    // Manejar cualquier error que pueda ocurrir
-    throw new functions.https.HttpsError(
-      "unknown", 
-      "Error al asignar el rol.", 
-      error
-    );
-  }
+    try {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency,
+      });
+
+      return res.status(200).send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error) {
+      console.error("Error creating PaymentIntent:", error);
+      return res.status(500).send({ error: "An error occurred while creating the PaymentIntent." });
+    }
+  });
+});
+
+exports.applyCoupon = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    const { couponCode } = req.body;
+
+    if (!couponCode) {
+      return res.status(400).send({ error: "Missing 'couponCode' in request body." });
+    }
+
+    try {
+      // Corrected query: Search for the coupon by the 'code' field
+      const couponsRef = admin.firestore().collection("coupons");
+      const snapshot = await couponsRef.where("code", "==", couponCode).limit(1).get();
+
+      if (snapshot.empty) {
+        return res.status(404).send({ error: "El código de cupón no es válido." });
+      }
+
+      const couponDoc = snapshot.docs[0];
+
+      // Optionally, you can add more validation logic here, e.g., check isActive flag, expiry date, etc.
+      if (!couponDoc.data().isActive) {
+        return res.status(400).send({ error: "Este cupón ya no está activo." });
+      }
+
+      return res.status(200).send({ data: couponDoc.data() });
+
+    } catch (error) {
+      console.error("Error applying coupon:", error);
+      return res.status(500).send({ error: "Ocurrió un error al aplicar el cupón." });
+    }
+  });
 });

@@ -20,6 +20,7 @@ import {
   FormControl,
   InputLabel
 } from '@mui/material';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -84,7 +85,13 @@ const OrderDetailPage = () => {
 
   return (
     <Container maxWidth="md" sx={{ my: 4 }}>
-      <Button onClick={() => navigate(-1)} sx={{ mb: 2 }}>Volver a Pedidos</Button>
+        <Button 
+            startIcon={<ArrowBackIosNewIcon />} 
+            onClick={() => navigate(-1)} 
+            sx={{ mb: 2, fontWeight: 'bold' }}
+        >
+            Volver a Pedidos
+        </Button>
       <Paper sx={{ p: 4 }}>
         <Typography variant="h5" gutterBottom>Detalle del Pedido #{order.id.substring(0, 6).toUpperCase()}</Typography>
         <Divider sx={{ my: 2 }} />

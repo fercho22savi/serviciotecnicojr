@@ -43,7 +43,7 @@ const ProductCard = ({ product }) => {
 
     const handleWishlistClick = (e) => {
         e.stopPropagation();
-        handleWishlist(product);
+        handleWishlist(id);
     };
 
     return (
@@ -142,7 +142,20 @@ const ProductCard = ({ product }) => {
                     {name}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                    <Rating value={averageRating} precision={0.5} readOnly size="small"/>
+                    <Rating 
+                        value={averageRating} 
+                        precision={0.5} 
+                        readOnly 
+                        size="small"
+                        sx={{
+                            '& .MuiRating-iconFilled': {
+                                color: '#ffc107', // Gold color for filled stars
+                            },
+                            '& .MuiRating-iconEmpty': {
+                                color: '#0000003B', // Light grey for empty stars
+                            }
+                        }}
+                    />
                     <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>({numReviews})</Typography>
                 </Box>
                 <Box>

@@ -1,112 +1,138 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Button, Box, Grid, CircularProgress } from '@mui/material';
+import { useWishlist } from '../context/WishlistContext';
+import { db } from '../firebase/config';
+import { collection, query, where, getDocs, documentId } from 'firebase/firestore';
+import { Typography, Grid, Box, CircularProgress, Paper, Alert, Link, Button } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { FavoriteBorder } from '@mui/icons-material';
-import { collection, getDocs, query, where, documentId } from 'firebase/firestore';
-
-import { useWishlist } from '../context/WishlistContext';
-import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase/config';
 import ProductCard from '../components/ProductCard';
-import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 const WishlistPage = () => {
-    const { currentUser } = useAuth();
-    const { wishlist, loading: wishlistLoading } = useWishlist();
-    const [products, setProducts] = useState([]);
-    const [productsLoading, setProductsLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const { wishlist, loading: wishlistLoading } = useWishlist();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchWishlistProducts = async () => {
-            if (!currentUser || wishlist.size === 0) {
-                setProducts([]);
-                setProductsLoading(false);
-                return;
-            }
+  useEffect(() => {
+    const fetchWishlistProducts = async () => {
+      // Wait for the initial wishlist from context to be loaded, and ensure the user is logged in.
+      if (wishlistLoading || !currentUser) {
+        setProducts([]);
+        return;
+      }
+      // If wishlist is empty, no need to query.
+      if (wishlist.size === 0) {
+        setProducts([]);
+        return;
+      }
 
-            setProductsLoading(true);
-            try {
-                const productIds = Array.from(wishlist);
-                const productsRef = collection(db, 'products');
-                // Firestore 'in' query supports up to 10 items. For more, multiple queries would be needed.
-                const q = query(productsRef, where(documentId(), 'in', productIds));
-                const querySnapshot = await getDocs(q);
-                const wishlistProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setProducts(wishlistProducts);
-            } catch (error) {
-                console.error("Error fetching wishlist products: ", error);
-                toast.error("Failed to load wishlist items.");
-            }
-            setProductsLoading(false);
-        };
-
-        // We only fetch products if the initial wishlist loading is done.
-        if (!wishlistLoading) {
-            fetchWishlistProducts();
+      setLoading(true);
+      setError(null);
+      try {
+        const wishlistIds = Array.from(wishlist);
+        // Firestore 'in' query is limited. Chunk the IDs into arrays of 30.
+        const chunks = [];
+        for (let i = 0; i < wishlistIds.length; i += 30) {
+          chunks.push(wishlistIds.slice(i, i + 30));
         }
 
-    }, [wishlist, currentUser, wishlistLoading]);
+        const productPromises = chunks.map(chunk => {
+          const productsQuery = query(collection(db, 'products'), where(documentId(), 'in', chunk));
+          return getDocs(productsQuery);
+        });
 
-    const isLoading = wishlistLoading || productsLoading;
+        const querySnapshots = await Promise.all(productPromises);
 
-    // User not logged in
+        const fetchedProducts = [];
+        querySnapshots.forEach(snapshot => {
+          snapshot.forEach(doc => {
+            fetchedProducts.push({ id: doc.id, ...doc.data() });
+          });
+        });
+
+        setProducts(fetchedProducts);
+
+      } catch (err) {
+        console.error("Error fetching wishlist products:", err);
+        setError("No se pudieron cargar los productos de tu lista de deseos.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWishlistProducts();
+  }, [wishlist, wishlistLoading, currentUser]);
+
+  const renderContent = () => {
+    // While context is loading user/wishlist data or we are fetching products
+    if (loading || wishlistLoading) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if (error) {
+      return <Alert severity="error">{error}</Alert>;
+    }
+
+    // User is logged out
     if (!currentUser) {
-        return (
-            <Box sx={{ textAlign: 'center', mt: 8, p: 4 }}>
-                <FavoriteBorder sx={{ fontSize: 80, color: 'grey.400' }} />
-                <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold' }}>
-                    Inicia sesión para ver tu lista de deseos
-                </Typography>
-                <Typography color="text.secondary" sx={{ mb: 3 }}>
-                    Guarda tus productos favoritos para no perderlos de vista.
-                </Typography>
-                <Button component={RouterLink} to="/login" variant="contained">
-                    Iniciar Sesión
-                </Button>
-            </Box>
-        );
+      return (
+        <Alert severity="info" action={
+          <Button component={RouterLink} to="/login" color="inherit" size="small">
+            Iniciar Sesión
+          </Button>
+        }>
+          Inicia sesión para ver tu lista de deseos.
+        </Alert>
+      );
     }
-
-    // Loading state
-    if (isLoading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-
-    return (
-        <Container maxWidth="xl" sx={{ my: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="text.primary">
-                Mi Lista de Deseos
+    
+    // Wishlist is empty
+    if (products.length === 0) {
+      return (
+         <Box sx={{ textAlign: 'center', mt: 4, p: 4, border: '2px dashed', borderColor: 'grey.300', borderRadius: 2 }}>
+            <FavoriteBorder sx={{ fontSize: 60, color: 'grey.400' }} />
+            <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold' }}>
+                Tu lista de deseos está vacía
             </Typography>
-            
-            {products.length > 0 ? (
-                <Grid container spacing={3}>
-                    {products.map((product) => (
-                        <Grid item key={product.id} xs={12} sm={6} md={4} lg={3}>
-                            <ProductCard product={product} />
-                        </Grid>
-                    ))}
-                </Grid>
-            ) : (
-                // Wishlist is empty
-                <Box sx={{ textAlign: 'center', mt: 8, p: 4, border: '2px dashed', borderColor: 'grey.300', borderRadius: 2 }}>
-                    <FavoriteBorder sx={{ fontSize: 80, color: 'grey.400' }} />
-                    <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold' }}>
-                        Tu lista de deseos está vacía
-                    </Typography>
-                    <Typography color="text.secondary" sx={{ mb: 3 }}>
-                        Explora el catálogo y pulsa el corazón para guardar tus productos favoritos.
-                    </Typography>
-                    <Button component={RouterLink} to="/products" variant="contained">
-                        Buscar Productos
-                    </Button>
-                </Box>
-            )}
-        </Container>
+            <Typography color="text.secondary" sx={{ mb: 3 }}>
+                Explora el catálogo y pulsa el corazón para guardar tus productos favoritos.
+            </Typography>
+            <Button component={RouterLink} to="/products" variant="contained">
+                Buscar Productos
+            </Button>
+        </Box>
+      );
+    }
+
+    // Display products
+    return (
+      <Grid container spacing={3}>
+        {products.map((product) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+            <ProductCard product={product} />
+          </Grid>
+        ))}
+      </Grid>
     );
+  };
+
+  return (
+    <Paper sx={{ p: { xs: 2, md: 4 } }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Mi Lista de Deseos
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        Tus productos favoritos, guardados en un solo lugar.
+      </Typography>
+      {renderContent()}
+    </Paper>
+  );
 };
 
 export default WishlistPage;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import StoreIcon from '@mui/icons-material/Store';
 import DownloadIcon from '@mui/icons-material/Download';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ImageWithFallback from '../../components/ImageWithFallback';
@@ -18,6 +19,7 @@ import OrderStatusTracker from '../../components/OrderStatusTracker';
 
 const OrderDetail = () => {
     const { orderId } = useParams();
+    const navigate = useNavigate();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -115,6 +117,14 @@ const OrderDetail = () => {
 
     return (
         <Container maxWidth="lg" sx={{ my: 4 }}>
+            <Button 
+                startIcon={<ArrowBackIosNewIcon />} 
+                onClick={() => navigate(-1)} 
+                sx={{ mb: 2, fontWeight: 'bold' }}
+            >
+                Volver al historial
+            </Button>
+
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                  <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>Detalle del Pedido</Typography>
                 <Button variant="contained" startIcon={<DownloadIcon />} onClick={handleExportToPdf}>Exportar a PDF</Button>

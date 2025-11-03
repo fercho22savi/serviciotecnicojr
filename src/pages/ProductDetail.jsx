@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, limit, getDocs, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ import {
   IconButton, CircularProgress, Alert, TextField, Tabs, Tab
 } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import AddIcon from '@mui/icons-material/Add';
@@ -47,10 +48,11 @@ function CustomTabPanel(props) {
 
 function ProductDetail() {
   const { productId } = useParams();
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { addToCart } = useCart();
   const { wishlist, handleWishlist } = useWishlist();
-  const { addProduct } = useRecentlyViewed(); // <-- CORREGIDO
+  const { addProduct } = useRecentlyViewed();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +76,7 @@ function ProductDetail() {
         if (docSnap.exists()) {
           const productData = { id: docSnap.id, ...docSnap.data() };
           setProduct(productData);
-          addProduct(productId); // <-- CORREGIDO
+          addProduct(productId);
         } else {
           setError("Producto no encontrado");
         }
@@ -189,6 +191,14 @@ function ProductDetail() {
   return (
     <Box sx={{ bgcolor: 'background.default' }}>
     <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Button 
+            startIcon={<ArrowBackIosNewIcon />} 
+            onClick={() => navigate(-1)} 
+            sx={{ mb: 3, fontWeight: 'bold' }}
+        >
+            Volver
+        </Button>
+
       <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb" sx={{ mb: 3 }}>
         <Link underline="hover" color="inherit" component={RouterLink} to="/">Inicio</Link>
         <Link underline="hover" color="inherit" component={RouterLink} to="/products">Productos</Link>

@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db, storage } from '../../firebase/config';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { updateProfile } from 'firebase/auth';
+import { updateProfile, sendPasswordResetEmail, getAuth } from 'firebase/auth';
 import {
-    Avatar, Box, Typography, TextField, Button, Grid, CircularProgress, IconButton, Paper, useTheme
+    Avatar, Box, Typography, TextField, Button, Grid, CircularProgress, IconButton, Paper, 
+    useTheme, Card, CardContent, CardActions, Divider
 } from '@mui/material';
 import { PhotoCamera } from '@mui/icons-material';
 import toast from 'react-hot-toast';
@@ -72,7 +73,9 @@ function Profile() {
             const snapshot = await uploadBytes(storageRef, file);
             const photoURL = await getDownloadURL(snapshot.ref);
 
-            await updateProfile(currentUser, { photoURL });
+            const auth = getAuth();
+            await updateProfile(auth.currentUser, { photoURL });
+            
             const userDocRef = doc(db, 'users', currentUser.uid);
             await updateDoc(userDocRef, { photoURL });
 
@@ -99,15 +102,17 @@ function Profile() {
 
         const userDocRef = doc(db, 'users', currentUser.uid);
         const toastId = toast.loading(t('profile.toast.updating'));
+        const auth = getAuth();
 
         try {
             if (profile.displayName !== currentUser.displayName) {
-                await updateProfile(currentUser, { displayName: profile.displayName });
+                await updateProfile(auth.currentUser, { displayName: profile.displayName });
             }
             await updateDoc(userDocRef, { 
                 displayName: profile.displayName, firstName: profile.firstName, lastName: profile.lastName, 
                 phone: profile.phone, birthDate: profile.birthDate 
             }, { merge: true });
+            
             setCurrentUser(prevUser => ({...prevUser, displayName: profile.displayName}));
             toast.success(t('profile.toast.success'), { id: toastId });
         } catch (error) {
@@ -116,8 +121,28 @@ function Profile() {
         }
     };
 
+    const handlePasswordReset = async () => {
+        const auth = getAuth();
+        if (!auth.currentUser) {
+            toast.error("Debes iniciar sesión para hacer esto.");
+            return;
+        }
+        const toastId = toast.loading("Enviando correo de restablecimiento...");
+        try {
+            await sendPasswordResetEmail(auth, auth.currentUser.email);
+            toast.success("¡Correo enviado! Revisa tu bandeja de entrada.", { id: toastId, duration: 6000 });
+        } catch (error) {
+            console.error("Password reset error:", error);
+            toast.error("No se pudo enviar el correo. Inténtalo de nuevo.", { id: toastId });
+        }
+    };
+
     if (loading) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+    }
+
+    if (!currentUser) {
+        return <Alert severity="info">Por favor, inicia sesión para ver tu perfil.</Alert>;
     }
 
     return (
@@ -129,30 +154,15 @@ function Profile() {
                 <Grid container spacing={3} alignItems="center">
                     <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
                          <Box sx={{ position: 'relative', width: 'fit-content' }}>
-                            <Avatar
-                                src={profile.photoURL}
-                                sx={{ width: 128, height: 128, fontSize: '4rem' }}
-                            >
+                            <Avatar src={profile.photoURL} sx={{ width: 128, height: 128, fontSize: '4rem' }}>
                                 {profile.displayName ? profile.displayName.charAt(0).toUpperCase() : ''}
                             </Avatar>
-                            <IconButton
-                                aria-label="upload picture"
-                                component="label"
-                                disabled={uploading}
-                                sx={{
-                                    position: 'absolute',
-                                    bottom: 8,
-                                    right: 8,
-                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                                    color: 'black',
-                                    boxShadow: theme.shadows[3],
-                                    backdropFilter: 'blur(4px)',
+                            <IconButton aria-label="upload picture" component="label" disabled={uploading} sx={{
+                                    position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    color: 'black', boxShadow: theme.shadows[3], backdropFilter: 'blur(4px)',
                                     border: `1px solid ${theme.palette.divider}`,
-                                    '&:hover': {
-                                        backgroundColor: 'rgba(255, 255, 255, 1)',
-                                    }
-                                }}
-                            >
+                                    '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' }
+                                }}>
                                 <input type="file" accept="image/*" hidden onChange={handlePhotoChange} />
                                 {uploading ? <CircularProgress size={24} color="inherit" /> : <PhotoCamera sx={{ fontSize: 24 }}/>}
                             </IconButton>
@@ -185,6 +195,19 @@ function Profile() {
                     </Button>
                 </Box>
             </Box>
+
+            <Divider sx={{ my: 4 }} />
+
+            <Card variant="outlined">
+                <CardContent>
+                    <Typography variant="h6" gutterBottom>Seguridad de la Cuenta</Typography>
+                    <Typography color="text.secondary">Para cambiar tu contraseña, te enviaremos un enlace seguro a tu correo electrónico.</Typography>
+                </CardContent>
+                <CardActions sx={{p: 2}}>
+                    <Button variant="outlined" color="secondary" onClick={handlePasswordReset}>Enviar correo para cambiar contraseña</Button>
+                </CardActions>
+            </Card>
+
         </Paper>
     );
 }

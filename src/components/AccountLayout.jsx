@@ -1,38 +1,54 @@
-
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Container, Grid, Paper, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { Container, Grid, Paper, List, ListItem, ListItemButton, ListItemText, Typography, ListItemIcon } from '@mui/material';
+import {
+    Dashboard as DashboardIcon,
+    ShoppingBag as ShoppingBagIcon,
+    Favorite as FavoriteIcon,
+    AccountCircle as AccountCircleIcon,
+    Visibility as VisibilityIcon,
+    Settings as SettingsIcon,
+} from '@mui/icons-material';
 
 const accountLinks = [
-  { text: 'Dashboard', to: '/account/dashboard' },
-  { text: 'Historial de Pedidos', to: '/account/orders' },
-  { text: 'Lista de Deseos', to: '/account/wishlist' },
-  { text: 'Mi Perfil', to: '/account/profile' },
-  { text: 'Vistos Recientemente', to: '/account/recently-viewed' },
+  { text: 'Dashboard', to: '/account/dashboard', icon: <DashboardIcon /> },
+  { text: 'Historial de Pedidos', to: '/account/orders', icon: <ShoppingBagIcon /> },
+  { text: 'Lista de Deseos', to: '/account/wishlist', icon: <FavoriteIcon /> },
+  { text: 'Mi Perfil', to: '/account/profile', icon: <AccountCircleIcon /> },
+  { text: 'Vistos Recientemente', to: '/account/recently-viewed', icon: <VisibilityIcon /> },
+  { text: 'Configuración', to: '/account/settings', icon: <SettingsIcon /> },
 ];
 
 const AccountLayout = () => {
   const navLinkStyle = ({ isActive }) => ({
-    backgroundColor: isActive ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
+    backgroundColor: isActive ? '#E3F2FD' : 'transparent',
+    color: isActive ? '#0D47A1' : 'inherit',
     '&:hover': {
-      backgroundColor: 'rgba(0, 0, 0, 0.04)'
+      backgroundColor: isActive ? '#BBDEFB' : 'rgba(0, 0, 0, 0.04)'
     },
-    borderRadius: '4px',
-    marginBottom: '4px'
+    '& .MuiListItemIcon-root': {
+        color: isActive ? '#0D47A1' : 'inherit',
+    },
+    borderRadius: '8px',
+    marginBottom: '4px',
+    transition: 'background-color 0.3s, color 0.3s',
   });
 
   return (
     <Container sx={{ my: 4 }}>
       <Grid container spacing={4}>
         <Grid item xs={12} md={3}>
-          <Paper sx={{ p: 2, borderRadius: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ pl: 2 }}>
+          <Paper sx={{ p: 2, borderRadius: 3, boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)' }}>
+            <Typography variant="h6" gutterBottom sx={{ pl: 2, fontWeight: 'bold' }}>
               Mi Cuenta
             </Typography>
             <List component="nav">
               {accountLinks.map((link) => (
                 <ListItem key={link.to} disablePadding>
                   <ListItemButton component={NavLink} to={link.to} sx={navLinkStyle}>
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                        {link.icon}
+                    </ListItemIcon>
                     <ListItemText primary={link.text} />
                   </ListItemButton>
                 </ListItem>
@@ -41,9 +57,8 @@ const AccountLayout = () => {
           </Paper>
         </Grid>
         <Grid item xs={12} md={9}>
-          <Paper sx={{ p: { xs: 2, md: 4 }, borderRadius: 3 }}>
-            <Outlet />
-          </Paper>
+           {/* The Paper component is removed from here to prevent nesting, as pages have their own Paper wrapper */}
+           <Outlet />
         </Grid>
       </Grid>
     </Container>
