@@ -27,25 +27,44 @@
         "follow_us": "Follow Us",
         "copyright": "Copyright © YourStore.com {{year}}. All rights reserved."
     },
-    "preferences": {
-        "title": "Preferences",
-        "subtitle": "Customize your experience in the application.",
-        "notifications": "Notifications",
-        "email_offers": "Email offers and news",
-        "sms_updates": "SMS order updates",
-        "push_notifications": "In-app push notifications",
-        "appearance_language": "Appearance & Language",
-        "theme": "Theme",
-        "light_theme": "Light",
-        "dark_theme": "Dark",
-        "system_theme": "System Default",
-        "language": "Language",
-        "spanish": "Spanish",
-        "english": "English",
-        "save_button": "Save Preferences",
-        "saving_toast": "Saving preferences...",
-        "save_success": "Preferences saved successfully",
-        "save_error": "Error saving preferences"
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Manage your account's appearance, notifications, and security.",
+        "action_alert_prefix": "The functionality for",
+        "action_alert_suffix": "will be implemented soon.",
+        "delete_account_confirm": "Are you sure you want to permanently delete your account? This action cannot be undone.",
+        "delete_account_action": "Delete Account",
+        "change_button": "Change",
+        "export_button": "Export",
+        "appearance": {
+            "title": "Appearance",
+            "language_label": "Language",
+            "dark_mode_label": "Dark Mode",
+            "dark_mode_secondary": "Perfect for nighttime browsing"
+        },
+        "notifications": {
+            "title": "Notifications",
+            "offers_label": "Offers & Promotions",
+            "offers_secondary": "Receive emails with our best discounts",
+            "orders_label": "Order Updates",
+            "orders_secondary": "Get notifications about the status of your purchases"
+        },
+        "security": {
+            "title": "Security & Data",
+            "password_label": "Password",
+            "password_secondary": "It is recommended to update it periodically",
+            "change_password_action": "Change Password",
+            "export_data_label": "Export my data",
+            "export_data_secondary": "Download a file with all your information",
+            "export_data_action": "Export Data"
+        },
+        "danger_zone": {
+            "title": "Danger Zone",
+            "delete_account_label": "Delete Account",
+            "delete_account_secondary": "This action is permanent and cannot be undone.",
+            "delete_account_button": "Delete my account",
+            "delete_warning": "Deleting your account will irreversibly erase your order history, wishlists, and all associated information."
+        }
     },
     "faq_page": {
         "title": "Frequently Asked Questions",
@@ -63,13 +82,13 @@
         "damaged_a": "We are sorry to hear that. Please contact customer support with your order number and photos of the damaged product so we can assist you."
     },
     "account_menu": {
-        "title": "User Panel",
+        "title": "My Account",
+        "dashboard": "Dashboard",
+        "order_history": "Order History",
+        "wishlist": "Wishlist",
         "profile": "My Profile",
-        "orders": "My Orders",
-        "addresses": "Addresses",
-        "payment_methods": "Payment Methods",
-        "security": "Security",
-        "preferences": "Preferences"
+        "recently_viewed": "Recently Viewed",
+        "settings": "Settings"
     },
     "addresses": {
         "title": "My Addresses",
@@ -105,38 +124,62 @@
     },
     "orders": {
         "title": "My Orders",
-        "fetch_error": "Error fetching orders.",
-        "no_orders_title": "You haven't placed any orders yet.",
-        "no_orders_subtitle": "Browse our products and find something you love.",
-        "browse_products_button": "Browse Products",
-        "order_number_label": "Order #",
-        "date_label": "Date",
-        "total_label": "Total",
+        "fetch_error": "Couldn't load your orders.",
+        "login_prompt": "Please log in to see your history.",
+        "no_orders": "You haven't placed any orders yet.",
+        "order_number": "Order #",
+        "date": "Date",
         "status_label": "Status",
-        "view_details_button": "View Details",
+        "total": "Total",
+        "actions": "Actions",
+        "view_details": "View Details",
+        "cancel_button": "Cancel",
+        "cancel_confirm": "Are you sure you want to cancel this order?",
+        "cancel_success": "Order cancelled successfully.",
+        "cancel_error": "Could not cancel the order.",
+        "generating_invoice": "Generating your invoice...",
+        "rows_per_page": "Orders per page:",
+        "close_button": "Close",
+        "download_pdf": "Download PDF",
         "status": {
-            "en_proceso": "Processing",
-            "pagado": "Paid",
-            "en_preparacion": "Preparing",
-            "enviado": "Shipped",
-            "entregado": "Delivered",
-            "cancelado": "Cancelled"
-        },
-        "error_title": "Error Loading Orders",
-        "index_fix_instruction": "Please check the browser console for a link to create the required database index in Firebase.",
-        "search_label": "Search Orders"
+            "processing": "Processing",
+            "completed": "Completed",
+            "cancelled": "Cancelled"
+        }
     },
     "order_detail": {
-        "title": "Order Detail #{{id}}",
-        "title_simple": "Order Detail",
-        "not_found": "Order not found",
-        "date_label": "Date",
-        "total_label": "Total",
+        "title": "Order Details #{{id}}",
+        "title_simple": "Order Details",
+        "invalid_amount": "$0",
         "items_label": "Items",
         "quantity_label": "Quantity",
-        "price_label": "Price",
-        "export_pdf_button": "Export to PDF",
-        "print_button": "Print"
+        "subtotal": "Subtotal",
+        "discount": "Discount",
+        "shipping_cost": "Shipping Cost",
+        "free_shipping": "Free",
+        "total_label": "Total",
+        "shipping_address": "Shipping Address",
+        "payment_method": "Payment Method",
+        "card_ending_in": "Card ending in **** {{last4}}",
+        "brand_label": "Brand"
+    },
+    "invoice": {
+        "title": "INVOICE",
+        "filename": "invoice",
+        "bill_to": "Bill to:",
+        "invoice_number": "Invoice #:",
+        "issue_date": "Issue Date:",
+        "order_status": "Order Status:",
+        "payment_method_card": "Card {{brand}} ending in {{last4}}",
+        "table": {
+            "description": "Description",
+            "quantity": "Qty",
+            "unit_price": "Unit Price",
+            "total": "Total"
+        },
+        "total_due": "TOTAL DUE:",
+        "footer_thanks": "Thank you for your purchase!",
+        "footer_page": "Page"
     },
     "payment_methods": {
         "title": "Payment Methods",

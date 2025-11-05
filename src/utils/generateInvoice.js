@@ -1,21 +1,18 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 
-// Función para generar un slug de texto seguro para nombres de archivo
 const toSlug = (text) => text.toString().toLowerCase()
-    .replace(/\s+/g, '-')       // Reemplaza espacios con -
-    .replace(/[^\w\-]+/g, '')   // Elimina todos los caracteres que no son palabras
-    .replace(/\-\-+/g, '-')     // Reemplaza múltiples - con uno solo
-    .replace(/^-+/, '')          // Recorta - del inicio
-    .replace(/-+$/, '');         // Recorta - del final
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 
-export const generateInvoice = (order) => {
+export const generateInvoice = (order, t, i18n) => {
     const doc = new jsPDF();
 
-    // --- UNIFICACIÓN Y VALIDACIÓN DE DATOS ---
-    // Unifica la estructura de precios para manejar datos antiguos y nuevos.
     const safePricing = {
         subtotal: order.pricing?.subtotal ?? order.subTotal ?? 0,
         shipping: order.pricing?.shipping ?? order.shippingCost ?? 0,
@@ -24,34 +21,31 @@ export const generateInvoice = (order) => {
     };
     const discountAmount = typeof safePricing.discount === 'number' ? safePricing.discount : 0;
 
-    // --- DATOS GLOBALES ---
     const companyLogo = 'https://firebasestorage.googleapis.com/v0/b/serviciotecnicojr-187663-9a086.appspot.com/o/images%2FAPP%2FLOGO.png?alt=media&token=c80337c7-c725-4638-9e55-52467d1c1a9a'; 
     const companyName = 'Servicio Técnico JR';
     const companyAddress = 'Carrera 10 #12-34, Bogotá, Colombia';
-    const invoiceTitle = 'FACTURA DE VENTA';
+    const invoiceTitle = t('invoice.title');
     const currencySymbol = '$';
     
-    // --- Colores y Fuentes ---
     const primaryColor = '#4A90E2';
     const textColor = '#4A4A4A';
     const headerFooterColor = '#F5F5F5';
 
-    // --- Función para formatear moneda ---
+    const activeLocale = i18n.language === 'es' ? es : enUS;
+    const localeString = i18n.language === 'es' ? 'es-CO' : 'en-US';
+
     const formatCurrency = (value) => {
         if (typeof value !== 'number') return 'N/A';
-        return `${currencySymbol}${value.toLocaleString('es-CO')}`;
+        return new Intl.NumberFormat(localeString, { style: 'currency', currency: 'USD' }).format(value);
     };
 
-    // =======================================================================
-    //  ENCABEZADO
-    // =======================================================================
     doc.setFillColor(headerFooterColor);
     doc.rect(0, 0, doc.internal.pageSize.getWidth(), 40, 'F');
     
     try {
         doc.addImage(companyLogo, 'PNG', 15, 12, 25, 16);
     } catch(e) {
-        console.error("Error al cargar el logo en PDF", e);
+        console.error("Error loading PDF logo", e);
         doc.setFontSize(20).setFont('helvetica', 'bold').text(companyName, 15, 25);
     }
 
@@ -60,11 +54,8 @@ export const generateInvoice = (order) => {
     doc.setFontSize(10).setFont('helvetica', 'normal').setTextColor(textColor);
     doc.text(companyAddress, doc.internal.pageSize.getWidth() - 15, 32, { align: 'right' });
 
-    // =======================================================================
-    //  INFORMACIÓN DEL PEDIDO Y CLIENTE
-    // =======================================================================
     const infoStartY = 50;
-    doc.setFontSize(12).setFont('helvetica', 'bold').text('Facturar a:', 15, infoStartY);
+    doc.setFontSize(12).setFont('helvetica', 'bold').text(t('invoice.bill_to'), 15, infoStartY);
 
     const clientInfo = order.shippingAddress;
     doc.setFont('helvetica', 'normal');
@@ -74,9 +65,9 @@ export const generateInvoice = (order) => {
     doc.text(clientInfo?.country || 'N/A', 15, infoStartY + 28);
 
     const invoiceDetails = [
-        ['N° de Factura:', order.orderNumber || order.id.substring(0, 8).toUpperCase()],
-        ['Fecha de Emisión:', order.createdAt?.toDate ? format(order.createdAt.toDate(), "dd 'de' MMMM, yyyy", { locale: es }) : 'N/A'],
-        ['Estado del Pedido:', order.status],
+        [t('invoice.invoice_number'), order.orderNumber || order.id.substring(0, 8).toUpperCase()],
+        [t('invoice.issue_date'), order.createdAt?.toDate ? format(order.createdAt.toDate(), "dd MMMM, yyyy", { locale: activeLocale }) : 'N/A'],
+        [t('invoice.order_status'), t(`orders.status.${order.status.toLowerCase()}`)],
     ];
 
     autoTable(doc, {
@@ -89,10 +80,7 @@ export const generateInvoice = (order) => {
         columnStyles: { 0: { fontStyle: 'bold', halign: 'left' } },
     });
 
-    // =======================================================================
-    //  TABLA DE PRODUCTOS
-    // =======================================================================
-    const tableHeaders = [['Descripción', 'Cantidad', 'Precio Unit.', 'Total']];
+    const tableHeaders = [[t('invoice.table.description'), t('invoice.table.quantity'), t('invoice.table.unit_price'), t('invoice.table.total')]];
     const tableBody = order.items.map(item => [
         item.name,
         item.quantity,
@@ -107,26 +95,23 @@ export const generateInvoice = (order) => {
         theme: 'grid',
         headStyles: { fillColor: primaryColor, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center' },
         columnStyles: { 0: { halign: 'left' }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
-        didDrawPage: () => {
+        didDrawPage: (data) => {
             doc.setFillColor(headerFooterColor).rect(0, doc.internal.pageSize.getHeight() - 20, doc.internal.pageSize.getWidth(), 20, 'F');
-            doc.setFontSize(10).setTextColor(textColor).text('¡Gracias por su compra!', 15, doc.internal.pageSize.getHeight() - 10);
-            doc.text(`Página ${doc.internal.getNumberOfPages()}`, doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+            doc.setFontSize(10).setTextColor(textColor).text(t('invoice.footer_thanks'), 15, doc.internal.pageSize.getHeight() - 10);
+            doc.text(`${t('invoice.footer_page')} ${doc.internal.getNumberOfPages()}`, doc.internal.pageSize.getWidth() - 15, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
         }
     });
 
-    // =======================================================================
-    //  TOTALES
-    // =======================================================================
     const finalY = (doc).lastAutoTable.finalY;
     
     const totalsBody = [
-        ['Subtotal:', formatCurrency(safePricing.subtotal)],
-        ['Envío:', safePricing.shipping === 0 ? 'Gratis' : formatCurrency(safePricing.shipping)],
+        [t('order_detail.subtotal') + ':', formatCurrency(safePricing.subtotal)],
+        [t('order_detail.shipping_cost') + ':', safePricing.shipping === 0 ? t('order_detail.free_shipping') : formatCurrency(safePricing.shipping)],
     ];
     if (discountAmount > 0) {
-        totalsBody.push(['Descuento:', `-${formatCurrency(discountAmount)}`]);
+        totalsBody.push([t('order_detail.discount') + ':', `-${formatCurrency(discountAmount)}`]);
     }
-    totalsBody.push(['TOTAL A PAGAR:', formatCurrency(safePricing.total)]);
+    totalsBody.push([t('invoice.total_due'), formatCurrency(safePricing.total)]);
 
     autoTable(doc, {
         body: totalsBody,
@@ -145,13 +130,14 @@ export const generateInvoice = (order) => {
         },
     });
 
-    // =======================================================================
-    //  DETALLES DE PAGO Y GUARDADO
-    // =======================================================================
     const paymentY = finalY + 15;
-    doc.setFontSize(11).setFont('helvetica', 'bold').text('Método de Pago:', 15, paymentY);
-    doc.setFont('helvetica', 'normal').text(`Tarjeta ${order.payment?.brand || 'N/A'} terminada en ${order.payment?.last4 || 'XXXX'}`, 15, paymentY + 7);
+    doc.setFontSize(11).setFont('helvetica', 'bold').text(t('order_detail.payment_method') + ':', 15, paymentY);
+    const cardText = t('invoice.payment_method_card', {
+        brand: order.payment?.brand || 'N/A',
+        last4: order.payment?.last4 || 'XXXX'
+    });
+    doc.setFont('helvetica', 'normal').text(cardText, 15, paymentY + 7);
 
     const safeOrderNumber = toSlug(order.orderNumber || order.id);
-    doc.save(`factura-${safeOrderNumber}.pdf`);
+    doc.save(`${t('invoice.filename')}-${safeOrderNumber}.pdf`);
 };

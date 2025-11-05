@@ -8,15 +8,17 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Chip
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import DownloadIcon from '@mui/icons-material/Download'; // Icono para el nuevo botón
+import DownloadIcon from '@mui/icons-material/Download';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import OrderDetailView from '../../components/orders/OrderDetailView';
 import { toast } from 'react-hot-toast';
-import { generateInvoice } from '../../utils/generateInvoice'; // <-- Importamos el generador de PDF
+import { generateInvoice } from '../../utils/generateInvoice';
+import { useTranslation } from 'react-i18next';
 
 const Orders = () => {
+    const { t, i18n } = useTranslation();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -46,31 +48,31 @@ const Orders = () => {
             setLoading(false);
         }, (err) => {
             console.error("Error fetching orders: ", err);
-            setError("No se pudieron cargar tus pedidos.");
+            setError(t('orders.fetch_error'));
             setLoading(false);
         });
 
         return () => unsubscribe();
-    }, [currentUser]);
+    }, [currentUser, t]);
 
     const handleCancelOrder = async (orderId) => {
-        if (!window.confirm("¿Estás seguro de que quieres cancelar este pedido?")) return;
+        if (!window.confirm(t('orders.cancel_confirm'))) return;
         
         const orderRef = doc(db, 'orders', orderId);
         try {
-            await updateDoc(orderRef, { status: 'Cancelado' });
-            toast.success("Pedido cancelado con éxito.");
+            await updateDoc(orderRef, { status: 'Cancelled' });
+            toast.success(t('orders.cancel_success'));
         } catch (error) {
             console.error("Error canceling order: ", error);
-            toast.error("No se pudo cancelar el pedido.");
+            toast.error(t('orders.cancel_error'));
         }
     };
     
     const handleDownloadInvoice = () => {
         if (selectedOrder) {
-            toast.loading('Generando tu factura...', { duration: 1500 });
+            toast.loading(t('orders.generating_invoice'), { duration: 1500 });
             setTimeout(() => {
-              generateInvoice(selectedOrder);
+              generateInvoice(selectedOrder, t, i18n);
             }, 1500);
         }
     };
@@ -87,15 +89,17 @@ const Orders = () => {
     const formatCurrency = (order) => {
         const total = order.pricing?.total ?? order.totalAmount;
         if (typeof total !== 'number') return '$NaN';
-        return `$${total.toLocaleString('es-CO')}`;
+        const locale = i18n.language === 'es' ? 'es-CO' : 'en-US';
+        return new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD' }).format(total);
     };
 
     const getStatusChip = (status) => {
         let color = 'default';
-        if (status === 'Procesando') color = 'info';
-        if (status === 'Completado') color = 'success';
-        if (status === 'Cancelado') color = 'error';
-        return <Chip label={status} color={color} size="small" />;
+        const normalizedStatus = status.toLowerCase();
+        if (['procesando', 'processing'].includes(normalizedStatus)) color = 'info';
+        if (['completado', 'completed'].includes(normalizedStatus)) color = 'success';
+        if (['cancelado', 'cancelled'].includes(normalizedStatus)) color = 'error';
+        return <Chip label={t(`orders.status.${normalizedStatus}`, status)} color={color} size="small" />;
     };
 
     const paginatedOrders = orders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -106,40 +110,40 @@ const Orders = () => {
 
     return (
         <Container maxWidth="lg" sx={{ my: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom>Mis Pedidos</Typography>
+            <Typography variant="h4" component="h1" gutterBottom>{t('orders.title')}</Typography>
             {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
             
             {!currentUser && !loading ? (
-                <Alert severity="info">Por favor, <Button color="inherit" onClick={() => navigate('/login')}>inicia sesión</Button> para ver tu historial.</Alert>
+                <Alert severity="info">Please log in to see your history.</Alert>
             ) : orders.length === 0 ? (
-                <Paper sx={{ p: 4, textAlign: 'center' }}><Typography>Aún no has realizado ningún pedido.</Typography></Paper>
+                <Paper sx={{ p: 4, textAlign: 'center' }}><Typography>{t('orders.no_orders')}</Typography></Paper>
             ) : (
                 <Paper sx={{ width: '100%', overflow: 'hidden' }}>
                     <TableContainer>
                         <Table stickyHeader>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>N° Pedido</TableCell>
-                                    <TableCell>Fecha</TableCell>
-                                    <TableCell>Estado</TableCell>
-                                    <TableCell>Total</TableCell>
-                                    <TableCell align="center">Acciones</TableCell>
+                                    <TableCell>{t('orders.order_number')}</TableCell>
+                                    <TableCell>{t('orders.date')}</TableCell>
+                                    <TableCell>{t('orders.status_label')}</TableCell>
+                                    <TableCell>{t('orders.total')}</TableCell>
+                                    <TableCell align="center">{t('orders.actions')}</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {paginatedOrders.map((order) => (
                                     <TableRow key={order.id} hover>
                                         <TableCell>{order.orderNumber || order.id.substring(0, 6).toUpperCase()}</TableCell>
-                                        <TableCell>{order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd MMM, yyyy', { locale: es }) : 'N/A'}</TableCell>
+                                        <TableCell>{order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd MMM, yyyy', { locale: i18n.language === 'es' ? es : enUS }) : 'N/A'}</TableCell>
                                         <TableCell>{getStatusChip(order.status)}</TableCell>
                                         <TableCell>{formatCurrency(order)}</TableCell>
                                         <TableCell align="center">
                                             <Button variant="outlined" size="small" onClick={() => handleOpenModal(order)} sx={{ mr: 1 }}>
-                                                Ver Detalles
+                                                {t('orders.view_details')}
                                             </Button>
-                                            {order.status === 'Procesando' && (
+                                            {['Procesando', 'Processing'].includes(order.status) && (
                                                 <Button variant="contained" color="error" size="small" onClick={() => handleCancelOrder(order.id)}>
-                                                    Cancelar
+                                                    {t('orders.cancel_button')}
                                                 </Button>
                                             )}
                                         </TableCell>
@@ -156,27 +160,27 @@ const Orders = () => {
                         page={page}
                         onPageChange={handleChangePage}
                         onRowsPerPageChange={handleChangeRowsPerPage}
-                        labelRowsPerPage="Pedidos por página:"
+                        labelRowsPerPage={t('orders.rows_per_page')}
                     />
                 </Paper>
             )}
 
             <Dialog open={!!selectedOrder} onClose={handleCloseModal} fullWidth maxWidth="md">
                 <DialogTitle>
-                    Detalles del Pedido
+                    {t('order_detail.title_simple')}
                     <IconButton onClick={handleCloseModal} sx={{ position: 'absolute', right: 8, top: 8 }}><CloseIcon /></IconButton>
                 </DialogTitle>
                 <DialogContent dividers>
                     {selectedOrder && <OrderDetailView order={selectedOrder} />}
                 </DialogContent>
                 <DialogActions sx={{ justifyContent: 'space-between', p: 2 }}>
-                    <Button onClick={handleCloseModal} color="secondary">Cerrar</Button>
+                    <Button onClick={handleCloseModal} color="secondary">{t('orders.close_button')}</Button>
                     <Button 
                         variant="contained" 
                         startIcon={<DownloadIcon />} 
                         onClick={handleDownloadInvoice}
                     >
-                        Descargar PDF
+                        {t('orders.download_pdf')}
                     </Button>
                 </DialogActions>
             </Dialog>

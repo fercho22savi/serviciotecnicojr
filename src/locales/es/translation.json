@@ -28,25 +28,44 @@
         "follow_us": "Síguenos",
         "copyright": "Copyright © TuTienda.com {{year}}. Ahorra con nosotros"
     },
-    "preferences": {
-        "title": "Preferencias",
-        "subtitle": "Personaliza tu experiencia en la aplicación.",
-        "notifications": "Notificaciones",
-        "email_offers": "Ofertas y noticias por email",
-        "sms_updates": "Actualizaciones de pedidos por SMS",
-        "push_notifications": "Notificaciones push en la app",
-        "appearance_language": "Apariencia e Idioma",
-        "theme": "Tema",
-        "light_theme": "Claro",
-        "dark_theme": "Oscuro",
-        "system_theme": "Automático (del sistema)",
-        "language": "Idioma",
-        "spanish": "Español",
-        "english": "Inglés",
-        "save_button": "Guardar Preferencias",
-        "saving_toast": "Guardando preferencias...",
-        "save_success": "Preferencias guardadas con éxito",
-        "save_error": "Error al guardar las preferencias"
+    "settings": {
+        "title": "Configuración",
+        "subtitle": "Gestiona la apariencia, notificaciones y seguridad de tu cuenta.",
+        "action_alert_prefix": "La funcionalidad para",
+        "action_alert_suffix": "se implementará próximamente.",
+        "delete_account_confirm": "¿Estás seguro de que quieres eliminar tu cuenta de forma permanente? Esta acción no se puede deshacer.",
+        "delete_account_action": "Eliminar Cuenta",
+        "change_button": "Cambiar",
+        "export_button": "Exportar",
+        "appearance": {
+            "title": "Apariencia",
+            "language_label": "Idioma",
+            "dark_mode_label": "Modo Oscuro",
+            "dark_mode_secondary": "Ideal para navegar de noche"
+        },
+        "notifications": {
+            "title": "Notificaciones",
+            "offers_label": "Ofertas y Promociones",
+            "offers_secondary": "Recibir correos con nuestros mejores descuentos",
+            "orders_label": "Actualizaciones de Pedidos",
+            "orders_secondary": "Recibir notificaciones sobre el estado de tus compras"
+        },
+        "security": {
+            "title": "Seguridad y Datos",
+            "password_label": "Contraseña",
+            "password_secondary": "Se recomienda actualizarla periódicamente",
+            "change_password_action": "Cambiar Contraseña",
+            "export_data_label": "Exportar mis datos",
+            "export_data_secondary": "Descarga un archivo con toda tu información",
+            "export_data_action": "Exportar Datos"
+        },
+        "danger_zone": {
+            "title": "Zona de Peligro",
+            "delete_account_label": "Eliminar Cuenta",
+            "delete_account_secondary": "Esta acción es permanente y no se puede deshacer.",
+            "delete_account_button": "Eliminar mi cuenta",
+            "delete_warning": "Al eliminar tu cuenta, se borrará tu historial de pedidos, listas de deseos y toda la información asociada de forma irreversible."
+        }
     },
     "faq_page": {
         "title": "Preguntas Frecuentes",
@@ -64,13 +83,13 @@
         "damaged_a": "Lamentamos oír eso. Por favor, contacta a soporte al cliente con tu número de pedido y fotos del producto dañado para que podamos ayudarte."
     },
     "account_menu": {
-        "title": "Panel de Usuario",
+        "title": "Mi Cuenta",
+        "dashboard": "Dashboard",
+        "order_history": "Historial de Pedidos",
+        "wishlist": "Lista de Deseos",
         "profile": "Mi Perfil",
-        "orders": "Mis Pedidos",
-        "addresses": "Direcciones",
-        "payment_methods": "Métodos de Pago",
-        "security": "Seguridad",
-        "preferences": "Preferencias"
+        "recently_viewed": "Vistos Recientemente",
+        "settings": "Configuración"
     },
     "addresses": {
         "title": "Mis Direcciones",
@@ -106,37 +125,62 @@
     },
     "orders": {
         "title": "Mis Pedidos",
-        "fetch_error": "Error al cargar los pedidos.",
-        "no_orders_title": "Aún no has realizado pedidos.",
-        "no_orders_subtitle": "Explora nuestros productos y encuentra algo que te encante.",
-        "browse_products_button": "Ver Productos",
-        "order_number_label": "Nº de Pedido",
-        "date_label": "Fecha",
-        "total_label": "Total",
+        "fetch_error": "No se pudieron cargar tus pedidos.",
+        "login_prompt": "Por favor, inicia sesión para ver tu historial.",
+        "no_orders": "Aún no has realizado ningún pedido.",
+        "order_number": "N° Pedido",
+        "date": "Fecha",
         "status_label": "Estado",
-        "view_details_button": "Ver Detalles",
+        "total": "Total",
+        "actions": "Acciones",
+        "view_details": "Ver Detalles",
+        "cancel_button": "Cancelar",
+        "cancel_confirm": "¿Estás seguro de que quieres cancelar este pedido?",
+        "cancel_success": "Pedido cancelado con éxito.",
+        "cancel_error": "No se pudo cancelar el pedido.",
+        "generating_invoice": "Generando tu factura...",
+        "rows_per_page": "Pedidos por página:",
+        "close_button": "Cerrar",
+        "download_pdf": "Descargar PDF",
         "status": {
-            "en_proceso": "En proceso",
-            "pagado": "Pagado",
-            "en_preparacion": "En preparación",
-            "enviado": "Enviado",
-            "entregado": "Entregado",
-            "cancelado": "Cancelado"
-        },
-        "error_title": "Error al Cargar los Pedidos",
-        "index_fix_instruction": "Por favor, revisa la consola del navegador para obtener un enlace para crear el índice de base de datos requerido en Firebase.",
-        "search_label": "Buscar Pedidos"
+            "processing": "Procesando",
+            "completed": "Completado",
+            "cancelled": "Cancelado"
+        }
     },
     "order_detail": {
-        "title": "Detalle del Pedido #{{id}}",
-        "title_simple": "Detalle del Pedido",
-        "not_found": "Pedido no encontrado",
-        "date_label": "Fecha",
-        "total_label": "Total",
+        "title": "Detalles del Pedido #{{id}}",
+        "title_simple": "Detalles del Pedido",
+        "invalid_amount": "$0",
         "items_label": "Artículos",
         "quantity_label": "Cantidad",
-        "price_label": "Precio",
-        "export_pdf_button": "Exportar a PDF"
+        "subtotal": "Subtotal",
+        "discount": "Descuento",
+        "shipping_cost": "Coste de Envío",
+        "free_shipping": "Gratis",
+        "total_label": "Total",
+        "shipping_address": "Dirección de Envío",
+        "payment_method": "Método de Pago",
+        "card_ending_in": "Tarjeta terminada en **** {{last4}}",
+        "brand_label": "Marca"
+    },
+    "invoice": {
+        "title": "FACTURA DE VENTA",
+        "filename": "factura",
+        "bill_to": "Facturar a:",
+        "invoice_number": "N° de Factura:",
+        "issue_date": "Fecha de Emisión:",
+        "order_status": "Estado del Pedido:",
+        "payment_method_card": "Tarjeta {{brand}} terminada en {{last4}}",
+        "table": {
+            "description": "Descripción",
+            "quantity": "Cant.",
+            "unit_price": "Precio Unit.",
+            "total": "Total"
+        },
+        "total_due": "TOTAL A PAGAR:",
+        "footer_thanks": "¡Gracias por su compra!",
+        "footer_page": "Página"
     },
     "payment_methods": {
         "title": "Métodos de Pago",
