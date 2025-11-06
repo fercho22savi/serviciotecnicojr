@@ -1,5 +1,7 @@
 {
     "header": {
+        "storeName": "MiTienda",
+        "allCategories": "Todas las categorías",
         "searchPlaceholder": "Buscar productos...",
         "products": "Productos",
         "orders": "Pedidos",
@@ -27,6 +29,14 @@
         "refund_policy": "Política de Devoluciones y Reembolsos",
         "follow_us": "Síguenos",
         "copyright": "Copyright © TuTienda.com {{year}}. Ahorra con nosotros"
+    },
+    "home_page": {
+        "hero_title": "Tecnología que Inspira tu Futuro",
+        "hero_subtitle": "Descubre las últimas innovaciones en nuestra colección de productos de alta gama.",
+        "explore_collection_button": "Explorar Colección",
+        "explore_categories_title": "Explora Nuestras Categorías",
+        "new_arrivals_title": "Novedades",
+        "most_popular_title": "Los Más Populares"
     },
     "settings": {
         "title": "Configuración",
@@ -145,7 +155,7 @@
         "status": {
             "processing": "Procesando",
             "completed": "Completado",
-            "cancelled": "Cancelado"
+            "cancelled": "Cancelled"
         }
     },
     "order_detail": {
@@ -254,6 +264,11 @@
         "errors": {
             "load_profile": "No se pudo cargar tu perfil.",
             "update_profile": "Hubo un error al actualizar tu perfil."
+        },
+        "security_panel": {
+            "title": "Seguridad de la Cuenta",
+            "subtitle": "Para cambiar tu contraseña, te enviaremos un enlace seguro a tu correo electrónico.",
+            "action_button": "Enviar correo para cambiar contraseña"
         }
     },
     "shipping_policy": {
@@ -327,6 +342,54 @@
             "title_simulated": "Detalles del Pago (Simulado)",
             "cardholder": "Titular:",
             "card_number_label": "Número:"
+        }
+    },
+    "privacy_policy_page": {
+        "title": "Política de Privacidad",
+        "last_updated": "Última actualización: 1 de Agosto de 2024",
+        "introduction": {
+            "title": "1. Introducción",
+            "content": "Bienvenido a ElectronicaNr. Tu privacidad es de suma importancia para nosotros. Esta Política de Privacidad describe qué datos personales recopilamos, cómo los usamos, cómo los compartimos y tus derechos con respecto a tus datos."
+        },
+        "data_we_collect": {
+            "title": "2. Datos que Recopilamos",
+            "intro": "Recopilamos información de varias maneras cuando utilizas nuestros servicios:",
+            "points": [
+                "<strong>Información que nos proporcionas directamente:</strong> Esto incluye la información que proporcionas al crear una cuenta, realizar un pedido o contactarnos, como tu nombre, dirección de correo electrónico, dirección de envío y número de teléfono.",
+                "<strong>Información recopilada automáticamente:</strong> Recopilamos información sobre tu dispositivo y tu uso de nuestro sitio web, como tu dirección IP, tipo de navegador, páginas visitadas y la fecha y hora de tu visita.",
+                "<strong>Cookies y tecnologías similares:</strong> Utilizamos cookies para mejorar tu experiencia, analizar el tráfico y personalizar el contenido."
+            ]
+        },
+        "how_we_use_your_information": {
+            "title": "3. Cómo Usamos tu Información",
+            "intro": "Utilizamos la información que recopilamos para:",
+            "points": [
+                "Procesar y gestionar tus pedidos.",
+                "Mejorar y personalizar nuestros servicios y tu experiencia de compra.",
+                "Comunicarnos contigo, incluyendo responder a tus consultas y enviarte información sobre tu pedido.",
+                "Para fines de marketing (con tu consentimiento), como enviarte ofertas y promociones.",
+                "Garantizar la seguridad de nuestro sitio web y prevenir el fraude."
+            ]
+        },
+        "how_we_share_your_information": {
+            "title": "4. Cómo Compartimos tu Información",
+            "intro": "No vendemos ni alquilamos tu información personal a terceros. Podemos compartir tu información con:",
+            "points": [
+                "Proveedores de servicios que nos ayudan a operar nuestro negocio (por ejemplo, procesadores de pago y empresas de envío).",
+                "Autoridades legales, si así lo exige la ley o para proteger nuestros derechos."
+            ]
+        },
+        "your_rights": {
+            "title": "5. Tus Derechos",
+            "content": "Tienes derecho a acceder, corregir o eliminar tu información personal. También puedes oponerte al procesamiento de tus datos. Para ejercer estos derechos, por favor contáctanos a través de nuestra página de contacto."
+        },
+        "changes_to_this_policy": {
+            "title": "6. Cambios a esta Política",
+            "content": "Podemos actualizar esta Política de Privacidad de vez en cuando. Te notificaremos cualquier cambio publicando la nueva política en esta página."
+        },
+        "apple_app_store_disclosure": {
+            "title": "7. Divulgación de Datos en la App Store de Apple",
+            "content": "Para los usuarios que han descargado nuestra aplicación desde la App Store de Apple, proporcionamos divulgaciones específicas sobre nuestras prácticas de manejo de datos. Apple requiere que los desarrolladores sean transparentes sobre cómo los servicios de terceros, como Firebase, recopilan y utilizan los datos. Como desarrolladores, somos responsables de asegurar que la información proporcionada en la sección de privacidad de la App Store sea precisa y esté actualizada. Puedes encontrar información detallada sobre los datos que recopila nuestra aplicación en la página de producto de nuestra App Store."
         }
     }
 }

@@ -30,6 +30,7 @@ const CartPage = React.lazy(() => import('./pages/Cart.jsx'));
 const CheckoutForm = React.lazy(() => import('./pages/CheckoutForm.jsx'));
 const OrderConfirmationPage = React.lazy(() => import('./pages/OrderConfirmationPage.jsx'));
 const WishlistPage = React.lazy(() => import('./pages/Wishlist.jsx'));
+const PrivacyPolicyPage = React.lazy(() => import('./pages/PrivacyPolicyPage.jsx'));
 
 // Account Pages
 const AccountDashboard = React.lazy(() => import('./pages/account/AccountDashboard.jsx'));
@@ -99,6 +100,7 @@ const App = () => {
                     ),
                 },
                 { path: "/order-confirmation/:orderId", element: <OrderConfirmationPage /> },
+                { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
             ],
         },
         {

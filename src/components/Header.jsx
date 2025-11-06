@@ -10,14 +10,14 @@ import {
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useCustomTheme } from '../context/ThemeContext'; // CORREGIDO
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 
 const Header = () => {
   const { t } = useTranslation();
   const { currentUser, isAdmin, logout } = useAuth();
-  const { mode, toggleTheme } = useTheme();
+  const { mode, toggleTheme } = useCustomTheme(); // CORREGIDO
   const { cartItemCount } = useCart();
   const { itemCount: wishlistItemCount } = useWishlist();
   
@@ -65,7 +65,7 @@ const Header = () => {
             sx={{ textDecoration: 'none', fontWeight: 'bold', color: 'text.primary', display: 'flex', alignItems: 'center' }}
           >
             <Store sx={{ mr: 1, color: 'primary.main' }} />
-            MiTienda
+            {t('header.storeName')}
           </Typography>
 
           {/* Search form */}

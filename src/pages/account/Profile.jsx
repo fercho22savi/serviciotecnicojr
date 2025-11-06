@@ -66,7 +66,7 @@ function Profile() {
         if (!file || !currentUser) return;
 
         setUploading(true);
-        const toastId = toast.loading('Subiendo imagen...');
+        const toastId = toast.loading(t('profile.toast.uploading'));
 
         try {
             const storageRef = ref(storage, `profile_images/${currentUser.uid}/${file.name}`);
@@ -82,10 +82,10 @@ function Profile() {
             setProfile(prev => ({ ...prev, photoURL }));
             setCurrentUser(prevUser => ({...prevUser, photoURL}));
 
-            toast.success('¡Foto de perfil actualizada!', { id: toastId });
+            toast.success(t('profile.toast.photo_success'), { id: toastId });
         } catch (error) {
             console.error("Error updating profile photo:", error);
-            toast.error('Error al subir la imagen.', { id: toastId });
+            toast.error(t('profile.errors.upload_photo'), { id: toastId });
         } finally {
             setUploading(false);
         }
@@ -124,16 +124,16 @@ function Profile() {
     const handlePasswordReset = async () => {
         const auth = getAuth();
         if (!auth.currentUser) {
-            toast.error("Debes iniciar sesión para hacer esto.");
+            toast.error(t('profile.errors.not_logged_in'));
             return;
         }
-        const toastId = toast.loading("Enviando correo de restablecimiento...");
+        const toastId = toast.loading(t('profile.toast.sending_email'));
         try {
             await sendPasswordResetEmail(auth, auth.currentUser.email);
-            toast.success("¡Correo enviado! Revisa tu bandeja de entrada.", { id: toastId, duration: 6000 });
+            toast.success(t('profile.toast.email_sent'), { id: toastId, duration: 6000 });
         } catch (error) {
             console.error("Password reset error:", error);
-            toast.error("No se pudo enviar el correo. Inténtalo de nuevo.", { id: toastId });
+            toast.error(t('profile.errors.email_fail'), { id: toastId });
         }
     };
 
@@ -142,7 +142,7 @@ function Profile() {
     }
 
     if (!currentUser) {
-        return <Alert severity="info">Por favor, inicia sesión para ver tu perfil.</Alert>;
+        return <Alert severity="info">{t('profile.login_prompt')}</Alert>;
     }
 
     return (
@@ -200,11 +200,11 @@ function Profile() {
 
             <Card variant="outlined">
                 <CardContent>
-                    <Typography variant="h6" gutterBottom>Seguridad de la Cuenta</Typography>
-                    <Typography color="text.secondary">Para cambiar tu contraseña, te enviaremos un enlace seguro a tu correo electrónico.</Typography>
+                    <Typography variant="h6" gutterBottom>{t('profile.security_panel.title')}</Typography>
+                    <Typography color="text.secondary">{t('profile.security_panel.subtitle')}</Typography>
                 </CardContent>
                 <CardActions sx={{p: 2}}>
-                    <Button variant="outlined" color="secondary" onClick={handlePasswordReset}>Enviar correo para cambiar contraseña</Button>
+                    <Button variant="outlined" color="secondary" onClick={handlePasswordReset}>{t('profile.security_panel.action_button')}</Button>
                 </CardActions>
             </Card>
 

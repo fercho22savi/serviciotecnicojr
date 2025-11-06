@@ -2,8 +2,11 @@ import React from 'react';
 import { Box, Button, Container, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { useTranslation } from 'react-i18next';
 
 const HeroSection = () => {
+  const { t } = useTranslation();
+
   return (
     <Box
       sx={{
@@ -41,7 +44,7 @@ const HeroSection = () => {
             fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' }
           }}
         >
-          Tecnología que Inspira tu Futuro
+          {t('home_page.hero_title')}
         </Typography>
         <Typography 
           variant="h6" 
@@ -52,7 +55,7 @@ const HeroSection = () => {
             fontSize: { xs: '1rem', sm: '1.2rem' }
           }}
         >
-          Descubre las últimas innovaciones en nuestra colección de productos de alta gama.
+          {t('home_page.hero_subtitle')}
         </Typography>
         <Button
           component={RouterLink}
@@ -74,7 +77,7 @@ const HeroSection = () => {
             }
           }}
         >
-          Explorar Colección
+          {t('home_page.explore_collection_button')}
         </Button>
       </Container>
     </Box>

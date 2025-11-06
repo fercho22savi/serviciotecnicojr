@@ -13,8 +13,10 @@ import { db } from '../firebase/config';
 import { Link as RouterLink } from 'react-router-dom';
 import HeroSection from '../components/HeroSection';
 import ProductCarousel from '../components/ProductCarousel';
+import { useTranslation } from 'react-i18next';
 
 const HomePage = () => {
+  const { t } = useTranslation();
   const [newProducts, setNewProducts] = useState([]);
   const [popularProducts, setPopularProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -75,7 +77,7 @@ const HomePage = () => {
         {/* Categories Section */}
         <Box sx={{ mb: 6 }}>
           <Typography variant="h4" component="h2" fontWeight="bold" gutterBottom sx={{ textAlign: 'center', mb: 4 }}>
-            Explora Nuestras Categorías
+            {t('home_page.explore_categories_title')}
           </Typography>
           <Grid container spacing={3}>
             {categories.map((category) => (
@@ -105,10 +107,10 @@ const HomePage = () => {
         </Box>
 
         {/* New Products Carousel */}
-        <ProductCarousel title="Novedades" products={newProducts} />
+        <ProductCarousel title={t('home_page.new_arrivals_title')} products={newProducts} />
 
         {/* Popular Products Carousel */}
-        <ProductCarousel title="Los Más Populares" products={popularProducts} />
+        <ProductCarousel title={t('home_page.most_popular_title')} products={popularProducts} />
 
       </Container>
     </Box>

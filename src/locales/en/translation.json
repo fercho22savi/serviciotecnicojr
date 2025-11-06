@@ -1,5 +1,7 @@
 {
     "header": {
+        "storeName": "MyStore",
+        "allCategories": "All Categories",
         "searchPlaceholder": "Search products...",
         "products": "Products",
         "wishlist": "Wishlist",
@@ -26,6 +28,14 @@
         "refund_policy": "Refund & Return Policy",
         "follow_us": "Follow Us",
         "copyright": "Copyright © YourStore.com {{year}}. All rights reserved."
+    },
+    "home_page": {
+        "hero_title": "Technology that Inspires Your Future",
+        "hero_subtitle": "Discover the latest innovations in our high-end product collection.",
+        "explore_collection_button": "Explore Collection",
+        "explore_categories_title": "Explore Our Categories",
+        "new_arrivals_title": "New Arrivals",
+        "most_popular_title": "Most Popular"
     },
     "settings": {
         "title": "Settings",
@@ -253,6 +263,11 @@
         "errors": {
             "load_profile": "Could not load your profile.",
             "update_profile": "There was an error updating your profile."
+        },
+        "security_panel": {
+            "title": "Account Security",
+            "subtitle": "To change your password, we will send a secure link to your email.",
+            "action_button": "Send password reset email"
         }
     },
     "shipping_policy": {
@@ -326,6 +341,54 @@
             "title_simulated": "Payment Details (Simulated)",
             "cardholder": "Cardholder:",
             "card_number_label": "Number:"
+        }
+    },
+    "privacy_policy_page": {
+        "title": "Privacy Policy",
+        "last_updated": "Last updated: August 1, 2024",
+        "introduction": {
+            "title": "1. Introduction",
+            "content": "Welcome to ElectronicaNr. Your privacy is critically important to us. This Privacy Policy outlines what personal data we collect, how we use it, how we share it, and your rights regarding your data."
+        },
+        "data_we_collect": {
+            "title": "2. Data We Collect",
+            "intro": "We collect information in several ways when you use our services:",
+            "points": [
+                "<strong>Information you provide directly:</strong> This includes information you provide when creating an account, placing an order, or contacting us, such as your name, email address, shipping address, and phone number.",
+                "<strong>Information collected automatically:</strong> We collect information about your device and your use of our website, such as your IP address, browser type, pages visited, and the date and time of your visit.",
+                "<strong>Cookies and similar technologies:</strong> We use cookies to enhance your experience, analyze traffic, and personalize content."
+            ]
+        },
+        "how_we_use_your_information": {
+            "title": "3. How We Use Your Information",
+            "intro": "We use the information we collect to:",
+            "points": [
+                "Process and manage your orders.",
+                "Improve and personalize our services and your shopping experience.",
+                "Communicate with you, including responding to your inquiries and sending you information about your order.",
+                "For marketing purposes (with your consent), such as sending you offers and promotions.",
+                "Ensure the security of our website and prevent fraud."
+            ]
+        },
+        "how_we_share_your_information": {
+            "title": "4. How We Share Your Information",
+            "intro": "We do not sell or rent your personal information to third parties. We may share your information with:",
+            "points": [
+                "Service providers who help us operate our business (e.g., payment processors and shipping companies).",
+                "Legal authorities, if required by law or to protect our rights."
+            ]
+        },
+        "your_rights": {
+            "title": "5. Your Rights",
+            "content": "You have the right to access, correct, or delete your personal information. You can also object to the processing of your data. To exercise these rights, please contact us through our contact page."
+        },
+        "changes_to_this_policy": {
+            "title": "6. Changes to this Policy",
+            "content": "We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page."
+        },
+        "apple_app_store_disclosure": {
+            "title": "7. Apple App Store Data Disclosure",
+            "content": "For users who have downloaded our application from the Apple App Store, we provide specific disclosures regarding our data handling practices. Apple requires developers to be transparent about how third-party services, such as Firebase, collect and use data. As developers, we are responsible for ensuring that the information provided in the App Store's privacy section is accurate and up-to-date. You can find detailed information about the data collected by our app on our App Store product page."
         }
     }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useOutletContext } from 'react-router-dom';
-import Navbar from './Navbar';
+import Header from './Header'; // Cambiado de Navbar a Header
 import Footer from './Footer';
 import { db } from '../firebase/config';
 import { collection, getDocs } from 'firebase/firestore';
@@ -37,7 +37,7 @@ const MainLayout = () => {
 
   return (
     <>
-      <Navbar setSearchTerm={setSearchTerm} />
+      <Header setSearchTerm={setSearchTerm} /> {/* Cambiado de Navbar a Header */}
       <main>
         <Outlet context={contextValue} /> 
       </main>
