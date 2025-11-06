@@ -1,19 +1,21 @@
-
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Container, Grid, Paper, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
-
-const adminLinks = [
-  { text: 'Dashboard', to: '/admin/dashboard' },
-  { text: 'Productos', to: '/admin/products' },
-  { text: 'Categorías', to: '/admin/categories' },
-  { text: 'Pedidos', to: '/admin/orders' },
-  { text: 'Usuarios', to: '/admin/users' },
-  { text: 'Cupones', to: '/admin/coupons' },
-  { text: 'Opiniones', to: '/admin/reviews' },
-];
+import { useTranslation } from 'react-i18next';
 
 const AdminLayout = () => {
+  const { t } = useTranslation();
+
+  const adminLinks = [
+    { text: t('admin_menu.dashboard'), to: '/admin/dashboard' },
+    { text: t('admin_menu.products'), to: '/admin/products' },
+    { text: t('admin_menu.categories'), to: '/admin/categories' },
+    { text: t('admin_menu.orders'), to: '/admin/orders' },
+    { text: t('admin_menu.users'), to: '/admin/users' },
+    { text: t('admin_menu.coupons'), to: '/admin/coupons' },
+    { text: t('admin_menu.reviews'), to: '/admin/reviews' },
+  ];
+
   const navLinkStyle = ({ isActive }) => ({
     backgroundColor: isActive ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
     '&:hover': {
@@ -29,7 +31,7 @@ const AdminLayout = () => {
         <Grid item xs={12} md={3}>
           <Paper sx={{ p: 2, borderRadius: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ pl: 2 }}>
-              Panel de Admin
+              {t('admin_menu.title')}
             </Typography>
             <List component="nav">
               {adminLinks.map((link) => (

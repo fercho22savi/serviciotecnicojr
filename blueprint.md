@@ -53,9 +53,13 @@ This section documents all the style, design, and features implemented in the ap
 - **Phase 3: Product Reviews & Ratings (✅ Completed)**
     - **Outcome:** Users can now submit star ratings and written reviews on product detail pages. A transaction ensures that the product's average rating is updated atomically with each new review.
 
-- **Phase 4: Coupon & Discount System (In Progress)**
-    - **Goal:** Create a system for admins to generate discount codes that users can apply at checkout.
-    - **Implementation:** Develop a new `coupons` collection in Firestore, a full management UI in the admin panel (`CouponManagement.jsx`), and integrate the coupon application logic into the `CartContext` and `Cart.jsx` page.
+- **Phase 4: Coupon & Discount System (✅ Completed)**
+    - **Outcome:** A system for admins to generate discount codes that users can apply at checkout. A new `coupons` collection in Firestore, a full management UI in the admin panel (`CouponManagement.jsx`), and the coupon application logic is integrated into the `CartContext` and `Cart.jsx` page.
 
-- **Phase 5: Checkout Flow Implementation**
-    - **Goal:** Build the multi-step process for users to finalize their purchase, including shipping and payment.
+- **Phase 5: Checkout Flow Implementation (✅ Completed)**
+    - **Outcome:** A multi-step process for users to finalize their purchase, including shipping and payment.
+
+- **Phase 6: Category Management (In Progress)**
+    - **Goal:** Create a system for admins to manage product categories.
+    - **Implementation:** Develop a new `CategoryManagement.jsx` component in the admin panel to allow admins to create, read, update, and delete categories. This will involve creating a new `categories` collection in Firestore and integrating it with the product management system.
+

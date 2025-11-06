@@ -1,4 +1,3 @@
-
 {
     "header": {
         "storeName": "MyStore",
@@ -101,6 +100,45 @@
         "recently_viewed": "Recently Viewed",
         "settings": "Settings"
     },
+    "admin_menu": {
+        "title": "Admin Panel",
+        "dashboard": "Dashboard",
+        "products": "Products",
+        "categories": "Categories",
+        "orders": "Orders",
+        "users": "Users",
+        "coupons": "Coupons",
+        "reviews": "Reviews"
+    },
+    "category_management": {
+        "title": "Category Management",
+        "add_button": "Add Category",
+        "load_error": "Error loading categories.",
+        "update_success": "Category updated successfully.",
+        "create_success": "Category created successfully.",
+        "update_error": "Error updating category.",
+        "create_error": "Error creating category.",
+        "delete_confirm": "Are you sure you want to delete this category?",
+        "delete_success": "Category deleted successfully.",
+        "delete_error": "Error deleting category.",
+        "no_categories": "No categories found.",
+        "edit_title": "Edit Category",
+        "add_title": "Add New Category",
+        "cancel_button": "Cancel",
+        "save_button": "Save",
+        "table": {
+            "name": "Name",
+            "description": "Description",
+            "actions": "Actions"
+        },
+        "form": {
+            "name": "Category Name",
+            "description": "Description"
+        },
+        "errors": {
+            "name_required": "Category name is required."
+        }
+    },
     "addresses": {
         "title": "My Addresses",
         "add_button": "Add Address",
@@ -155,7 +193,8 @@
         "status": {
             "processing": "Processing",
             "completed": "Completed",
-            "cancelled": "Cancelled"
+            "cancelled": "Cancelled",
+            "shipped": "Shipped"
         }
     },
     "order_detail": {
@@ -211,12 +250,14 @@
         "cancel_button": "Cancel",
         "save_button": "Save Card",
         "unknown_brand": "Unknown",
+        "setup_intent_error": "Could not initialize the payment form. Please try again.",
         "form": {
             "cardholder_name": "Name on Card",
             "card_number": "Card Number",
             "expiry": "MM/YY",
             "cvc": "CVC",
-            "security_note": "Your payment information is secure. We do not store your full card details."
+            "security_note": "Your payment information is secure. We do not store your full card details.",
+            "fill_all_fields": "Please complete all fields to save your card."
         }
     },
     "security": {
@@ -321,6 +362,36 @@
         }
     },
     "checkout": {
+        "title": "Checkout Process",
+        "steps": {
+            "shipping": "Shipping Address",
+            "review": "Review Order",
+            "payment": "Payment Method"
+        },
+        "coupon_code_label": "Coupon Code",
+        "apply_button": "Apply",
+        "payment_method_title": "Credit or Debit Card",
+        "payment_security_note": "Your payment is securely processed by Stripe.",
+        "back_button": "Back",
+        "next_button": "Next",
+        "place_order_button": "Place Order",
+        "order_placed": "Order #{{orderNumber}} placed!",
+        "errors": {
+            "load_addresses": "Could not load your addresses.",
+            "init_payment": "Could not initialize payment.",
+            "coupon_code_required": "Please enter a coupon code.",
+            "server_error": "Server error",
+            "coupon_invalid": "Coupon is not valid or has expired.",
+            "name_required": "Name is required.",
+            "address_required": "Address is required.",
+            "city_required": "City is required.",
+            "zip_required": "Postal code is required.",
+            "country_required": "Country is required.",
+            "payment_form_not_ready": "Payment form is not ready.",
+            "card_details_not_found": "Card details not found.",
+            "order_save_error": "Payment was successful, but there was an error saving your order.",
+            "unknown_step": "Unknown step"
+        },
         "review": {
             "title": "Order Summary",
             "items": "Items in your cart",
@@ -409,5 +480,13 @@
             "remove_success": "Removed from wishlist!",
             "remove_error": "Could not remove from wishlist."
         }
+    },
+    "order_management": {
+        "title": "Order Management",
+        "load_error": "Error loading orders.",
+        "update_success": "Order status updated successfully.",
+        "update_error": "Error updating order status.",
+        "customer_id": "Customer ID",
+        "no_orders": "No orders found."
     }
 }

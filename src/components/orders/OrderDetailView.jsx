@@ -17,11 +17,33 @@ const OrderDetailView = ({ order }) => {
         return null;
     }
 
-    const formatCurrency = (amount) => {
+    const formatCurrency = (amount, currencyCode = 'COP') => {
         if (typeof amount !== 'number') return t('order_detail.invalid_amount');
-        const locale = i18n.language === 'es' ? 'es-CO' : 'en-US';
-        return new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD' }).format(amount);
+        
+        const locale = currencyCode === 'COP' ? 'es-CO' : 'en-US';
+
+        return new Intl.NumberFormat(locale, {
+            style: 'currency',
+            currency: currencyCode,
+            minimumFractionDigits: currencyCode === 'USD' ? 2 : 0,
+            maximumFractionDigits: currencyCode === 'USD' ? 2 : 0,
+        }).format(amount);
     };
+
+    const orderCurrency = order.pricing?.currency || 'COP';
+
+    // Helper to format item prices which are always stored in COP initially
+    // but should be displayed in the order's currency.
+    // This is a simplification. For accuracy, historical exchange rates would be needed.
+    const displayItemPrice = (priceInCop, quantity) => {
+        const totalInCop = priceInCop * quantity;
+        if (orderCurrency === 'USD') {
+            // Approximate conversion rate used at time of development
+            const totalInUsd = totalInCop / 4000;
+            return formatCurrency(totalInUsd, 'USD');
+        }
+        return formatCurrency(totalInCop, 'COP');
+    }
 
     return (
         <Box sx={{ p: { xs: 2, md: 3 }, backgroundColor: 'rgba(0,0,0,0.02)', borderRadius: '8px' }}>
@@ -38,7 +60,7 @@ const OrderDetailView = ({ order }) => {
                                     primary={item.name}
                                     secondary={`${t('order_detail.quantity_label')}: ${item.quantity}`}
                                 />
-                                <Typography variant="body2">{formatCurrency(item.price * item.quantity)}</Typography>
+                                <Typography variant="body2">{displayItemPrice(item.price, item.quantity)}</Typography>
                             </ListItem>
                         ))}
                     </List>
@@ -46,24 +68,24 @@ const OrderDetailView = ({ order }) => {
                     
                     <ListItem sx={{ py: 1, px: 0 }}>
                         <ListItemText primary={t('order_detail.subtotal')} />
-                        <Typography variant="body1">{formatCurrency(order.pricing?.subtotal)}</Typography>
+                        <Typography variant="body1">{formatCurrency(order.pricing?.subtotal, orderCurrency)}</Typography>
                     </ListItem>
                     {order.pricing?.discount > 0 && (
                         <ListItem sx={{ py: 0.5, px: 0 }}>
                             <ListItemText primary={`${t('order_detail.discount')} (${order.coupon?.code || 'N/A'})`} />
-                            <Typography variant="body1" color="success.main">{`- ${formatCurrency(order.pricing.discount)}`}</Typography>
+                            <Typography variant="body1" color="success.main">{`- ${formatCurrency(order.pricing.discount, orderCurrency)}`}</Typography>
                         </ListItem>
                     )}
                     <ListItem sx={{ py: 0.5, px: 0 }}>
                         <ListItemText primary={t('order_detail.shipping_cost')} />
                         <Typography variant="body1">
-                            {order.pricing?.shipping === 0 ? t('order_detail.free_shipping') : formatCurrency(order.pricing?.shipping)}
+                            {order.pricing?.shipping === 0 ? t('order_detail.free_shipping') : formatCurrency(order.pricing?.shipping, orderCurrency)}
                         </Typography>
                     </ListItem>
                     <ListItem sx={{ py: 1, px: 0 }}>
                         <ListItemText primary={t('order_detail.total_label')} sx={{ fontWeight: 700 }} />
                         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            {formatCurrency(order.pricing?.total)}
+                            {formatCurrency(order.pricing?.total, orderCurrency)}
                         </Typography>
                     </ListItem>
                 </Grid>

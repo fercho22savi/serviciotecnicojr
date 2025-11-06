@@ -31,6 +31,7 @@ const CheckoutForm = React.lazy(() => import('./pages/CheckoutForm.jsx'));
 const OrderConfirmationPage = React.lazy(() => import('./pages/OrderConfirmationPage.jsx'));
 const WishlistPage = React.lazy(() => import('./pages/Wishlist.jsx'));
 const PrivacyPolicyPage = React.lazy(() => import('./pages/PrivacyPolicyPage.jsx'));
+const ShippingPolicyPage = React.lazy(() => import('./pages/ShippingPolicyPage.jsx'));
 
 // Account Pages
 const AccountDashboard = React.lazy(() => import('./pages/account/AccountDashboard.jsx'));
@@ -39,6 +40,7 @@ const OrderDetail = React.lazy(() => import('./pages/account/OrderDetail.jsx'));
 const RecentlyViewedPage = React.lazy(() => import('./pages/account/RecentlyViewedPage.jsx'));
 const UserProfile = React.lazy(() => import('./pages/account/Profile.jsx'));
 const SettingsPage = React.lazy(() => import('./pages/account/SettingsPage.jsx'));
+const PaymentMethods = React.lazy(() => import('./pages/account/PaymentMethods.jsx'));
 
 // Admin Pages
 const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard.jsx'));
@@ -100,6 +102,7 @@ const App = () => {
                 },
                 { path: "/order-confirmation/:orderId", element: <OrderConfirmationPage /> },
                 { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
+                { path: "/shipping-policy", element: <ShippingPolicyPage /> },
                 { path: "/wishlist", element: <WishlistPage /> }, 
             ],
         },
@@ -122,6 +125,10 @@ const App = () => {
                 { path: "profile", element: <UserProfile /> },
                 { path: "recently-viewed", element: <RecentlyViewedPage /> },
                 { path: "settings", element: <SettingsPage /> },
+                { 
+                    path: "payment-methods", 
+                    element: <Elements stripe={stripePromise}><PaymentMethods /></Elements> 
+                },
                 { path: "wishlist", element: <Navigate to="/wishlist" replace /> }, // REDIRECT
             ],
         },

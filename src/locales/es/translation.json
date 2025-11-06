@@ -99,7 +99,47 @@
         "wishlist": "Lista de Deseos",
         "profile": "Mi Perfil",
         "recently_viewed": "Vistos Recientemente",
-        "settings": "Configuración"
+        "settings": "Configuración",
+        "payment_methods": "Métodos de Pago"
+    },
+    "admin_menu": {
+        "title": "Panel de Admin",
+        "dashboard": "Dashboard",
+        "products": "Productos",
+        "categories": "Categorías",
+        "orders": "Pedidos",
+        "users": "Usuarios",
+        "coupons": "Cupones",
+        "reviews": "Opiniones"
+    },
+    "category_management": {
+        "title": "Gestión de Categorías",
+        "add_button": "Añadir Categoría",
+        "load_error": "Error al cargar las categorías.",
+        "update_success": "Categoría actualizada con éxito.",
+        "create_success": "Categoría creada con éxito.",
+        "update_error": "Error al actualizar la categoría.",
+        "create_error": "Error al crear la categoría.",
+        "delete_confirm": "¿Estás seguro de que quieres eliminar esta categoría?",
+        "delete_success": "Categoría eliminada con éxito.",
+        "delete_error": "Error al eliminar la categoría.",
+        "no_categories": "No se encontraron categorías.",
+        "edit_title": "Editar Categoría",
+        "add_title": "Añadir Nueva Categoría",
+        "cancel_button": "Cancelar",
+        "save_button": "Guardar",
+        "table": {
+            "name": "Nombre",
+            "description": "Descripción",
+            "actions": "Acciones"
+        },
+        "form": {
+            "name": "Nombre de la Categoría",
+            "description": "Descripción"
+        },
+        "errors": {
+            "name_required": "El nombre de la categoría es obligatorio."
+        }
     },
     "addresses": {
         "title": "Mis Direcciones",
@@ -152,10 +192,12 @@
         "rows_per_page": "Pedidos por página:",
         "close_button": "Cerrar",
         "download_pdf": "Descargar PDF",
+        "exchange_rate_error": "No se pudo obtener la tasa de cambio.",
         "status": {
             "processing": "Procesando",
             "completed": "Completado",
-            "cancelled": "Cancelled"
+            "cancelled": "Cancelado",
+            "shipped": "Enviado"
         }
     },
     "order_detail": {
@@ -211,12 +253,14 @@
         "cancel_button": "Cancelar",
         "save_button": "Guardar Tarjeta",
         "unknown_brand": "Desconocida",
+        "setup_intent_error": "No se pudo inicializar el formulario de pago. Por favor, inténtalo de nuevo.",
         "form": {
             "cardholder_name": "Nombre en la Tarjeta",
             "card_number": "Número de Tarjeta",
             "expiry": "MM/AA",
             "cvc": "CVC",
-            "security_note": "Tu información de pago está segura. No almacenamos los detalles completos de tu tarjeta."
+            "security_note": "Tu información de pago está segura. No almacenamos los detalles completos de tu tarjeta.",
+            "fill_all_fields": "Por favor, completa todos los campos para guardar tu tarjeta."
         }
     },
     "security": {
@@ -321,6 +365,36 @@
         }
     },
     "checkout": {
+        "title": "Proceso de Pago",
+        "steps": {
+            "shipping": "Dirección de Envío",
+            "review": "Revisar Pedido",
+            "payment": "Método de Pago"
+        },
+        "coupon_code_label": "Código de Cupón",
+        "apply_button": "Aplicar",
+        "payment_method_title": "Tarjeta de Crédito o Débito",
+        "payment_security_note": "Tu pago se procesa de forma segura por Stripe.",
+        "back_button": "Atrás",
+        "next_button": "Siguiente",
+        "place_order_button": "Finalizar Compra",
+        "order_placed": "¡Pedido #{{orderNumber}} realizado!",
+        "errors": {
+            "load_addresses": "No se pudieron cargar tus direcciones.",
+            "init_payment": "No se pudo inicializar el pago.",
+            "coupon_code_required": "Por favor, ingresa un código de cupón.",
+            "server_error": "Error del servidor",
+            "coupon_invalid": "El cupón no es válido o ha expirado.",
+            "name_required": "El nombre es requerido.",
+            "address_required": "La dirección es requerida.",
+            "city_required": "La ciudad es requerida.",
+            "zip_required": "El código postal es requerido.",
+            "country_required": "El país es requerido.",
+            "payment_form_not_ready": "El formulario de pago no está listo.",
+            "card_details_not_found": "No se encontraron los detalles de la tarjeta.",
+            "order_save_error": "El pago fue exitoso, pero hubo un error al guardar tu pedido.",
+            "unknown_step": "Paso desconocido"
+        },
         "review": {
             "title": "Resumen del Pedido",
             "items": "Artículos en tu carrito",
@@ -409,5 +483,13 @@
             "remove_success": "¡Eliminado de la lista de deseos!",
             "remove_error": "No se pudo eliminar de la lista de deseos."
         }
+    },
+    "order_management": {
+        "title": "Gestión de Pedidos",
+        "load_error": "Error al cargar los pedidos.",
+        "update_success": "Estado del pedido actualizado con éxito.",
+        "update_error": "Error al actualizar el estado del pedido.",
+        "customer_id": "ID de Cliente",
+        "no_orders": "No se encontraron pedidos."
     }
 }

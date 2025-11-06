@@ -17,9 +17,23 @@ const Review = ({
     shippingCost, 
     discountAmount,
     finalTotal,
-    appliedCoupon 
+    appliedCoupon,
+    currency,
+    formatCurrency,
+    convertToUSD
 }) => {
     const { t } = useTranslation();
+
+    const displayAmount = (amount) => {
+        const value = currency === 'USD' ? convertToUSD(amount) : amount;
+        return formatCurrency(value, currency);
+    };
+    
+    const displayAmountWithSign = (amount, sign = '') => {
+        const value = currency === 'USD' ? convertToUSD(amount) : amount;
+        const formattedValue = formatCurrency(value, currency);
+        return `${sign}${formattedValue}`;
+    };
 
     return (
         <Box>
@@ -33,14 +47,14 @@ const Review = ({
                             primary={item.name} 
                             secondary={`Cantidad: ${item.quantity}`}
                         />
-                        <Typography variant="body2">{`$${(item.price * item.quantity).toLocaleString('es-CO')}`}</Typography>
+                        <Typography variant="body2">{displayAmount(item.price * item.quantity)}</Typography>
                     </ListItem>
                 ))}
                 <Divider sx={{ my: 1 }} />
 
                 <ListItem sx={{ py: 1, px: 0 }}>
                     <ListItemText primary="Subtotal" />
-                    <Typography variant="body1">{`$${subtotal.toLocaleString('es-CO')}`}</Typography>
+                    <Typography variant="body1">{displayAmount(subtotal)}</Typography>
                 </ListItem>
 
                 {discountAmount > 0 && (
@@ -49,21 +63,21 @@ const Review = ({
                             primary="Descuento"
                             secondary={appliedCoupon ? `Código: ${appliedCoupon.code}` : ''}
                         />
-                        <Typography variant="body1" color="success.main">{`- $${discountAmount.toLocaleString('es-CO')}`}</Typography>
+                        <Typography variant="body1" color="success.main">{displayAmountWithSign(discountAmount, '-')}</Typography>
                     </ListItem>
                 )}
 
                 <ListItem sx={{ py: 0.5, px: 0 }}>
                     <ListItemText primary="Envío" />
                     <Typography variant="body1">
-                        {shippingCost === 0 ? 'GRATIS' : `$${shippingCost.toLocaleString('es-CO')}`}
+                        {shippingCost === 0 ? 'GRATIS' : displayAmount(shippingCost)}
                     </Typography>
                 </ListItem>
 
                 <ListItem sx={{ py: 1, px: 0, mt: 1 }}>
                     <ListItemText primary="Total" />
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                        {`$${finalTotal.toLocaleString('es-CO')}`}
+                        {displayAmount(finalTotal)}
                     </Typography>
                 </ListItem>
             </List>

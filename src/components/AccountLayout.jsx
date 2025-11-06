@@ -9,6 +9,7 @@ import {
     AccountCircle as AccountCircleIcon,
     Visibility as VisibilityIcon,
     Settings as SettingsIcon,
+    CreditCard as CreditCardIcon
 } from '@mui/icons-material';
 
 const AccountLayout = () => {
@@ -20,6 +21,7 @@ const AccountLayout = () => {
     { text: t('account_menu.wishlist'), to: '/wishlist', icon: <FavoriteIcon /> },
     { text: t('account_menu.profile'), to: '/account/profile', icon: <AccountCircleIcon /> },
     { text: t('account_menu.recently_viewed'), to: '/account/recently-viewed', icon: <VisibilityIcon /> },
+    { text: t('account_menu.payment_methods'), to: '/account/payment-methods', icon: <CreditCardIcon /> },
     { text: t('account_menu.settings'), to: '/account/settings', icon: <SettingsIcon /> },
   ];
 

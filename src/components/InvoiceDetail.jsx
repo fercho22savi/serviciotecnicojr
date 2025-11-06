@@ -1,107 +1,133 @@
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import { Box, Button, Typography, Paper, Grid, Table, TableBody, TableCell, TableHead, TableRow, Divider } from '@mui/material';
-import Logo from './Logo';
+import Logo from './Logo'; // Assuming you have a Logo component
 
 const InvoiceDetail = ({ order }) => {
   const componentRef = useRef();
 
+  // This hook handles the print action
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
-    documentTitle: `Factura-${order.orderId}`,
+    documentTitle: `Factura-${order.orderNumber}`,
   });
 
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    const finalY = (doc).lastAutoTable.finalY || 10;
-    doc.text(`Factura #${order.orderId}`, 14, finalY + 15);
-    doc.text(`Cliente: ${order.customerDetails.firstName} ${order.customerDetails.lastName}`, 14, finalY + 25);
-    doc.text(`Total: ${(order.totalAmount * 1.21).toFixed(2)} €`, 14, finalY + 35);
-    doc.autoTable({ html: '#invoice-table' });
-    doc.save(`factura-${order.orderId}.pdf`);
+  // --- Dynamic Currency Formatter ---
+  const formatCurrency = (amount, currencyCode) => {
+    if (typeof amount !== 'number') return 'N/A';
+    
+    const locale = currencyCode === 'COP' ? 'es-CO' : 'en-US';
+    const options = {
+        style: 'currency',
+        currency: currencyCode,
+        minimumFractionDigits: currencyCode === 'USD' ? 2 : 0,
+        maximumFractionDigits: currencyCode === 'USD' ? 2 : 0,
+    };
+
+    return new Intl.NumberFormat(locale, options).format(amount);
   };
 
-  const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(
-      order.items.map(item => ({
-        Producto: item.name,
-        Cantidad: item.quantity,
-        PrecioUnitario: `${item.price} €`,
-        Subtotal: `${(item.price * item.quantity).toFixed(2)} €`,
-      }))
-    );
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Factura');
-    XLSX.writeFile(wb, `factura-${order.orderId}.xlsx`);
-  };
+  const orderCurrency = order.pricing?.currency || 'COP';
 
   return (
     <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, mt: 2 }}>
-      <Box ref={componentRef} sx={{ p: 4 }}>
-        <Grid container justifyContent="space-between" alignItems="center">
+      {/* --- Component to be printed -- */}
+      <Box ref={componentRef} sx={{ p: { xs: 2, md: 4 } }}>
+        <Grid container justifyContent="space-between" alignItems="flex-start" sx={{ mb: 4 }}>
           <Grid item>
-            <Logo />
-            <Typography variant="h5" gutterBottom sx={{mt:2}}>Factura</Typography>
+            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+              Servicio Técnico JR
+            </Typography>
           </Grid>
           <Grid item textAlign="right">
-            <Typography variant="h6">Pedido #{order.orderId}</Typography>
-            <Typography>Fecha: {new Date(order.createdAt.seconds * 1000).toLocaleDateString()}</Typography>
+            <Typography variant="h5" color="primary" sx={{ fontWeight: 500 }}>
+              FACTURA DE VENTA
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Carrera 10 #12-34, Bogotá, Colombia
+            </Typography>
           </Grid>
         </Grid>
-        <Divider sx={{ my: 3 }} />
-        <Grid container justifyContent="space-between">
-          <Grid item>
-            <Typography variant="h6">Cliente:</Typography>
-            <Typography>{`${order.customerDetails.firstName} ${order.customerDetails.lastName}`}</Typography>
-            <Typography>{order.customerDetails.address}</Typography>
-            <Typography>{`${order.customerDetails.city}, ${order.customerDetails.postalCode}`}</Typography>
-            <Typography>{order.customerDetails.country}</Typography>
-            <Typography>Email: {order.customerDetails.email}</Typography>
+
+        <Grid container justifyContent="space-between" sx={{ mb: 4 }}>
+          <Grid item xs={6}>
+            <Typography variant="overline" color="text.secondary">Facturar a:</Typography>
+            <Typography>{order.shippingAddress?.recipientName}</Typography>
+            <Typography>{order.shippingAddress?.street}</Typography>
+            <Typography>{`${order.shippingAddress?.city}, ${order.shippingAddress?.postalCode}`}</Typography>
+            <Typography>{order.shippingAddress?.country}</Typography>
+          </Grid>
+          <Grid item xs={6} textAlign="right">
+            <Grid container>
+                <Grid item xs={6}><Typography variant="body1" sx={{fontWeight: 'bold'}}>N° de Factura:</Typography></Grid>
+                <Grid item xs={6}><Typography variant="body1">{order.orderNumber}</Typography></Grid>
+                
+                <Grid item xs={6}><Typography variant="body1" sx={{fontWeight: 'bold'}}>Fecha de Emisión:</Typography></Grid>
+                <Grid item xs={6}><Typography variant="body1">{new Date(order.createdAt?.seconds * 1000).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</Typography></Grid>
+                
+                <Grid item xs={6}><Typography variant="body1" sx={{fontWeight: 'bold'}}>Estado del Pedido:</Typography></Grid>
+                <Grid item xs={6}><Typography variant="body1">{order.status}</Typography></Grid>
+            </Grid>
           </Grid>
         </Grid>
-        <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Productos</Typography>
-        <Table id="invoice-table">
-          <TableHead>
+
+        <Table sx={{ mb: 4 }}>
+          <TableHead sx={{ backgroundColor: 'primary.main' }}>
             <TableRow>
-              <TableCell>Producto</TableCell>
-              <TableCell align="right">Cantidad</TableCell>
-              <TableCell align="right">Precio Unitario</TableCell>
-              <TableCell align="right">Subtotal</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Descripción</TableCell>
+              <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Cant.</TableCell>
+              <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Precio Unit.</TableCell>
+              <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Total</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {order.items.map((item) => (
+            {order.items?.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.name}</TableCell>
                 <TableCell align="right">{item.quantity}</TableCell>
-                <TableCell align="right">{item.price.toFixed(2)} €</TableCell>
-                <TableCell align="right">{(item.price * item.quantity).toFixed(2)} €</TableCell>
+                <TableCell align="right">{formatCurrency(item.price, orderCurrency)}</TableCell>
+                <TableCell align="right">{formatCurrency(item.price * item.quantity, orderCurrency)}</TableCell>
               </TableRow>
             ))}
-            <TableRow>
-              <TableCell rowSpan={3} />
-              <TableCell colSpan={2}>Subtotal</TableCell>
-              <TableCell align="right">{order.totalAmount.toFixed(2)} €</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell colSpan={2}>IVA (21%)</TableCell>
-              <TableCell align="right">{(order.totalAmount * 0.21).toFixed(2)} €</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell colSpan={2}><Typography variant="h6">Total</Typography></TableCell>
-              <TableCell align="right"><Typography variant="h6">{(order.totalAmount * 1.21).toFixed(2)} €</Typography></TableCell>
-            </TableRow>
           </TableBody>
         </Table>
+
+        <Grid container>
+            <Grid item xs={6}>
+                <Typography variant="overline" color="text.secondary">Método de Pago:</Typography>
+                <Typography>Tarjeta {order.payment?.brand || 'N/A'} terminada en {order.payment?.last4 || 'N/A'}</Typography>
+            </Grid>
+            <Grid item xs={6} >
+                <Box sx={{display: 'flex', justifyContent: 'space-between', mb: 1}}>
+                    <Typography sx={{fontWeight: 'bold'}}>Subtotal:</Typography>
+                    <Typography>{formatCurrency(order.pricing.subtotal, orderCurrency)}</Typography>
+                </Box>
+                <Box sx={{display: 'flex', justifyContent: 'space-between', mb: 1}}>
+                    <Typography sx={{fontWeight: 'bold'}}>Coste de Envío:</Typography>
+                    <Typography>{order.pricing.shipping === 0 ? 'Gratis' : formatCurrency(order.pricing.shipping, orderCurrency)}</Typography>
+                </Box>
+                {order.pricing.discount > 0 && (
+                    <Box sx={{display: 'flex', justifyContent: 'space-between', mb: 1}}>
+                        <Typography sx={{fontWeight: 'bold'}}>Descuento:</Typography>
+                        <Typography color="success.main">-{formatCurrency(order.pricing.discount, orderCurrency)}</Typography>
+                    </Box>
+                )}
+                <Divider sx={{my:1}} />
+                <Box sx={{display: 'flex', justifyContent: 'space-between', mt: 1}}>
+                    <Typography variant="h6" sx={{fontWeight: 'bold'}} color="primary">TOTAL A PAGAR:</Typography>
+                    <Typography variant="h6" sx={{fontWeight: 'bold'}}>{formatCurrency(order.pricing.total, orderCurrency)}</Typography>
+                </Box>
+            </Grid>
+        </Grid>
+
       </Box>
+
       <Divider sx={{ my: 3 }} />
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, p: 2 }}>
-        <Button variant="contained" onClick={handleExportPDF}>Exportar a PDF</Button>
-        <Button variant="contained" onClick={handleExportExcel}>Exportar a Excel</Button>
-        <Button variant="contained" color="secondary" onClick={handlePrint}>Imprimir</Button>
+        {/* The print button now generates a PDF-like experience */}
+        <Button variant="contained" color="secondary" onClick={handlePrint}>Imprimir o Guardar como PDF</Button>
+        {/* Other export buttons can be re-enabled later if needed */}
+        {/* <Button variant="outlined" onClick={() => alert('Exporting to PDF...')}>Exportar a PDF (WIP)</Button> */}
       </Box>
     </Paper>
   );

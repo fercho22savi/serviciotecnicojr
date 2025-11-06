@@ -10,11 +10,15 @@ import {
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
-import StatusBadge from '../../components/StatusBadge';
+import { useTranslation } from 'react-i18next';
+import { es, enUS } from 'date-fns/locale';
+import StatusChip from '../../components/StatusChip'; // IMPORT THE NEW COMPONENT
 
-const STATUS_OPTIONS = ['En proceso', 'Pagado', 'Enviado', 'Entregado', 'Cancelado'];
+// Standardized status values (used in the database)
+const STATUS_OPTIONS = ['Processing', 'Shipped', 'Completed', 'Cancelled'];
 
 function OrderManagement() {
+  const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,19 +31,18 @@ function OrderManagement() {
         const ordersList = querySnapshot.docs.map(doc => ({ 
             id: doc.id, 
             ...doc.data(),
-            // Asegurarse de que el estado por defecto sea 'En proceso' si no está definido
-            status: doc.data().status || 'En proceso' 
+            status: doc.data().status || 'Processing' // Default to standardized status
         }));
         setOrders(ordersList);
       } catch (error) {
         console.error("Error fetching orders: ", error);
-        toast.error("Error al cargar los pedidos.");
+        toast.error(t('order_management.load_error'));
       } finally {
         setLoading(false);
       }
     };
     fetchOrders();
-  }, []);
+  }, [t]);
 
   const handleStatusChange = async (orderId, newStatus) => {
     const orderRef = doc(db, 'orders', orderId);
@@ -50,10 +53,10 @@ function OrderManagement() {
                 order.id === orderId ? { ...order, status: newStatus } : order
             )
         );
-        toast.success('Estado del pedido actualizado.');
+        toast.success(t('order_management.update_success'));
     } catch (error) {
         console.error("Error updating order status: ", error);
-        toast.error('No se pudo actualizar el estado del pedido.');
+        toast.error(t('order_management.update_error'));
     }
   };
 
@@ -64,52 +67,52 @@ function OrderManagement() {
   return (
     <Container maxWidth="lg" sx={{ my: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Gestión de Pedidos
+        {t('order_management.title')}
       </Typography>
       
       <Paper elevation={3} sx={{ overflowX: 'auto' }}>
         <Table sx={{ minWidth: 750 }}>
           <TableHead>
             <TableRow>
-              <TableCell>ID Pedido</TableCell>
-              <TableCell>Fecha</TableCell>
-              <TableCell>Cliente</TableCell>
-              <TableCell align="right">Total</TableCell>
-              <TableCell align="center">Estado</TableCell>
-              <TableCell align="center">Acciones</TableCell>
+              <TableCell>{t('orders.order_number')}</TableCell>
+              <TableCell>{t('orders.date')}</TableCell>
+              <TableCell>{t('order_management.customer_id')}</TableCell>
+              <TableCell align="right">{t('orders.total')}</TableCell>
+              <TableCell align="center">{t('orders.status_label')}</TableCell>
+              <TableCell align="center">{t('orders.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {orders.map((order) => (
               <TableRow key={order.id} hover>
                 <TableCell component="th" scope="row" sx={{fontFamily: 'monospace'}}>
-                  {order.id.substring(0, 6).toUpperCase()}
+                  {order.orderNumber || order.id.substring(0, 6).toUpperCase()}
                 </TableCell>
                 <TableCell>
-                  {order.createdAt?.seconds ? format(new Date(order.createdAt.seconds * 1000), 'dd/MM/yyyy HH:mm') : 'N/A'}
+                  {order.createdAt?.seconds ? format(new Date(order.createdAt.seconds * 1000), 'dd/MM/yyyy HH:mm', { locale: i18n.language === 'es' ? es : enUS }) : 'N/A'}
                 </TableCell>
                 <TableCell sx={{fontFamily: 'monospace', fontSize: '0.75rem'}}>{order.userId}</TableCell>
                 <TableCell align="right">
-                  {(order.totalAmount * 1.21).toFixed(2)} €
+                   {new Intl.NumberFormat(i18n.language === 'es' ? 'es-CO' : 'en-US', { style: 'currency', currency: order.currency || 'COP' }).format(order.totalAmount)}
                 </TableCell>
                 <TableCell align="center">
                     <FormControl fullWidth size="small">
                         <Select
                             value={order.status}
                             onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                            renderValue={(selected) => <StatusBadge status={selected} />}
+                            renderValue={(selected) => <StatusChip status={selected} />}
                             sx={{ minWidth: 140 }}
                         >
                             {STATUS_OPTIONS.map((statusOption) => (
                                 <MenuItem key={statusOption} value={statusOption}>
-                                    <StatusBadge status={statusOption} />
+                                    <StatusChip status={statusOption} />
                                 </MenuItem>
                             ))}
                         </Select>
                     </FormControl>
                 </TableCell>
                 <TableCell align="center">
-                  <IconButton component={Link} to={`/admin/orders/${order.id}`} color="primary" title="Ver Detalle">
+                  <IconButton component={Link} to={`/admin/orders/${order.id}`} color="primary" title={t('orders.view_details')}>
                     <VisibilityIcon />
                   </IconButton>
                 </TableCell>
@@ -118,7 +121,7 @@ function OrderManagement() {
           </TableBody>
         </Table>
         {orders.length === 0 && !loading && 
-            <Typography sx={{textAlign: 'center', p: 4}}>No se han encontrado pedidos.</Typography>
+            <Typography sx={{textAlign: 'center', p: 4}}>{t('order_management.no_orders')}</Typography>
         }
       </Paper>
     </Container>

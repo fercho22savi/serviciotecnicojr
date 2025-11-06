@@ -1,183 +1,218 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { Typography, Box, Button, CircularProgress, Paper, Grid, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
-import { useAuth } from '../../context/AuthContext';
+import { 
+    Container, Typography, Paper, Box, Button, CircularProgress, Alert, 
+    List, ListItem, ListItemText, IconButton, Dialog, DialogTitle, 
+    DialogContent, DialogActions, TextField, Grid, ListItemIcon, useTheme 
+} from '@mui/material';
+import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { db } from '../../firebase/config';
-import { collection, getDocs, addDoc, doc, deleteDoc } from 'firebase/firestore';
-import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import DeleteIcon from '@mui/icons-material/Delete';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
+import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { FaCcVisa, FaCcMastercard, FaCcAmex, FaCreditCard } from 'react-icons/fa';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../firebase/config';
 
-const initialCardState = {
-    cardholderName: '',
-    cardNumber: '',
-    expiry: '', // MM/YY
-    cvc: ''
+const cardElementOptions = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#424770',
+      '::placeholder': {
+        color: '#aab7c4',
+      },
+    },
+    invalid: {
+      color: '#9e2146',
+    },
+  },
 };
 
-function PaymentMethods() {
+const getCardIcon = (brand) => {
+    switch (brand) {
+        case 'visa': return <FaCcVisa size="2em" />;
+        case 'mastercard': return <FaCcMastercard size="2em" />;
+        case 'amex': return <FaCcAmex size="2em" />;
+        default: return <FaCreditCard size="2em" />;
+    }
+};
+
+const createSetupIntent = httpsCallable(functions, 'createSetupIntent');
+
+const PaymentMethods = () => {
     const { t } = useTranslation();
-    const { currentUser } = useAuth(); // Correctly using currentUser
-    const [paymentMethods, setPaymentMethods] = useState([]);
+    const stripe = useStripe();
+    const elements = useElements();
+    const { currentUser } = useAuth();
+    const theme = useTheme();
+
+    const [methods, setMethods] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [open, setOpen] = useState(false);
-    const [newCard, setNewCard] = useState(initialCardState);
+    const [formError, setFormError] = useState('');
+    const [cardholderName, setCardholderName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [clientSecret, setClientSecret] = useState('');
 
-    const createMockToken = (cardDetails) => {
-        const last4 = cardDetails.cardNumber.slice(-4);
-        let brand = t('payment_methods.unknown_brand');
-        if (/^4/.test(cardDetails.cardNumber)) brand = 'Visa';
-        if (/^5[1-5]/.test(cardDetails.cardNumber)) brand = 'Mastercard';
-        if (/^3[47]/.test(cardDetails.cardNumber)) brand = 'American Express';
-        
-        return Promise.resolve({
-            token: `tok_${Math.random().toString(36).substr(2, 10)}`,
-            card: {
-                brand,
-                last4,
-                exp_month: cardDetails.expiry.split('/')[0],
-                exp_year: `20${cardDetails.expiry.split('/')[1]}`,
-                cardholder_name: cardDetails.cardholderName,
-            }
-        });
-    };
-
-    const fetchPaymentMethods = useCallback(async () => {
+    useEffect(() => {
         if (!currentUser) {
             setLoading(false);
             return;
         }
+
         setLoading(true);
-        try {
-            const methodsColRef = collection(db, 'users', currentUser.uid, 'payment_methods');
-            const querySnapshot = await getDocs(methodsColRef);
-            const userMethods = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setPaymentMethods(userMethods);
-        } catch (error) {
-            toast.error(t('payment_methods.load_error'));
-            console.error("Error fetching payment methods: ", error);
-        } finally {
+        const methodsRef = collection(db, 'users', currentUser.uid, 'payment_methods');
+        const unsubscribe = onSnapshot(methodsRef, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setMethods(data);
             setLoading(false);
-        }
+        }, (err) => {
+            console.error(err);
+            setError(t('payment_methods.load_error'));
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, [currentUser, t]);
 
-    useEffect(() => {
-        fetchPaymentMethods();
-    }, [fetchPaymentMethods]);
+    const handleOpen = async () => {
+        setOpen(true);
+        try {
+            const result = await createSetupIntent();
+            setClientSecret(result.data.clientSecret);
+        } catch (err) {
+            console.error("Error creating setup intent:", err);
+            setFormError(t('payment_methods.setup_intent_error'));
+        }
+    };
 
-    const handleOpen = () => setOpen(true);
     const handleClose = () => {
         setOpen(false);
-        setNewCard(initialCardState);
+        setFormError('');
+        setCardholderName('');
+        setClientSecret('');
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setNewCard(prev => ({ ...prev, [name]: value }));
-    };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!stripe || !elements || !clientSecret || !cardholderName.trim()) {
+            setFormError(t('payment_methods.form.fill_all_fields'));
+            return;
+        }
 
-    const handleSubmit = async () => {
-        if (!currentUser) return;
-        const toastId = toast.loading(t('payment_methods.saving_toast'));
+        const cardElement = elements.getElement(CardElement);
+        setIsSaving(true);
+        setFormError('');
+
+        const { error: setupError, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
+            payment_method: {
+                card: cardElement,
+                billing_details: { name: cardholderName, email: currentUser.email },
+            },
+        });
+
+        if (setupError) {
+            setFormError(setupError.message);
+            setIsSaving(false);
+            return;
+        }
+
         try {
-            const { token, card } = await createMockToken(newCard);
-            const methodsColRef = collection(db, 'users', currentUser.uid, 'payment_methods');
-            await addDoc(methodsColRef, {
-                ...card,
-                tokenId: token,
+            const pmDoc = await getDoc(doc(db, 'stripe_customers', currentUser.uid, 'payment_methods', setupIntent.payment_method));
+            const paymentMethodData = pmDoc.data();
+
+            await addDoc(collection(db, 'users', currentUser.uid, 'payment_methods'), {
+                stripePaymentMethodId: setupIntent.payment_method,
+                last4: paymentMethodData.card.last4,
+                brand: paymentMethodData.card.brand,
+                isDefault: methods.length === 0, 
             });
 
-            toast.success(t('payment_methods.save_success'), { id: toastId });
+            toast.success(t('payment_methods.save_success'));
             handleClose();
-            fetchPaymentMethods(); // Refresh the list
-        } catch (error) {
-            toast.error(t('payment_methods.save_error'), { id: toastId });
-            console.error("Error saving payment method: ", error);
+        } catch (err) {
+            console.error("Firestore error:", err);
+            setFormError(t('payment_methods.save_error'));
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleDelete = async (methodId) => {
-        if (window.confirm(t('payment_methods.delete_confirm'))) {
-            if (!currentUser) return;
-            const toastId = toast.loading(t('payment_methods.deleting_toast'));
-            try {
-                const methodDocRef = doc(db, 'users', currentUser.uid, 'payment_methods', methodId);
-                await deleteDoc(methodDocRef);
-                toast.success(t('payment_methods.delete_success'), { id: toastId });
-                fetchPaymentMethods(); // Refresh the list
-            } catch (error) {
-                toast.error(t('payment_methods.delete_error'), { id: toastId });
-                console.error("Error deleting payment method: ", error);
+        if (!window.confirm(t('payment_methods.delete_confirm'))) return;
+        toast.promise(
+            deleteDoc(doc(db, 'users', currentUser.uid, 'payment_methods', methodId)),
+            {
+                loading: t('payment_methods.deleting_toast'),
+                success: t('payment_methods.delete_success'),
+                error: t('payment_methods.delete_error'),
             }
-        }
+        );
     };
 
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4, minHeight: '200px' }}>
-                <CircularProgress />
-                <Typography sx={{ ml: 2 }}>{t('payment_methods.loading_text')}</Typography>
-            </Box>
-        );
-    }
-
     return (
-        <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{t('payment_methods.title')}</Typography>
-                <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={handleOpen}>
-                    {t('payment_methods.add_button')}
-                </Button>
-            </Box>
-
-            {paymentMethods.length === 0 ? (
-                <Paper sx={{ p: 4, textAlign: 'center', borderRadius: '12px' }}>
-                    <Typography variant="h6">{t('payment_methods.no_methods_title')}</Typography>
-                    <Typography color="text.secondary">{t('payment_methods.no_methods_subtitle')}</Typography>
+        <Container maxWidth="md">
+            <Typography variant="h4" component="h1" gutterBottom>{t('payment_methods.title')}</Typography>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}><CircularProgress /></Box>
+            ) : methods.length === 0 ? (
+                <Paper sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography variant="h6" gutterBottom>{t('payment_methods.no_methods_title')}</Typography>
+                    <Typography color="text.secondary" sx={{ mb: 3 }}>{t('payment_methods.no_methods_subtitle')}</Typography>
+                    <Button variant="contained" onClick={handleOpen}>{t('payment_methods.add_button')}</Button>
                 </Paper>
             ) : (
-                <Grid container spacing={3}>
-                    {paymentMethods.map(method => (
-                        <Grid item xs={12} md={6} key={method.id}>
-                            <Paper sx={{ p: 2.5, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <CreditCardIcon color="primary" />
-                                    <Box>
-                                        <Typography sx={{ fontWeight: 'bold' }}>{t('payment_methods.card_ending_in', { brand: method.brand, last4: method.last4 })}</Typography>
-                                        <Typography variant="body2" color="text.secondary">{t('payment_methods.expires_label')}: {method.exp_month}/{method.exp_year.slice(2)}</Typography>
-                                    </Box>
-                                </Box>
-                                <IconButton size="small" onClick={() => handleDelete(method.id)}><DeleteIcon /></IconButton>
-                            </Paper>
-                        </Grid>
-                    ))}
-                </Grid>
+                <Paper sx={{ p: 2 }}>
+                    <List>
+                        {methods.map((method) => (
+                            <ListItem key={method.id} secondaryAction={<IconButton edge="end" onClick={() => handleDelete(method.id)}><DeleteIcon /></IconButton>}>
+                                <ListItemIcon>{getCardIcon(method.brand)}</ListItemIcon>
+                                <ListItemText 
+                                    primary={`${method.brand.charAt(0).toUpperCase() + method.brand.slice(1)} **** ${method.last4}`}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button variant="contained" onClick={handleOpen}>{t('payment_methods.add_button')}</Button>
+                    </Box>
+                </Paper>
             )}
 
-            <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+            <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
                 <DialogTitle>{t('payment_methods.add_dialog_title')}</DialogTitle>
-                <DialogContent>
-                    <Box component="form" sx={{ pt: 1 }}>
-                        <TextField margin="normal" fullWidth label={t('payment_methods.form.cardholder_name')} name="cardholderName" value={newCard.cardholderName} onChange={handleChange} />
-                        <TextField margin="normal" fullWidth label={t('payment_methods.form.card_number')} name="cardNumber" value={newCard.cardNumber} onChange={handleChange} placeholder="0000 0000 0000 0000"/>
+                <form onSubmit={handleSubmit}>
+                    <DialogContent>
                         <Grid container spacing={2}>
-                            <Grid item xs={6}><TextField margin="normal" fullWidth label={t('payment_methods.form.expiry')} name="expiry" value={newCard.expiry} onChange={handleChange} placeholder="MM/YY"/></Grid>
-                            <Grid item xs={6}><TextField margin="normal" fullWidth label={t('payment_methods.form.cvc')} name="cvc" value={newCard.cvc} onChange={handleChange} placeholder="123"/></Grid>
+                            <Grid item xs={12}>
+                                <TextField fullWidth label={t('payment_methods.form.cardholder_name')} value={cardholderName} onChange={(e) => setCardholderName(e.target.value)} required variant="outlined" />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Paper sx={{ p: 2, border: `1px solid ${theme.palette.divider}` }}>
+                                  <CardElement options={cardElementOptions} />
+                                </Paper>
+                            </Grid>
+                            {formError && <Grid item xs={12}><Alert severity="error">{formError}</Alert></Grid>}
+                            <Grid item xs={12}>
+                                <Typography variant="caption" color="text.secondary">{t('payment_methods.form.security_note')}</Typography>
+                            </Grid>
                         </Grid>
-                        <Typography variant="caption" color="text.secondary" sx={{mt: 2, display: 'block'}}>
-                            {t('payment_methods.form.security_note')}
-                        </Typography>
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ p: '0 24px 20px' }}>
-                    <Button onClick={handleClose}>{t('payment_methods.cancel_button')}</Button>
-                    <Button onClick={handleSubmit} variant="contained">{t('payment_methods.save_button')}</Button>
-                </DialogActions>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleClose}>{t('payment_methods.cancel_button')}</Button>
+                        <Button type="submit" variant="contained" disabled={isSaving || !stripe || !clientSecret}>
+                            {isSaving ? <CircularProgress size={24} /> : t('payment_methods.save_button')}
+                        </Button>
+                    </DialogActions>
+                </form>
             </Dialog>
-        </Box>
+        </Container>
     );
-}
+};
 
 export default PaymentMethods;

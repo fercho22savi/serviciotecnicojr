@@ -4,15 +4,16 @@ import {
 } from '@mui/material';
 import { AddShoppingCart, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import ImageWithFallback from './ImageWithFallback';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const ProductCard = ({ product }) => {
     const navigate = useNavigate();
     const { addToCart } = useCart();
     const { wishlist, handleWishlist } = useWishlist();
+    const { convertToUSD } = useCurrency();
     const [isHovered, setIsHovered] = useState(false);
 
     if (!product) {
@@ -45,6 +46,8 @@ const ProductCard = ({ product }) => {
         e.stopPropagation();
         handleWishlist(id);
     };
+
+    const priceInUSD = convertToUSD(price);
 
     return (
         <Card 
@@ -149,10 +152,10 @@ const ProductCard = ({ product }) => {
                         size="small"
                         sx={{
                             '& .MuiRating-iconFilled': {
-                                color: '#ffc107', // Gold color for filled stars
+                                color: '#ffc107',
                             },
                             '& .MuiRating-iconEmpty': {
-                                color: '#0000003B', // Light grey for empty stars
+                                color: '#0000003B',
                             }
                         }}
                     />
@@ -161,6 +164,9 @@ const ProductCard = ({ product }) => {
                 <Box>
                     <Typography variant="h5" color="primary.main" sx={{ fontWeight: 'bold' }}>
                         ${Number(price).toLocaleString('es-CO')}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'green', fontWeight: '500' }}>
+                        Approx. ${priceInUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                     </Typography>
                 </Box>
             </CardContent>
