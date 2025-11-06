@@ -3,6 +3,7 @@ import { db } from '../firebase/config';
 import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const WishlistContext = createContext();
 
@@ -12,8 +13,8 @@ export const WishlistProvider = ({ children }) => {
     const [wishlist, setWishlist] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const { currentUser } = useAuth();
+    const { t } = useTranslation();
 
-    // Fetch wishlist from Firestore when user logs in
     const fetchWishlist = useCallback(async () => {
         if (!currentUser) {
             setWishlist(new Set());
@@ -28,17 +29,16 @@ export const WishlistProvider = ({ children }) => {
             setWishlist(new Set(productIds));
         } catch (error) {
             console.error("Error fetching wishlist: ", error);
-            toast.error("Could not fetch wishlist.");
+            toast.error(t('wishlist.toast.fetch_error'));
         } finally {
             setLoading(false);
         }
-    }, [currentUser]);
+    }, [currentUser, t]);
 
     useEffect(() => {
         fetchWishlist();
     }, [fetchWishlist]);
 
-    // Clear local wishlist on logout
     useEffect(() => {
         if (!currentUser) {
             setWishlist(new Set());
@@ -47,24 +47,21 @@ export const WishlistProvider = ({ children }) => {
 
     const addToWishlist = async (productId) => {
         if (!currentUser) {
-            toast.error("Please log in to add items to your wishlist.");
+            toast.error(t('wishlist.toast.add_login_prompt'));
             return;
         }
         try {
-            // Optimistic UI update: update state before async operation
             setWishlist(prevWishlist => {
-                if (prevWishlist.has(productId)) return prevWishlist; // Already in wishlist, do nothing
-                // Create a new Set to ensure React detects the state change
+                if (prevWishlist.has(productId)) return prevWishlist;
                 const newWishlist = new Set(prevWishlist);
                 newWishlist.add(productId);
                 return newWishlist;
             });
             await setDoc(doc(db, 'users', currentUser.uid, 'wishlist', productId), { productId });
-            toast.success("Added to wishlist!");
+            toast.success(t('wishlist.toast.add_success'));
         } catch (error) {
             console.error("Error adding to wishlist: ", error);
-            toast.error("Could not add to wishlist.");
-            // Revert UI on error
+            toast.error(t('wishlist.toast.add_error'));
             setWishlist(prev => {
                 const newWishlist = new Set(prev);
                 newWishlist.delete(productId);
@@ -76,20 +73,17 @@ export const WishlistProvider = ({ children }) => {
     const removeFromWishlist = async (productId) => {
         if (!currentUser) return;
         try {
-            // Optimistic UI update
             setWishlist(prevWishlist => {
-                if (!prevWishlist.has(productId)) return prevWishlist; // Not in wishlist, do nothing
-                // Create a new Set for re-render
+                if (!prevWishlist.has(productId)) return prevWishlist;
                 const newWishlist = new Set(prevWishlist);
                 newWishlist.delete(productId);
                 return newWishlist;
             });
             await deleteDoc(doc(db, 'users', currentUser.uid, 'wishlist', productId));
-            toast.success("Removed from wishlist!");
+            toast.success(t('wishlist.toast.remove_success'));
         } catch (error) {
             console.error("Error removing from wishlist: ", error);
-            toast.error("Could not remove from wishlist.");
-            // Revert UI on error
+            toast.error(t('wishlist.toast.remove_error'));
             setWishlist(prev => {
                 const newWishlist = new Set(prev);
                 newWishlist.add(productId);
@@ -98,7 +92,6 @@ export const WishlistProvider = ({ children }) => {
         }
     };
     
-    // Single handler for toggling an item
     const handleWishlist = (productId) => {
         if (wishlist.has(productId)) {
             removeFromWishlist(productId);

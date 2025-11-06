@@ -1,3 +1,4 @@
+
 {
     "header": {
         "storeName": "MyStore",
@@ -389,6 +390,24 @@
         "apple_app_store_disclosure": {
             "title": "7. Apple App Store Data Disclosure",
             "content": "For users who have downloaded our application from the Apple App Store, we provide specific disclosures regarding our data handling practices. Apple requires developers to be transparent about how third-party services, such as Firebase, collect and use data. As developers, we are responsible for ensuring that the information provided in the App Store's privacy section is accurate and up-to-date. You can find detailed information about the data collected by our app on our App Store product page."
+        }
+    },
+    "wishlist": {
+        "title": "My Wishlist",
+        "subtitle": "Your favorite products, saved in one place.",
+        "fetch_error": "Could not load your wishlist products.",
+        "login_prompt": "Please log in to see your wishlist.",
+        "login_button": "Login",
+        "empty_title": "Your wishlist is empty",
+        "empty_subtitle": "Explore the catalog and tap the heart to save your favorite products.",
+        "explore_button": "Explore Products",
+        "toast": {
+            "fetch_error": "Could not fetch wishlist.",
+            "add_login_prompt": "Please log in to add items to your wishlist.",
+            "add_success": "Added to wishlist!",
+            "add_error": "Could not add to wishlist.",
+            "remove_success": "Removed from wishlist!",
+            "remove_error": "Could not remove from wishlist."
         }
     }
 }

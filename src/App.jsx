@@ -50,7 +50,6 @@ const UserManagement = React.lazy(() => import('./pages/admin/UserManagementPage
 const CouponManagement = React.lazy(() => import('./pages/admin/CouponManagement.jsx'));
 const ReviewManagementPage = React.lazy(() => import('./pages/admin/ReviewManagementPage.jsx'));
 
-// Stripe Promise
 const stripePromise = loadStripe('pk_test_51SPG2ACheyYwcT4lBqCBmxCJvvGALzBrQOzkVvtTsdcX19vxrlWSE6Fnyr6iVHvFydne9Y0kAmaFwjahivQLlizk00sccB4WuB');
 
 const App = () => {
@@ -78,7 +77,7 @@ const App = () => {
     const AuthenticatedRoute = ({ children }) => (currentUser ? children : <Navigate to="/login" />);
 
     if (loading || checkingAdmin) {
-        return <div>Cargando aplicación...</div>; // Consider a global spinner
+        return <div>Cargando aplicación...</div>;
     }
 
     const router = createBrowserRouter([
@@ -101,6 +100,7 @@ const App = () => {
                 },
                 { path: "/order-confirmation/:orderId", element: <OrderConfirmationPage /> },
                 { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
+                { path: "/wishlist", element: <WishlistPage /> }, 
             ],
         },
         {
@@ -119,10 +119,10 @@ const App = () => {
                 { path: "dashboard", element: <AccountDashboard /> },
                 { path: "orders", element: <OrderHistory /> },
                 { path: "orders/:orderId", element: <OrderDetail /> },
-                { path: "wishlist", element: <WishlistPage /> },
                 { path: "profile", element: <UserProfile /> },
                 { path: "recently-viewed", element: <RecentlyViewedPage /> },
                 { path: "settings", element: <SettingsPage /> },
+                { path: "wishlist", element: <Navigate to="/wishlist" replace /> }, // REDIRECT
             ],
         },
         {
@@ -145,7 +145,6 @@ const App = () => {
             element: <Typography variant="h4" align="center" sx={{ mt: 5 }}>404 - Página no encontrada</Typography>,
         },
     ], {
-        // Activating Future Flags for React Router v7 compatibility
         future: {
             v7_startTransition: true,
             v7_relativeSplatPath: true,

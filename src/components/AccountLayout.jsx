@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { useTranslation } from 'react-i18next'; // Importado
+import { useTranslation } from 'react-i18next';
 import { Container, Grid, Paper, List, ListItem, ListItemButton, ListItemText, Typography, ListItemIcon } from '@mui/material';
 import {
     Dashboard as DashboardIcon,
@@ -12,12 +12,12 @@ import {
 } from '@mui/icons-material';
 
 const AccountLayout = () => {
-  const { t } = useTranslation(); // Inicializado
+  const { t } = useTranslation();
 
   const accountLinks = [
     { text: t('account_menu.dashboard'), to: '/account/dashboard', icon: <DashboardIcon /> },
     { text: t('account_menu.order_history'), to: '/account/orders', icon: <ShoppingBagIcon /> },
-    { text: t('account_menu.wishlist'), to: '/account/wishlist', icon: <FavoriteIcon /> },
+    { text: t('account_menu.wishlist'), to: '/wishlist', icon: <FavoriteIcon /> },
     { text: t('account_menu.profile'), to: '/account/profile', icon: <AccountCircleIcon /> },
     { text: t('account_menu.recently_viewed'), to: '/account/recently-viewed', icon: <VisibilityIcon /> },
     { text: t('account_menu.settings'), to: '/account/settings', icon: <SettingsIcon /> },

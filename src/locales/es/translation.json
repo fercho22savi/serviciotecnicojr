@@ -391,5 +391,23 @@
             "title": "7. Divulgación de Datos en la App Store de Apple",
             "content": "Para los usuarios que han descargado nuestra aplicación desde la App Store de Apple, proporcionamos divulgaciones específicas sobre nuestras prácticas de manejo de datos. Apple requiere que los desarrolladores sean transparentes sobre cómo los servicios de terceros, como Firebase, recopilan y utilizan los datos. Como desarrolladores, somos responsables de asegurar que la información proporcionada en la sección de privacidad de la App Store sea precisa y esté actualizada. Puedes encontrar información detallada sobre los datos que recopila nuestra aplicación en la página de producto de nuestra App Store."
         }
+    },
+    "wishlist": {
+        "title": "Mi Lista de Deseos",
+        "subtitle": "Tus productos favoritos, guardados en un solo lugar.",
+        "fetch_error": "No se pudieron cargar los productos de tu lista de deseos.",
+        "login_prompt": "Inicia sesión para ver tu lista de deseos.",
+        "login_button": "Iniciar Sesión",
+        "empty_title": "Tu lista de deseos está vacía",
+        "empty_subtitle": "Explora el catálogo y pulsa el corazón para guardar tus productos favoritos.",
+        "explore_button": "Buscar Productos",
+        "toast": {
+            "fetch_error": "No se pudo obtener la lista de deseos.",
+            "add_login_prompt": "Por favor, inicia sesión para añadir artículos a tu lista de deseos.",
+            "add_success": "¡Añadido a la lista de deseos!",
+            "add_error": "No se pudo añadir a la lista de deseos.",
+            "remove_success": "¡Eliminado de la lista de deseos!",
+            "remove_error": "No se pudo eliminar de la lista de deseos."
+        }
     }
 }

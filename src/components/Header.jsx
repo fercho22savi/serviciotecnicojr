@@ -10,14 +10,14 @@ import {
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useCustomTheme } from '../context/ThemeContext'; // CORREGIDO
+import { useCustomTheme } from '../context/ThemeContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 
 const Header = () => {
   const { t } = useTranslation();
   const { currentUser, isAdmin, logout } = useAuth();
-  const { mode, toggleTheme } = useCustomTheme(); // CORREGIDO
+  const { mode, toggleTheme } = useCustomTheme();
   const { cartItemCount } = useCart();
   const { itemCount: wishlistItemCount } = useWishlist();
   
@@ -68,7 +68,6 @@ const Header = () => {
             {t('header.storeName')}
           </Typography>
 
-          {/* Search form */}
           <Box component="form" onSubmit={handleSearchSubmit} sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, maxWidth: 500 }}>
             <TextField
               fullWidth
@@ -84,7 +83,6 @@ const Header = () => {
             />
           </Box>
 
-          {/* Action Icons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Tooltip title={mode === 'light' ? t('header.darkModeTooltip') : t('header.lightModeTooltip')}>
                 <IconButton color="inherit" onClick={toggleTheme}>
@@ -95,7 +93,6 @@ const Header = () => {
             <Tooltip title={t('header.wishlist')}><IconButton color="inherit" component={Link} to="/wishlist"><Badge badgeContent={wishlistItemCount} color="error"><FavoriteBorder /></Badge></IconButton></Tooltip>
             <Tooltip title={t('header.cart')}><IconButton color="inherit" component={Link} to="/cart"><Badge badgeContent={cartItemCount} color="error"><ShoppingCart /></Badge></IconButton></Tooltip>
 
-            {/* User Profile / Login Buttons */}
             {currentUser ? (
               <>
                 <IconButton onClick={handleMenu} size="small" sx={{ ml: 1 }}>
