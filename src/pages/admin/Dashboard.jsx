@@ -1,71 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '../../firebase/config';
-import { Box, Container, Grid, Paper, Typography, CircularProgress, Table, TableBody, TableCell, TableHead, TableRow, Chip } from '@mui/material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import PeopleIcon from '@mui/icons-material/People';
-import InventoryIcon from '@mui/icons-material/Inventory';
+import { Grid, Paper, Typography, Avatar, Box, Button, Chip } from '@mui/material';
+import { getAuth, signOut } from 'firebase/auth';
+import { db } from '../../firebase/config'; // Corrected path
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
-const StatCard = ({ title, value, icon, color }) => (
-  <Paper sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }} elevation={3}>
-    <Box>
-      <Typography color="text.secondary" gutterBottom>{title}</Typography>
-      <Typography variant="h4" component="p">{value}</Typography>
-    </Box>
-    <Box sx={{ color: color, fontSize: 48 }}>
-        {icon}
-    </Box>
+const StatCard = ({ title, value }) => (
+  <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 120, backgroundColor: '#333', color: 'white', borderRadius: '12px' }}>
+    <Typography variant="subtitle1" color="#ccc">{title}</Typography>
+    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{value}</Typography>
   </Paper>
 );
 
-function AdminDashboard() {
-  const [stats, setStats] = useState({ totalRevenue: 0, totalOrders: 0, totalCustomers: 0, totalProducts: 0 });
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [salesData, setSalesData] = useState([]);
+const RecentOrder = ({ order }) => (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, borderBottom: '1px solid #444' }}>
+      <Typography>#{order.id.slice(0, 6)}...</Typography>
+      <Typography>{new Date(order.createdAt.seconds * 1000).toLocaleDateString()}</Typography>
+      <Chip label={order.status} size="small" sx={{ backgroundColor: order.status === 'Entregado' ? '#4caf50' : '#ff9800', color: 'white' }} />
+      <Typography>${order.total.toFixed(2)}</Typography>
+    </Box>
+  );
+
+const AdminDashboard = () => {
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const auth = getAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ordersSnapshot, productsSnapshot, usersSnapshot, recentOrdersSnapshot] = await Promise.all([
-          getDocs(collection(db, 'orders')),
-          getDocs(collection(db, 'products')),
-          getDocs(collection(db, 'users')),
-          getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5)))
-        ]);
-
-        const totalRevenue = ordersSnapshot.docs.reduce((acc, doc) => acc + doc.data().total, 0);
-        const totalOrders = ordersSnapshot.size;
-        const totalProducts = productsSnapshot.size;
-        const totalCustomers = usersSnapshot.size;
-        setStats({ totalRevenue, totalOrders, totalProducts, totalCustomers });
-
-        const orders = recentOrdersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setRecentOrders(orders);
-
-        const salesByDay = {};
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-        ordersSnapshot.docs.forEach(doc => {
-          const order = doc.data();
-          if (order.createdAt && order.createdAt.toDate() > sevenDaysAgo) {
-            const date = order.createdAt.toDate().toLocaleDateString('en-CA');
-            if (!salesByDay[date]) salesByDay[date] = 0;
-            salesByDay[date] += order.total;
-          }
-        });
-
-        const chartData = Object.keys(salesByDay).sort().map(date => ({ 
-          date: new Date(date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-          ingresos: salesByDay[date]
-        }));
-        setSalesData(chartData);
-
+        // Fetch all orders, not just for the current user
+        const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+        const ordersSnapshot = await getDocs(ordersQuery);
+        const ordersData = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setOrders(ordersData);
       } catch (error) {
-        console.error("Error fetching dashboard data: ", error);
+          console.error("Error fetching all orders:", error);
       } finally {
         setLoading(false);
       }
@@ -74,68 +45,51 @@ function AdminDashboard() {
     fetchData();
   }, []);
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate('/login');
+  };
+
   if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress /></Box>;
+    return <div>Loading admin dashboard...</div>;
   }
 
-  return (
-    <Container maxWidth="xl" sx={{ my: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>Dashboard</Typography>
-      
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid xs={12} sm={6} md={3}><StatCard title="Ingresos Totales" value={`$${stats.totalRevenue.toFixed(2)}`} icon={<MonetizationOnIcon fontSize="inherit"/>} color="success.main" /></Grid>
-        <Grid xs={12} sm={6} md={3}><StatCard title="Pedidos Totales" value={stats.totalOrders} icon={<ShoppingCartIcon fontSize="inherit"/>} color="info.main" /></Grid>
-        <Grid xs={12} sm={6} md={3}><StatCard title="Clientes Totales" value={stats.totalCustomers} icon={<PeopleIcon fontSize="inherit"/>} color="warning.main" /></Grid>
-        <Grid xs={12} sm={6} md={3}><StatCard title="Productos Totales" value={stats.totalProducts} icon={<InventoryIcon fontSize="inherit"/>} color="error.main" /></Grid>
-      </Grid>
+  const totalRevenue = orders.reduce((acc, order) => acc + (order.total || 0), 0);
+  const totalSales = orders.length;
+  const pendingOrders = orders.filter(o => o.status === 'Procesando' || o.status === 'Enviado').length;
+  const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
+  return (
+    <Box sx={{ flexGrow: 1, p: 3, backgroundColor: '#1a1a1a', color: 'white', minHeight: '100vh' }}>
       <Grid container spacing={3}>
-        <Grid xs={12}>
-          <Paper sx={{ p: 3, height: 400 }} elevation={3}>
-            <Typography variant="h6" gutterBottom>Ingresos de los Últimos 7 Días</Typography>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis tickFormatter={(value) => `$${value}`} />
-                <Tooltip formatter={(value) => [`$${value.toFixed(2)}`, 'Ingresos']}/>
-                <Legend />
-                <Line type="monotone" dataKey="ingresos" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} />
-              </LineChart>
-            </ResponsiveContainer>
+        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+                <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Admin Dashboard</Typography>
+                <Typography color="#ccc">Overview of your store's performance.</Typography>
+            </div>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar sx={{ mr: 2 }}>{auth.currentUser?.email?.[0].toUpperCase()}</Avatar>
+            <Typography>{auth.currentUser?.email}</Typography>
+            <Button onClick={handleLogout} sx={{ ml: 2, color: '#ccc', borderColor: '#ccc', borderRadius: '20px' }} variant="outlined">Log out</Button>
+          </Box>
+        </Grid>
+
+        <Grid item xs={12} md={3}><StatCard title="Total Revenue" value={`$${totalRevenue.toFixed(2)}`} /></Grid>
+        <Grid item xs={12} md={3}><StatCard title="Total Sales" value={totalSales} /></Grid>
+        <Grid item xs={12} md={3}><StatCard title="Pending Orders" value={pendingOrders} /></Grid>
+        <Grid item xs={12} md={3}><StatCard title="Average Order Value" value={`$${averageOrderValue.toFixed(2)}`} /></Grid>
+
+
+        <Grid item xs={12}>
+          <Paper sx={{ p: 2, backgroundColor: '#2b2b2b', color: 'white', borderRadius: '12px' }}>
+            <Typography variant="h6" sx={{mb: 2}}>Recent Orders</Typography>
+              {orders.slice(0, 5).map(order => <RecentOrder key={order.id} order={order} />)}
           </Paper>
         </Grid>
-
-        <Grid xs={12}>
-            <Paper sx={{ p: 3 }} elevation={3}>
-                <Typography variant="h6" gutterBottom>Últimos Pedidos</Typography>
-                <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>ID Pedido</TableCell>
-                            <TableCell>Fecha</TableCell>
-                            <TableCell>Total</TableCell>
-                            <TableCell>Estado</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {recentOrders.map((order) => (
-                            <TableRow key={order.id} hover>
-                                <TableCell component="th" scope="row">{order.id}</TableCell>
-                                <TableCell>{order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</TableCell>
-                                <TableCell>${order.total.toFixed(2)}</TableCell>
-                                <TableCell>
-                                    <Chip label={order.status} color={order.status === 'Procesando' ? 'warning' : order.status === 'Completado' ? 'success' : 'default'} />
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </Paper>
-        </Grid>
+        
       </Grid>
-    </Container>
+    </Box>
   );
-}
+};
 
 export default AdminDashboard;

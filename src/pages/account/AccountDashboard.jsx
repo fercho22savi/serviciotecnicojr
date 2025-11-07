@@ -1,213 +1,133 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Typography,
-    Grid,
-    Paper,
-    Box,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
-    Button,
-    Chip,
-    CircularProgress
-} from '@mui/material';
-import {
-    ShoppingCart as ShoppingCartIcon,
-    AttachMoney as AttachMoneyIcon,
-    Receipt as ReceiptIcon,
-    Star as StarIcon
-} from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useAuth } from '../../context/AuthContext';
-import { db } from '../../firebase/config';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { Grid, Paper, Typography, Avatar, Box, Button, Chip } from '@mui/material';
+import { getAuth, signOut } from 'firebase/auth';
+import { db } from '../../firebase/config'; // Adjust as needed
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import OrderTrackerMap from '../../components/OrderTrackerMap'; // Create this component
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
+const StatCard = ({ title, value }) => (
+    <Paper sx={{ 
+        p: 2, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center', // Center content vertically
+        height: 120, 
+        backgroundColor: '#333', 
+        color: 'white', 
+        borderRadius: '12px' 
+    }}>
+      <Typography variant="subtitle1" color="#ccc">{title}</Typography>
+      <Typography
+        variant="h4"
+        sx={{
+          fontWeight: 'bold',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          fontSize: {
+            xs: '1.5rem',
+            sm: '2rem',
+            md: '2.125rem'
+          }
+        }}
+      >
+        {value}
+      </Typography>
+    </Paper>
+  );
 
-const getStatusChip = (status) => {
-    const chipStyles = {
-        Enviado: { backgroundColor: 'warning.light', color: 'warning.dark' },
-        Entregado: { backgroundColor: 'success.light', color: 'success.dark' },
-        Procesando: { backgroundColor: 'info.light', color: 'info.dark' },
-        Cancelado: { backgroundColor: 'error.light', color: 'error.dark' },
-    };
-    const style = chipStyles[status] || {};
-    return <Chip label={status} size="small" sx={{...style, fontWeight: 'bold'}} />;
-};
+  const RecentOrder = ({ order }) => (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1, borderBottom: '1px solid #444' }}>
+      <Typography>#{order.id.slice(0, 6)}</Typography>
+      <Typography>{new Date((order.createdAt?.seconds || 0) * 1000).toLocaleDateString()}</Typography>
+      <Chip label={order.status} size="small" sx={{ backgroundColor: order.status === 'Delivered' ? '#4caf50' : '#ff9800', color: 'white' }} />
+      <Typography>${(order.total || order.amount || 0).toFixed(2)}</Typography>
+    </Box>
+  );
 
 const AccountDashboard = () => {
-    const { currentUser } = useAuth();
-    const [dashboardData, setDashboardData] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const auth = getAuth();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!currentUser) {
-                setLoading(false);
-                return;
-            }
+  const API_KEY = 'AIzaSyBioa5eRPcSJ_LrndxJJC5FFiaXCbfBHto'; // Replace with your actual key
 
-            try {
-                const ordersQuery = query(
-                    collection(db, 'orders'),
-                    where('userId', '==', currentUser.uid),
-                    orderBy('createdAt', 'desc')
-                );
-                const querySnapshot = await getDocs(ordersQuery);
+  useEffect(() => {
+    const fetchData = async () => {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setUser(userDoc.data());
+        }
 
-                const orders = [];
-                querySnapshot.forEach(doc => {
-                    orders.push({ id: doc.id, ...doc.data() });
-                });
+        const ordersQuery = query(collection(db, 'orders'), where('userId', '==', currentUser.uid));
+        const ordersSnapshot = await getDocs(ordersQuery);
+        const ordersData = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setOrders(ordersData);
+      }
+      setLoading(false);
+    };
 
-                let totalSpent = 0;
-                const purchaseHistoryMap = {};
-                const categoryCount = {};
+    fetchData();
+  }, [auth]);
 
-                orders.forEach(order => {
-                    totalSpent += order.total;
-                    const month = new Date(order.createdAt.seconds * 1000).toLocaleString('default', { month: 'short', year: '2-digit' });
-                    purchaseHistoryMap[month] = (purchaseHistoryMap[month] || 0) + order.total;
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate('/login');
+  };
 
-                    order.items.forEach(item => {
-                        const category = item.category || 'Otros';
-                        categoryCount[category] = (categoryCount[category] || 0) + (item.price * item.quantity);
-                    });
-                });
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-                const purchaseHistory = Object.entries(purchaseHistoryMap).map(([name, gasto]) => ({ name, gasto })).reverse();
-                const categoryData = Object.entries(categoryCount).map(([name, value]) => ({ name, value }));
-                const recentOrders = orders.slice(0, 5).map(order => ({
-                    id: `#${order.id.substring(0, 6)}...`,
-                    date: new Date(order.createdAt.seconds * 1000).toLocaleDateString(),
-                    status: order.status,
-                    total: `$${order.total.toFixed(2)}`,
-                    originalId: order.id,
-                }));
+  const totalSpent = orders.reduce((acc, order) => acc + (order.total || order.amount || 0), 0);
+  const averageRating = 4.3; // Placeholder
+  const userLocation = user?.address ? { lat: user.address.latitude, lng: user.address.longitude } : null;
 
-                const kpis = [
-                    { title: 'Total Gastado', value: `$${totalSpent.toFixed(2)}`, icon: <AttachMoneyIcon fontSize="large" />, color: 'success.light' },
-                    { title: 'Compras Realizadas', value: orders.length, icon: <ShoppingCartIcon fontSize="large" />, color: 'info.light' },
-                    { title: 'Pedidos en Proceso', value: orders.filter(o => o.status === 'Procesando' || o.status === 'Enviado').length, icon: <ReceiptIcon fontSize="large" />, color: 'warning.light' },
-                    { title: 'Calificación Promedio', value: 'N/A', icon: <StarIcon fontSize="large" />, color: 'primary.light' },
-                ];
+  return (
+    <Box sx={{ flexGrow: 1, p: 3, backgroundColor: '#1a1a1a', color: 'white', minHeight: '100vh' }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Dashboard</Typography>
+            <Typography color="#ccc">Welcome, {user?.name || 'User'}! Here is a summary of your recent activity</Typography>
+          </div>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar src={user?.avatarUrl} sx={{ mr: 2 }} />
+            <Typography>{user?.name || 'User'}</Typography>
+            <Button onClick={handleLogout} sx={{ ml: 2, color: '#ccc', borderColor: '#ccc', borderRadius: '20px' }} variant="outlined">Log out</Button>
+          </Box>
+        </Grid>
 
-                setDashboardData({ kpis, purchaseHistory, categoryData, recentOrders });
-            } catch (error) {
-                console.error("Error fetching dashboard data:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        <Grid item xs={12} md={3}><StatCard title="Total Orders" value={orders.length} /></Grid>
+        <Grid item xs={12} md={3}><StatCard title="Total Spent" value={`$${totalSpent.toFixed(2)}`} /></Grid>
+        <Grid item xs={12} md={3}><StatCard title="Current Orders" value={orders.filter(o => o.status === 'Processing' || o.status === 'Shipped').length} /></Grid>
+        <Grid item xs={12} md={3}><StatCard title="Average Rating" value={averageRating} /></Grid>
 
-        fetchData();
-    }, [currentUser]);
-
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-                <CircularProgress />
-                <Typography sx={{ ml: 2 }}>Cargando tu dashboard...</Typography>
-            </Box>
-        );
-    }
-
-    if (!dashboardData || dashboardData.recentOrders.length === 0) {
-        return (
-            <Box sx={{textAlign: 'center', mt: 5}}>
-                 <Typography variant="h5" gutterBottom>¡Bienvenido, {currentUser?.displayName || 'Usuario'}!</Typography>
-                 <Typography color="text.secondary">Parece que aún no has realizado ninguna compra.</Typography>
-                 <Button variant="contained" color="primary" component="a" href="/products" sx={{mt: 3}}>Explorar productos</Button>
-            </Box>
-        )
-    }
-
-    return (
-        <Box sx={{ p: { xs: 1, md: 2} }}>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-                ¡Hola de nuevo, {currentUser?.displayName || 'Usuario'}!
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                Aquí tienes un resumen de tu actividad y compras recientes.
-            </Typography>
-
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-                {dashboardData.kpis.map((item, index) => (
-                    <Grid item xs={12} sm={6} md={3} key={index}>
-                        <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '12px', backgroundColor: item.color }}>
-                            <Box>
-                                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{item.value}</Typography>
-                                <Typography variant="subtitle2" color="text.secondary">{item.title}</Typography>
-                            </Box>
-                            {React.cloneElement(item.icon, { sx: { color: `${item.color.split('.')[0]}.dark` }})}
-                        </Paper>
-                    </Grid>
-                ))}
-            </Grid>
-
-            <Grid container spacing={4} sx={{ mb: 4 }}>
-                <Grid item xs={12} lg={8}>
-                    <Paper sx={{ p: 3, borderRadius: '12px', height: 350 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>Historial de Compras</Typography>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={dashboardData.purchaseHistory} margin={{ top: 5, right: 20, left: -10, bottom: 30 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Line type="monotone" dataKey="gasto" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} lg={4}>
-                     <Paper sx={{ p: 3, borderRadius: '12px', height: 350 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>Categorías Más Compradas</Typography>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 30 }}>
-                                <Pie data={dashboardData.categoryData} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="value" label>
-                                    {dashboardData.categoryData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                                </Pie>
-                                <Tooltip />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </Paper>
-                </Grid>
-            </Grid>
-
-            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>Mis Últimos Pedidos</Typography>
-            <Paper sx={{ borderRadius: '12px', overflow: 'hidden' }}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold' }}>N° de Orden</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Fecha</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
-                            <TableCell></TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {dashboardData.recentOrders.map((order) => (
-                            <TableRow key={order.id}>
-                                <TableCell>{order.id}</TableCell>
-                                <TableCell>{order.date}</TableCell>
-                                <TableCell>{getStatusChip(order.status)}</TableCell>
-                                <TableCell>{order.total}</TableCell>
-                                <TableCell align="right">
-                                    <Button variant="outlined" size="small" component="a" href={`/account/orders/${order.originalId}`}>Ver Detalles</Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </Paper>
-        </Box>
-    );
+        <Grid item xs={12} lg={7}>
+          <Paper sx={{ p: 2, backgroundColor: '#2b2b2b', color: 'white', borderRadius: '12px', height: '100%' }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Recent Orders</Typography>
+            {orders.slice(0, 4).map(order => <RecentOrder key={order.id} order={order} />)}
+          </Paper>
+        </Grid>
+        
+        <Grid item xs={12} lg={5}>
+           <Paper sx={{ p: 2, backgroundColor: '#2b2b2b', color: 'white', borderRadius: '12px', height: '100%' }}>
+             <Typography variant="h6" sx={{ mb: 2 }}>Mi Ubicación</Typography>
+             {userLocation ? 
+                <OrderTrackerMap apiKey={API_KEY} userLocation={userLocation} /> : 
+                <Typography color="#ccc">No se encontró una dirección. Ve a tu perfil para agregar una.</Typography>
+             }
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
+  );
 };
 
 export default AccountDashboard;

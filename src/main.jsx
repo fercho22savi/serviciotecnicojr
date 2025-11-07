@@ -15,8 +15,8 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import './i18n';
 import './index.css';
 
-// Use a public test key from Stripe's documentation
-const stripePromise = loadStripe('pk_test_51H5a2XFAB4a4YpQZ3i1d1a1S1s7q1a1s7q1a1s7q1a1s7q1a1s7q1a1s7q1a1s7q1a1s7q1a1S1s7q1a1s7q1a1');
+// Use the correct public test key 
+const stripePromise = loadStripe('pk_test_51SPG2ACheyYwcT4lBqCBmxCJvvGALzBrQOzkVvtTsdcX19vxrlWSE6Fnyr6iVHvFydne9Y0kAmaFwjahivQLlizk00sccB4WuB');
 
 const GlobalSuspenseFallback = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>

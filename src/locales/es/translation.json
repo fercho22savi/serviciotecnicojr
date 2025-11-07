@@ -291,29 +291,43 @@
         "subtitle": "Actualiza tus datos personales y de contacto.",
         "loading": "Cargando perfil...",
         "form": {
+            "displayName": "Nombre de usuario",
             "first_name": "Nombre",
             "last_name": "Apellido",
             "email_helper": "El correo electrónico no se puede cambiar.",
             "phone": "Teléfono",
             "id_document": "Documento de Identidad",
-            "birth_date": "Fecha de Nacimiento"
+            "birth_date": "Fecha de Nacimiento",
+            "address": "Dirección",
+            "city": "Ciudad / Municipio",
+            "country": "País",
+            "department": "Departamento",
+            "postal_code": "Código Postal"
         },
         "button": {
             "save": "Guardar Cambios"
         },
         "toast": {
             "updating": "Actualizando perfil...",
-            "success": "Perfil actualizado con éxito"
+            "success": "Perfil actualizado con éxito",
+            "uploading": "Subiendo foto...",
+            "photo_success": "Foto de perfil actualizada",
+            "sending_email": "Enviando correo...",
+            "email_sent": "¡Correo enviado! Revisa tu bandeja de entrada."
         },
         "errors": {
             "load_profile": "No se pudo cargar tu perfil.",
-            "update_profile": "Hubo un error al actualizar tu perfil."
+            "update_profile": "Hubo un error al actualizar tu perfil.",
+            "upload_photo": "Error al subir la foto.",
+            "not_logged_in": "No has iniciado sesión.",
+            "email_fail": "No se pudo enviar el correo de restablecimiento."
         },
         "security_panel": {
             "title": "Seguridad de la Cuenta",
             "subtitle": "Para cambiar tu contraseña, te enviaremos un enlace seguro a tu correo electrónico.",
             "action_button": "Enviar correo para cambiar contraseña"
-        }
+        },
+        "login_prompt": "Por favor, inicia sesión para ver tu perfil."
     },
     "shipping_policy": {
         "title": "Envíos y Devoluciones",
