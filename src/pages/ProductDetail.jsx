@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, limit, getDocs, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
@@ -60,10 +61,37 @@ function ProductDetail() {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
-  const [hasPurchased, setHasPurchased] = useState(false);
-  const [purchaseCheckLoading, setPurchaseCheckLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [tabValue, setTabValue] = useState(0);
+
+  // --- Start of Corrected fetchReviews Logic ---
+  const fetchReviews = async () => {
+    if (!productId) return;
+    setReviewsLoading(true);
+    try {
+      // Simplified query to fetch all reviews
+      const reviewsQuery = query(collection(db, `products/${productId}/reviews`));
+      const reviewsSnapshot = await getDocs(reviewsQuery);
+      const allReviews = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // Filter and sort on the client-side
+      const approvedAndSortedReviews = allReviews
+        .filter(review => review.status === 'approved')
+        .sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+            return dateB - dateA; // Sort descending
+        });
+
+      setReviews(approvedAndSortedReviews);
+    } catch (err) { 
+      console.error("Error fetching reviews:", err); 
+      toast.error("No se pudieron cargar las opiniones en este momento.");
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+  // --- End of Corrected fetchReviews Logic ---
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -87,52 +115,31 @@ function ProductDetail() {
         setLoading(false);
       }
     };
+    
     fetchProduct();
+    fetchReviews(); // Fetch reviews initially
     window.scrollTo(0, 0);
   }, [productId, addProduct]);
 
   useEffect(() => {
     if (!product) return;
 
-    const fetchReviewsAndRelated = async () => {
-      setReviewsLoading(true);
+    const fetchRelatedProducts = async () => {
       try {
-        const reviewsQuery = query(collection(db, `products/${productId}/reviews`), where('status', '==', 'approved'), orderBy('createdAt', 'desc'));
-        const reviewsSnapshot = await getDocs(reviewsQuery);
-        setReviews(reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      } catch (err) { console.error("Error fetching reviews:", err); }
-      setReviewsLoading(false);
-
-      try {
-        const relatedQuery = query(collection(db, "products"), where('category', '==', product.category), where('__name__', '!=', product.id), limit(4));
-        const relatedSnapshot = await getDocs(relatedQuery);
-        setRelatedProducts(relatedSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+        if (product.category) {
+            const relatedQuery = query(collection(db, "products"), where('category', '==', product.category), where('__name__', '!=', product.id), limit(4));
+            const relatedSnapshot = await getDocs(relatedQuery);
+            setRelatedProducts(relatedSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+        }
       } catch (err) { console.error("Error fetching related products:", err); }
     }
 
-    const checkPurchaseStatus = async () => {
-      if (!currentUser) {
-          setPurchaseCheckLoading(false);
-          return;
-      }
-      setPurchaseCheckLoading(true);
-      try {
-        const ordersQuery = query(collection(db, 'orders'), where('userId', '==', currentUser.uid));
-        const querySnapshot = await getDocs(ordersQuery);
-        const purchased = querySnapshot.docs.some(doc => doc.data().items.some(item => item.id === productId));
-        setHasPurchased(purchased);
-      } catch (err) { console.error("Error checking purchase status:", err); }
-      finally { setPurchaseCheckLoading(false); }
-    };
+    fetchRelatedProducts();
 
-    fetchReviewsAndRelated();
-    checkPurchaseStatus();
-
-  }, [product, productId, currentUser]);
+  }, [product, currentUser]);
 
   const handleReviewSubmit = async ({ rating, comment }) => {
     if (!currentUser) return toast.error("Debes iniciar sesión para dejar una opinión.");
-    if (!hasPurchased) return toast.error("Debes haber comprado este producto para dejar una reseña.");
 
     const reviewRef = doc(collection(db, `products/${productId}/reviews`));
     try {
@@ -143,10 +150,11 @@ function ProductDetail() {
             rating,
             comment,
             createdAt: serverTimestamp(),
-            status: 'pending'
+            status: 'approved'
         });
-        toast.success("¡Gracias! Tu opinión está pendiente de aprobación.");
-    } catch (err) {
+        toast.success("¡Gracias por tu opinión! Ha sido publicada.");
+        fetchReviews(); // Re-fetch reviews to show the new one immediately
+    } catch (err) { 
         console.error("Error submitting review: ", err);
         toast.error("No se pudo enviar tu opinión.");
     }
@@ -156,7 +164,7 @@ function ProductDetail() {
     setQuantity((prev) => {
         const newQuantity = prev + amount;
         if (newQuantity < 1) return 1;
-        if (newQuantity > product.stock) return product.stock;
+        if (newQuantity > (product.stock || 0)) return product.stock || 1;
         return newQuantity;
     });
   };
@@ -182,9 +190,17 @@ function ProductDetail() {
   
   if (!product) return null;
 
-  const images = product.images?.length > 0 
-    ? product.images.map(img => ({ original: img, thumbnail: img }))
-    : [{ original: 'https://via.placeholder.com/600x600.png?text=No+Image', thumbnail: 'https://via.placeholder.com/150x150.png?text=No+Image' }];
+  let imagesForGallery = [];
+  const placeholderImage = 'https://via.placeholder.com/600x600.png?text=Imagen+no+disponible';
+  const placeholderThumbnail = 'https://via.placeholder.com/150x150.png?text=No+Img';
+
+  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    imagesForGallery = product.images.map(img => ({ original: img, thumbnail: img }));
+  } else if (product.image && typeof product.image === 'string') {
+    imagesForGallery = [{ original: product.image, thumbnail: product.image }];
+  } else {
+    imagesForGallery = [{ original: placeholderImage, thumbnail: placeholderThumbnail }];
+  }
 
   const isWishlisted = wishlist.has(product.id);
 
@@ -209,7 +225,7 @@ function ProductDetail() {
         <Grid container spacing={{ xs: 3, md: 5 }}>
            <Grid item xs={12} md={6}>
              <ImageGallery 
-                items={images} 
+                items={imagesForGallery} 
                 showNav={false}
                 showPlayButton={false}
                 showFullscreenButton={true}
@@ -221,7 +237,7 @@ function ProductDetail() {
             
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, cursor:'pointer' }} onClick={() => setTabValue(1)}>
               <Rating value={product.averageRating || 0} precision={0.5} readOnly />
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 1, textDecoration: 'underline' }}>({product.numReviews || 0} valoraciones)</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ ml: 1, textDecoration: 'underline' }}>({reviews.length} valoraciones)</Typography>
             </Box>
             
             <Box sx={{ my: 2 }}>
@@ -245,8 +261,8 @@ function ProductDetail() {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <IconButton size="small" onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1}><RemoveIcon /></IconButton>
                     <Typography sx={{ mx: 2, width: '40px', textAlign:'center', fontWeight:'bold'}}>{quantity}</Typography>
-                    <IconButton size="small" onClick={() => handleQuantityChange(1)} disabled={quantity >= product.stock}><AddIcon /></IconButton>
-                    <Typography variant="body2" color="text.secondary" sx={{ml: 2}}>{product.stock} disponibles</Typography>
+                    <IconButton size="small" onClick={() => handleQuantityChange(1)} disabled={quantity >= (product.stock || 1)}><AddIcon /></IconButton>
+                    <Typography variant="body2" color="text.secondary" sx={{ml: 2}}>{product.stock || 0} disponibles</Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 3 }}>
@@ -255,10 +271,10 @@ function ProductDetail() {
                         color="secondary" 
                         size="large" 
                         onClick={handleAddToCart}
-                        disabled={product.stock === 0}
+                        disabled={!product.stock || product.stock === 0}
                         sx={{ flexGrow: 1, py: 1.5, fontWeight:'bold' }}
                     >
-                        {product.stock === 0 ? 'Agotado' : 'Añadir al carrito'}
+                        {!product.stock || product.stock === 0 ? 'Agotado' : 'Añadir al carrito'}
                     </Button>
                     <IconButton onClick={() => handleWishlist(product)} aria-label="add to wishlist" sx={{ border: '1px solid', borderColor: 'grey.300', p: 1.5, borderRadius: 2 }}>
                         {isWishlisted ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
@@ -276,7 +292,7 @@ function ProductDetail() {
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} aria-label="info tabs" centered>
                     <Tab label="Descripción" id="tab-0" />
-                    <Tab label={`Opiniones (${product.numReviews || 0})`} id="tab-1" />
+                    <Tab label={`Opiniones (${reviews.length})`} id="tab-1" />
                 </Tabs>
             </Box>
             <CustomTabPanel value={tabValue} index={0}>
@@ -289,18 +305,17 @@ function ProductDetail() {
                         <RatingSummary 
                             reviews={reviews} 
                             averageRating={product.averageRating || 0} 
-                            totalReviews={product.numReviews || 0} 
+                            totalReviews={reviews.length} 
                         />
                     </Grid>
                     <Grid item xs={12}>
                         <ReviewList reviews={reviews} />
                     </Grid>
                     <Grid item xs={12}>
-                        {purchaseCheckLoading ? <CircularProgress /> :
+                        {
                           !currentUser ? <Alert severity="info"><Link component={RouterLink} to={`/login?redirect=/product/${productId}`}>Inicia sesión</Link> para dejar tu opinión.</Alert> :
                           userHasReviewed ? <Alert severity="success">Ya has dejado una opinión para este producto.</Alert> :
-                          hasPurchased ? <ReviewForm onSubmit={handleReviewSubmit} /> :
-                          <Alert severity="info">Debes haber comprado este producto para poder dejar una opinión.</Alert>
+                          <ReviewForm onSubmit={handleReviewSubmit} />
                         }
                     </Grid>
                 </Grid>

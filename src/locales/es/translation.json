@@ -393,6 +393,11 @@
         "next_button": "Siguiente",
         "place_order_button": "Finalizar Compra",
         "order_placed": "¡Pedido #{{orderNumber}} realizado!",
+        "order_success_title": "¡Gracias por tu compra!",
+        "order_success_message": "Tu pedido ha sido procesado con éxito. Recibirás una confirmación por correo electrónico en breve.",
+        "confirmation_number": "Tu número de confirmación es:",
+        "continue_shopping": "Seguir Comprando",
+        "view_orders": "Ver Mis Pedidos",
         "errors": {
             "load_addresses": "No se pudieron cargar tus direcciones.",
             "init_payment": "No se pudo inicializar el pago.",
@@ -477,7 +482,7 @@
         },
         "apple_app_store_disclosure": {
             "title": "7. Divulgación de Datos en la App Store de Apple",
-            "content": "Para los usuarios que han descargado nuestra aplicación desde la App Store de Apple, proporcionamos divulgaciones específicas sobre nuestras prácticas de manejo de datos. Apple requiere que los desarrolladores sean transparentes sobre cómo los servicios de terceros, como Firebase, recopilan y utilizan los datos. Como desarrolladores, somos responsables de asegurar que la información proporcionada en la sección de privacidad de la App Store sea precisa y esté actualizada. Puedes encontrar información detallada sobre los datos que recopila nuestra aplicación en la página de producto de nuestra App Store."
+            "content": "Para los usuarios que han descargado nuestra aplicación desde la App Store de Apple, proporcionamos divulgaciones específicas sobre nuestras prácticas de manejo de datos. Apple requiere que los desarrolladores sean transparentes sobre cómo los servicios de terceros, como Firebase, recopilan y utilizan los datos. Como desarrolladores, somos responsables de asegurar que la información proporcionada en la sección de privacidad de la App Store sea precisa y esté actualizada. Puedes encontrar información detallada sobre los datos que recopila nuestra aplicación en la página de producto de nuestra App-Store."
         }
     },
     "wishlist": {

@@ -1,217 +1,121 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-    Container, Typography, Paper, Box, Button, CircularProgress, Alert, 
-    List, ListItem, ListItemText, IconButton, Dialog, DialogTitle, 
-    DialogContent, DialogActions, TextField, Grid, ListItemIcon, useTheme 
-} from '@mui/material';
-import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
-import { db } from '../../firebase/config';
+
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { toast } from 'react-hot-toast';
+import { db } from '../../firebase/config';
+import { collection, addDoc, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
-import { FaCcVisa, FaCcMastercard, FaCcAmex, FaCreditCard } from 'react-icons/fa';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebase/config';
-
-const cardElementOptions = {
-  style: {
-    base: {
-      fontSize: '16px',
-      color: '#424770',
-      '::placeholder': {
-        color: '#aab7c4',
-      },
-    },
-    invalid: {
-      color: '#9e2146',
-    },
-  },
-};
-
-const getCardIcon = (brand) => {
-    switch (brand) {
-        case 'visa': return <FaCcVisa size="2em" />;
-        case 'mastercard': return <FaCcMastercard size="2em" />;
-        case 'amex': return <FaCcAmex size="2em" />;
-        default: return <FaCreditCard size="2em" />;
-    }
-};
-
-const createSetupIntent = httpsCallable(functions, 'createSetupIntent');
+import toast from 'react-hot-toast';
 
 const PaymentMethods = () => {
     const { t } = useTranslation();
-    const stripe = useStripe();
-    const elements = useElements();
     const { currentUser } = useAuth();
-    const theme = useTheme();
-
-    const [methods, setMethods] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [open, setOpen] = useState(false);
-    const [formError, setFormError] = useState('');
-    const [cardholderName, setCardholderName] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-    const [clientSecret, setClientSecret] = useState('');
+    const [paymentMethods, setPaymentMethods] = useState([]);
+    const [newCard, setNewCard] = useState({ number: '', expiry: '', cvv: '' });
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (!currentUser) {
+        if (!currentUser) return;
+        const fetchPaymentMethods = async () => {
+            setLoading(true);
+            try {
+                const methodsRef = collection(db, 'users', currentUser.uid, 'paymentMethods');
+                const snapshot = await getDocs(methodsRef);
+                const methods = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setPaymentMethods(methods);
+            } catch (error) {
+                console.error("Error fetching payment methods: ", error);
+                toast.error(t('paymentMethods.fetch_error'));
+            }
             setLoading(false);
+        };
+        fetchPaymentMethods();
+    }, [currentUser, t]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setNewCard(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleAddCard = async (e) => {
+        e.preventDefault();
+        if (!currentUser) return;
+
+        // Basic validation
+        if (!newCard.number || !newCard.expiry || !newCard.cvv) {
+            toast.error(t('paymentMethods.fill_all_fields'));
             return;
         }
 
         setLoading(true);
-        const methodsRef = collection(db, 'users', currentUser.uid, 'payment_methods');
-        const unsubscribe = onSnapshot(methodsRef, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setMethods(data);
-            setLoading(false);
-        }, (err) => {
-            console.error(err);
-            setError(t('payment_methods.load_error'));
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [currentUser, t]);
-
-    const handleOpen = async () => {
-        setOpen(true);
         try {
-            const result = await createSetupIntent();
-            setClientSecret(result.data.clientSecret);
-        } catch (err) {
-            console.error("Error creating setup intent:", err);
-            setFormError(t('payment_methods.setup_intent_error'));
+            const methodsRef = collection(db, 'users', currentUser.uid, 'paymentMethods');
+            const docRef = await addDoc(methodsRef, newCard);
+            setPaymentMethods(prev => [...prev, { id: docRef.id, ...newCard }]);
+            setNewCard({ number: '', expiry: '', cvv: '' });
+            toast.success(t('paymentMethods.add_success'));
+        } catch (error) {
+            console.error("Error adding payment method: ", error);
+            toast.error(t('paymentMethods.add_error'));
         }
+        setLoading(false);
     };
 
-    const handleClose = () => {
-        setOpen(false);
-        setFormError('');
-        setCardholderName('');
-        setClientSecret('');
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!stripe || !elements || !clientSecret || !cardholderName.trim()) {
-            setFormError(t('payment_methods.form.fill_all_fields'));
-            return;
-        }
-
-        const cardElement = elements.getElement(CardElement);
-        setIsSaving(true);
-        setFormError('');
-
-        const { error: setupError, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
-            payment_method: {
-                card: cardElement,
-                billing_details: { name: cardholderName, email: currentUser.email },
-            },
-        });
-
-        if (setupError) {
-            setFormError(setupError.message);
-            setIsSaving(false);
-            return;
-        }
-
+    const handleDeleteCard = async (id) => {
+        if (!currentUser) return;
+        setLoading(true);
         try {
-            const pmDoc = await getDoc(doc(db, 'stripe_customers', currentUser.uid, 'payment_methods', setupIntent.payment_method));
-            const paymentMethodData = pmDoc.data();
-
-            await addDoc(collection(db, 'users', currentUser.uid, 'payment_methods'), {
-                stripePaymentMethodId: setupIntent.payment_method,
-                last4: paymentMethodData.card.last4,
-                brand: paymentMethodData.card.brand,
-                isDefault: methods.length === 0, 
-            });
-
-            toast.success(t('payment_methods.save_success'));
-            handleClose();
-        } catch (err) {
-            console.error("Firestore error:", err);
-            setFormError(t('payment_methods.save_error'));
-        } finally {
-            setIsSaving(false);
+            await deleteDoc(doc(db, 'users', currentUser.uid, 'paymentMethods', id));
+            setPaymentMethods(prev => prev.filter(method => method.id !== id));
+            toast.success(t('paymentMethods.delete_success'));
+        } catch (error) {
+            console.error("Error deleting payment method: ", error);
+            toast.error(t('paymentMethods.delete_error'));
         }
-    };
-
-    const handleDelete = async (methodId) => {
-        if (!window.confirm(t('payment_methods.delete_confirm'))) return;
-        toast.promise(
-            deleteDoc(doc(db, 'users', currentUser.uid, 'payment_methods', methodId)),
-            {
-                loading: t('payment_methods.deleting_toast'),
-                success: t('payment_methods.delete_success'),
-                error: t('payment_methods.delete_error'),
-            }
-        );
+        setLoading(false);
     };
 
     return (
-        <Container maxWidth="md">
-            <Typography variant="h4" component="h1" gutterBottom>{t('payment_methods.title')}</Typography>
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            
-            {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}><CircularProgress /></Box>
-            ) : methods.length === 0 ? (
-                <Paper sx={{ p: 4, textAlign: 'center' }}>
-                    <Typography variant="h6" gutterBottom>{t('payment_methods.no_methods_title')}</Typography>
-                    <Typography color="text.secondary" sx={{ mb: 3 }}>{t('payment_methods.no_methods_subtitle')}</Typography>
-                    <Button variant="contained" onClick={handleOpen}>{t('payment_methods.add_button')}</Button>
-                </Paper>
-            ) : (
-                <Paper sx={{ p: 2 }}>
-                    <List>
-                        {methods.map((method) => (
-                            <ListItem key={method.id} secondaryAction={<IconButton edge="end" onClick={() => handleDelete(method.id)}><DeleteIcon /></IconButton>}>
-                                <ListItemIcon>{getCardIcon(method.brand)}</ListItemIcon>
-                                <ListItemText 
-                                    primary={`${method.brand.charAt(0).toUpperCase() + method.brand.slice(1)} **** ${method.last4}`}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
-                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button variant="contained" onClick={handleOpen}>{t('payment_methods.add_button')}</Button>
-                    </Box>
-                </Paper>
-            )}
+        <div className="container mx-auto p-4">
+            <h1 className="text-2xl font-bold mb-4">{t('paymentMethods.title')}</h1>
 
-            <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-                <DialogTitle>{t('payment_methods.add_dialog_title')}</DialogTitle>
-                <form onSubmit={handleSubmit}>
-                    <DialogContent>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12}>
-                                <TextField fullWidth label={t('payment_methods.form.cardholder_name')} value={cardholderName} onChange={(e) => setCardholderName(e.target.value)} required variant="outlined" />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <Paper sx={{ p: 2, border: `1px solid ${theme.palette.divider}` }}>
-                                  <CardElement options={cardElementOptions} />
-                                </Paper>
-                            </Grid>
-                            {formError && <Grid item xs={12}><Alert severity="error">{formError}</Alert></Grid>}
-                            <Grid item xs={12}>
-                                <Typography variant="caption" color="text.secondary">{t('payment_methods.form.security_note')}</Typography>
-                            </Grid>
-                        </Grid>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleClose}>{t('payment_methods.cancel_button')}</Button>
-                        <Button type="submit" variant="contained" disabled={isSaving || !stripe || !clientSecret}>
-                            {isSaving ? <CircularProgress size={24} /> : t('payment_methods.save_button')}
-                        </Button>
-                    </DialogActions>
+            <div className="bg-white shadow rounded-lg p-6 mb-6">
+                <h2 className="text-xl font-semibold mb-4">{t('paymentMethods.add_new')}</h2>
+                <form onSubmit={handleAddCard}>
+                    <div className="mb-4">
+                        <label htmlFor="number" className="block text-sm font-medium text-gray-700">{t('paymentMethods.card_number')}</label>
+                        <input type="text" name="number" id="number" value={newCard.number} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label htmlFor="expiry" className="block text-sm font-medium text-gray-700">{t('paymentMethods.expiry_date')}</label>
+                            <input type="text" name="expiry" id="expiry" value={newCard.expiry} onChange={handleInputChange} placeholder="MM/YY" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                        </div>
+                        <div>
+                            <label htmlFor="cvv" className="block text-sm font-medium text-gray-700">{t('paymentMethods.cvv')}</label>
+                            <input type="text" name="cvv" id="cvv" value={newCard.cvv} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                        </div>
+                    </div>
+                    <button type="submit" disabled={loading} className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50">
+                        {loading ? t('paymentMethods.saving') : t('paymentMethods.save_card')}
+                    </button>
                 </form>
-            </Dialog>
-        </Container>
+            </div>
+
+            <div>
+                <h2 className="text-xl font-semibold mb-4">{t('paymentMethods.saved_cards')}</h2>
+                {loading && <p>{t('paymentMethods.loading')}</p>}
+                <div className="space-y-4">
+                    {paymentMethods.map(method => (
+                        <div key={method.id} className="bg-white shadow rounded-lg p-4 flex justify-between items-center">
+                            <p>**** **** **** {method.number.slice(-4)}</p>
+                            <p>{method.expiry}</p>
+                            <button onClick={() => handleDeleteCard(method.id)} disabled={loading} className="text-red-500 hover:text-red-700 disabled:opacity-50">{t('common.delete')}</button>
+                        </div>
+                    ))}
+                    {!loading && paymentMethods.length === 0 && <p>{t('paymentMethods.no_saved_cards')}</p>}
+                </div>
+            </div>
+        </div>
     );
 };
 

@@ -14,10 +14,25 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-export const analytics = getAnalytics(app);
-export const functions = getFunctions(app);
+
+// Initialize conditional services
+let analytics;
+let functions;
+
+if (typeof window !== 'undefined') {
+    try {
+        analytics = getAnalytics(app);
+    } catch (e) {
+        console.error("Firebase Analytics is not available in this environment.", e);
+        analytics = null; // Ensure analytics is explicitly null if it fails
+    }
+    functions = getFunctions(app);
+}
+
+export { analytics, functions };

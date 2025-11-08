@@ -11,12 +11,12 @@ import { WishlistProvider } from './context/WishlistContext';
 import { RecentlyViewedProvider } from './context/RecentlyViewedContext';
 import { CustomThemeProvider } from './context/ThemeContext';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { ProductProvider } from './context/ProductContext';
 
 import './i18n';
 import './index.css';
 
-// Use the correct public test key 
-const stripePromise = loadStripe('pk_test_51SPG2ACheyYwcT4lBqCBmxCJvvGALzBrQOzkVvtTsdcX19vxrlWSE6Fnyr6iVHvFydne9Y0kAmaFwjahivQLlizk00sccB4WuB');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const GlobalSuspenseFallback = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
@@ -30,17 +30,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Elements stripe={stripePromise}>
         <CustomThemeProvider>
           <AuthProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <RecentlyViewedProvider>
-                  <CurrencyProvider>
-                    <App />
-                    <Toaster position="bottom-right" reverseOrder={false} />
-                  </CurrencyProvider>
-                </RecentlyViewedProvider>
-              </WishlistProvider>
-            </CartProvider>
+            <ProductProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <RecentlyViewedProvider>
+                    <CurrencyProvider>
+                      <App />
+                    </CurrencyProvider>
+                  </RecentlyViewedProvider>
+                </WishlistProvider>
+              </CartProvider>
+            </ProductProvider>
           </AuthProvider>
+          <Toaster position="bottom-right" reverseOrder={false} />
         </CustomThemeProvider>
       </Elements>
     </Suspense>

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { seedDatabase } from '../firebase/seeder'; // Importar el seeder
 
 const ProductContext = createContext();
 
@@ -12,21 +13,26 @@ export const ProductProvider = ({ children }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchProducts = async () => {
+        const initializeProducts = async () => {
             try {
+                // 1. Ejecutar el seeder para poblar la DB si es necesario
+                await seedDatabase();
+
+                // 2. Obtener los productos de Firestore
                 const productsCollection = collection(db, 'products');
                 const snapshot = await getDocs(productsCollection);
                 const productsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setProducts(productsList);
+
             } catch (err) {
                 setError(err);
-                console.error("Error fetching products: ", err);
+                console.error("Error initializing products: ", err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchProducts();
+        initializeProducts();
     }, []);
 
     const value = { products, loading, error };

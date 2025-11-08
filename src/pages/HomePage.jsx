@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -13,6 +14,7 @@ import { db } from '../firebase/config';
 import { Link as RouterLink } from 'react-router-dom';
 import HeroSection from '../components/HeroSection';
 import ProductCarousel from '../components/ProductCarousel';
+import RecentlyViewedProducts from '../components/RecentlyViewedProducts'; // Import the new component
 import { useTranslation } from 'react-i18next';
 
 const HomePage = () => {
@@ -111,6 +113,9 @@ const HomePage = () => {
 
         {/* Popular Products Carousel */}
         <ProductCarousel title={t('home_page.most_popular_title')} products={popularProducts} />
+
+        {/* Recently Viewed Products Section */}
+        <RecentlyViewedProducts />
 
       </Container>
     </Box>

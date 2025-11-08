@@ -16,7 +16,7 @@ import OrderDetailView from '../../components/orders/OrderDetailView';
 import { toast } from 'react-hot-toast';
 import { generateInvoice } from '../../utils/generateInvoice';
 import { useTranslation } from 'react-i18next';
-import StatusChip from '../../components/StatusChip'; // IMPORT THE NEW COMPONENT
+import StatusChip from '../../components/StatusChip';
 
 const Orders = () => {
     const { t, i18n } = useTranslation();
@@ -24,7 +24,6 @@ const Orders = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { currentUser } = useAuth();
-    const navigate = useNavigate();
     
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -57,6 +56,7 @@ const Orders = () => {
         }
 
         setLoading(true);
+        setError(null); // Reset error state on new fetch
         const ordersQuery = query(
             collection(db, 'orders'), 
             where("userId", "==", currentUser.uid),
@@ -113,88 +113,97 @@ const Orders = () => {
         return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
     };
 
-    const paginatedOrders = orders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    const renderBody = () => {
+        if (loading) {
+            return <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}><CircularProgress /></Box>;
+        }
 
-    if (loading && orders.length === 0) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}><CircularProgress /></Box>;
-    }
+        if (error) {
+            return <Alert severity="error">{error}</Alert>;
+        }
+
+        if (!currentUser) {
+            return <Alert severity="info">{t('orders.login_prompt')}</Alert>;
+        }
+        
+        if (orders.length === 0) {
+            return <Paper sx={{ p: 4, textAlign: 'center' }}><Typography>{t('orders.no_orders')}</Typography></Paper>;
+        }
+
+        const paginatedOrders = orders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+        return (
+            <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+                <TableContainer>
+                    <Table stickyHeader>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>{t('orders.order_number')}</TableCell>
+                                <TableCell>{t('orders.date')}</TableCell>
+                                <TableCell>{t('orders.status_label')}</TableCell>
+                                <TableCell>{t('orders.total')}</TableCell>
+                                <TableCell align="center">{t('orders.actions')}</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {paginatedOrders.map((order) => {
+                                const totalInCop = order.pricing?.total ?? order.totalAmount;
+                                const totalInUsd = usdToCopRate && totalInCop ? totalInCop / usdToCopRate : null;
+                                const isCancellable = order.status === 'Processing';
+
+                                return (
+                                    <TableRow key={order.id} hover>
+                                        <TableCell>{order.orderNumber || order.id.substring(0, 6).toUpperCase()}</TableCell>
+                                        <TableCell>{order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd MMM, yyyy', { locale: i18n.language === 'es' ? es : enUS }) : 'N/A'}</TableCell>
+                                        <TableCell><StatusChip status={order.status} /></TableCell>
+                                        <TableCell>
+                                            <Typography variant="body1" fontWeight="bold">
+                                                {formatCurrency(totalInCop, 'COP')}
+                                            </Typography>
+                                            {usdToCopRate && totalInUsd !== null && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    (aprox. {formatCurrency(totalInUsd, 'USD')})
+                                                </Typography>
+                                            )}
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Button variant="outlined" size="small" onClick={() => handleOpenModal(order)} sx={{ mr: 1 }}>
+                                                {t('orders.view_details')}
+                                            </Button>
+                                            <Button 
+                                                variant="contained" 
+                                                color="error" 
+                                                size="small" 
+                                                onClick={() => handleCancelOrder(order.id)}
+                                                disabled={!isCancellable}
+                                            >
+                                                {t('orders.cancel_button')}
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+                <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={orders.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    labelRowsPerPage={t('orders.rows_per_page')}
+                />
+            </Paper>
+        );
+    };
 
     return (
         <Container maxWidth="lg" sx={{ my: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom>{t('orders.title')}</Typography>
-            {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-            
-            {!currentUser && !loading ? (
-                <Alert severity="info">{t('orders.login_prompt')}</Alert>
-            ) : orders.length === 0 && !loading ? (
-                <Paper sx={{ p: 4, textAlign: 'center' }}><Typography>{t('orders.no_orders')}</Typography></Paper>
-            ) : (
-                <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-                    <TableContainer>
-                        <Table stickyHeader>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>{t('orders.order_number')}</TableCell>
-                                    <TableCell>{t('orders.date')}</TableCell>
-                                    <TableCell>{t('orders.status_label')}</TableCell>
-                                    <TableCell>{t('orders.total')}</TableCell>
-                                    <TableCell align="center">{t('orders.actions')}</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {paginatedOrders.map((order) => {
-                                    const totalInCop = order.pricing?.total ?? order.totalAmount;
-                                    const totalInUsd = usdToCopRate && totalInCop ? totalInCop / usdToCopRate : null;
-                                    const isCancellable = order.status === 'Processing';
-
-                                    return (
-                                        <TableRow key={order.id} hover>
-                                            <TableCell>{order.orderNumber || order.id.substring(0, 6).toUpperCase()}</TableCell>
-                                            <TableCell>{order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd MMM, yyyy', { locale: i18n.language === 'es' ? es : enUS }) : 'N/A'}</TableCell>
-                                            <TableCell><StatusChip status={order.status} /></TableCell>
-                                            <TableCell>
-                                                <Typography variant="body1" fontWeight="bold">
-                                                    {formatCurrency(totalInCop, 'COP')}
-                                                </Typography>
-                                                {usdToCopRate && totalInUsd !== null && (
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        (aprox. {formatCurrency(totalInUsd, 'USD')})
-                                                    </Typography>
-                                                )}
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                <Button variant="outlined" size="small" onClick={() => handleOpenModal(order)} sx={{ mr: 1 }}>
-                                                    {t('orders.view_details')}
-                                                </Button>
-                                                <Button 
-                                                    variant="contained" 
-                                                    color="error" 
-                                                    size="small" 
-                                                    onClick={() => handleCancelOrder(order.id)}
-                                                    disabled={!isCancellable}
-                                                >
-                                                    {t('orders.cancel_button')}
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                    <TablePagination
-                        rowsPerPageOptions={[5, 10, 25]}
-                        component="div"
-                        count={orders.length}
-                        rowsPerPage={rowsPerPage}
-                        page={page}
-                        onPageChange={handleChangePage}
-                        onRowsPerPageChange={handleChangeRowsPerPage}
-                        labelRowsPerPage={t('orders.rows_per_page')}
-                    />
-                </Paper>
-            )}
-
+            {renderBody()}
             <Dialog open={!!selectedOrder} onClose={handleCloseModal} fullWidth maxWidth="md">
                 <DialogTitle>
                     {t('order_detail.title_simple')}

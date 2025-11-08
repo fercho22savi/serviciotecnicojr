@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Card, CardContent, Typography, Box, IconButton, Chip, Rating
+    Card, CardContent, Typography, Box, IconButton, Chip, Rating, Tooltip
 } from '@mui/material';
 import { AddShoppingCart, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -94,31 +94,35 @@ const ProductCard = ({ product }) => {
                     transform: isHovered ? 'translateY(0)' : 'translateY(100%)',
                     transition: 'opacity 0.3s ease, transform 0.3s ease'
                 }}>
-                     <IconButton 
-                        size="small" 
-                        onClick={handleAddToCart} 
-                        disabled={stock === 0}
-                        sx={{ 
-                            bgcolor: 'secondary.main', 
-                            color: 'white',
-                            '&:hover': { bgcolor: 'secondary.dark' },
-                            mx: 0.5
-                        }}
-                    > 
-                        <AddShoppingCart />
-                    </IconButton>
-                    <IconButton 
-                        size="small" 
-                        onClick={handleWishlistClick}
-                        sx={{ 
-                            bgcolor: 'primary.main',
-                            color: 'white',
-                            '&:hover': { bgcolor: 'primary.dark' },
-                            mx: 0.5
-                        }}
-                    >
-                        {isInWishlist ? <Favorite fontSize="small"/> : <FavoriteBorder fontSize="small"/>}
-                    </IconButton>
+                     <Tooltip title="Agregar al carrito">
+                        <IconButton 
+                            size="small" 
+                            onClick={handleAddToCart} 
+                            disabled={stock === 0}
+                            sx={{ 
+                                bgcolor: 'secondary.main', 
+                                color: 'white',
+                                '&:hover': { bgcolor: 'secondary.dark' },
+                                mx: 0.5
+                            }}
+                        > 
+                            <AddShoppingCart />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title={isInWishlist ? "Quitar de la wishlist" : "Agregar a la wishlist"}>
+                        <IconButton 
+                            size="small" 
+                            onClick={handleWishlistClick}
+                            sx={{ 
+                                bgcolor: isInWishlist ? 'error.main' : 'primary.main',
+                                color: 'white',
+                                '&:hover': { bgcolor: isInWishlist ? 'error.dark' : 'primary.dark' },
+                                mx: 0.5
+                            }}
+                        >
+                            {isInWishlist ? <Favorite fontSize="small"/> : <FavoriteBorder fontSize="small"/>}
+                        </IconButton>
+                    </Tooltip>
                 </Box>
             </Box>
 
@@ -165,7 +169,7 @@ const ProductCard = ({ product }) => {
                     <Typography variant="h5" color="primary.main" sx={{ fontWeight: 'bold' }}>
                         ${Number(price).toLocaleString('es-CO')}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'green', fontWeight: '500' }}>
+                    <Typography variant="body2" sx={{ color: '#2e7d32', fontWeight: '500' }}>
                         Approx. ${priceInUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                     </Typography>
                 </Box>

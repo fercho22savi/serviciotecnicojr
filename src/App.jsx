@@ -1,17 +1,11 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 
-// Firebase
-import { auth, db } from './firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
-
 // Context
 import { useAuth } from './context/AuthContext';
-import { RecentlyViewedProvider } from './context/RecentlyViewedContext';
-import { CustomThemeProvider } from './context/ThemeContext';
 
 // Layouts
 import MainLayout from './components/MainLayout';
@@ -52,33 +46,15 @@ const UserManagement = React.lazy(() => import('./pages/admin/UserManagementPage
 const CouponManagement = React.lazy(() => import('./pages/admin/CouponManagement.jsx'));
 const ReviewManagementPage = React.lazy(() => import('./pages/admin/ReviewManagementPage.jsx'));
 
-const stripePromise = loadStripe('pk_test_51SPG2ACheyYwcT4lBqCBmxCJvvGALzBrQOzkVvtTsdcX19vxrlWSE6Fnyr6iVHvFydne9Y0kAmaFwjahivQLlizk00sccB4WuB');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const App = () => {
-    const { currentUser, loading } = useAuth();
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [checkingAdmin, setCheckingAdmin] = useState(true);
-
-    useEffect(() => {
-        const checkAdminStatus = async () => {
-            if (currentUser) {
-                try {
-                    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                    setIsAdmin(userDoc.exists() && userDoc.data().role === 'admin');
-                } catch (error) {
-                    console.error("Error checking admin status:", error);
-                    setIsAdmin(false);
-                }
-            }
-            setCheckingAdmin(false);
-        };
-        if (!loading) checkAdminStatus();
-    }, [currentUser, loading]);
+    const { currentUser, isAdmin, loading } = useAuth();
 
     const AdminRoute = ({ children }) => (isAdmin ? children : <Navigate to="/" />);
     const AuthenticatedRoute = ({ children }) => (currentUser ? children : <Navigate to="/login" />);
 
-    if (loading || checkingAdmin) {
+    if (loading) {
         return <div>Cargando aplicación...</div>;
     }
 
@@ -103,7 +79,6 @@ const App = () => {
                 { path: "/order-confirmation/:orderId", element: <OrderConfirmationPage /> },
                 { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
                 { path: "/shipping-policy", element: <ShippingPolicyPage /> },
-                { path: "/wishlist", element: <WishlistPage /> }, 
             ],
         },
         {
@@ -125,11 +100,11 @@ const App = () => {
                 { path: "profile", element: <UserProfile /> },
                 { path: "recently-viewed", element: <RecentlyViewedPage /> },
                 { path: "settings", element: <SettingsPage /> },
-                { 
+                {
                     path: "payment-methods", 
-                    element: <Elements stripe={stripePromise}><PaymentMethods /></Elements> 
+                    element: <PaymentMethods />
                 },
-                { path: "wishlist", element: <Navigate to="/wishlist" replace /> }, // REDIRECT
+                { path: "wishlist", element: <WishlistPage /> },
             ],
         },
         {
@@ -159,13 +134,9 @@ const App = () => {
     });
 
     return (
-        <CustomThemeProvider>
-            <RecentlyViewedProvider>
-                <Suspense fallback={<div>Cargando página...</div>}>
-                    <RouterProvider router={router} />
-                </Suspense>
-            </RecentlyViewedProvider>
-        </CustomThemeProvider>
+        <Suspense fallback={<div>Cargando página...</div>}>
+            <RouterProvider router={router} />
+        </Suspense>
     );
 };
 

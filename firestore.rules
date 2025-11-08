@@ -1,46 +1,70 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Allow public read access to products for browsing
-    match /products/{productId} {
-      allow read: if true;
-      allow write: if request.auth != null; // Only authenticated users can write
+
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin';
     }
 
-    // Users can only manage their own documents
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Cart items can be managed by the owner
-    match /users/{userId}/cart/{cartId} {
-        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Wishlist items can be managed by the owner
-    match /users/{userId}/wishlist/{wishlistId} {
-        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Reviews can be created by authenticated users and read by anyone
-    match /reviews/{reviewId} {
-        allow read: if true;
-        allow create: if request.auth != null;
-        allow update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
-
-    // Orders can only be accessed by the user who created them or an admin
-    match /orders/{orderId} {
-      allow read, update: if request.auth != null && 
-                          (request.resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
-      allow create: if request.auth != null;
-    }
-
-    // Allow admin full access to specific collections
+    // Reglas para la colección de usuarios y sus documentos
     match /users/{userId} {
-        allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow get: if request.auth.uid == userId;
+      allow list: if isAdmin();
+      allow update: if request.auth.uid == userId || isAdmin();
+      allow create: if isAdmin();
+    }
+
+    // Regla explícita para la subcolección del carrito
+    match /users/{userId}/cart/{document=**} {
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+
+    // Regla explícita para la subcolección de la lista de deseos
+    match /users/{userId}/wishlist/{document=**} {
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+
+    // Regla explícita para la subcolección de métodos de pago
+    match /users/{userId}/paymentMethods/{document=**} {
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+
+    // Reglas para productos y categorías
+    match /products/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin() || request.auth != null; // Permitir escritura a admins o para la carga inicial
+    }
+
+    match /categories/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin() || request.auth != null; // Permitir escritura a admins o para la carga inicial
+    }
+
+    // Reglas para los pedidos
+    match /orders/{orderId} {
+        allow create: if request.auth.uid != null;
+        allow read, update: if request.auth.uid == resource.data.userId || isAdmin();
+        allow delete: if isAdmin();
+    }
+    
+    // Reglas para las reseñas de productos
+    match /products/{productId}/reviews/{reviewId} {
+        allow read: if true;
+        allow create: if request.auth.uid != null;
+        allow update: if request.auth.uid == resource.data.userId;
+        allow delete: if request.auth.uid == resource.data.userId || isAdmin();
+    }
+
+    // Reglas para los cupones
+    match /coupons/{couponId} {
+        allow read, create, update, delete: if isAdmin();
+    }
+    
+    // Denegación por defecto para cualquier otra ruta
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
