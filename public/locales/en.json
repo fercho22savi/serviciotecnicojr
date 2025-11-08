@@ -21,5 +21,50 @@
   },
   "products_page": {
       "title": "Product Catalog"
+  },
+  "account_menu": {
+    "title": "My Account",
+    "go_to_store": "Go to Store",
+    "dashboard": "Dashboard",
+    "order_history": "Order History",
+    "wishlist": "Wishlist",
+    "profile": "My Profile",
+    "recently_viewed": "Recently Viewed",
+    "payment_methods": "Payment Methods",
+    "manage_products": "Manage Products",
+    "settings": "Settings"
+  },
+  "admin_menu": {
+    "title": "Admin Panel",
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "categories": "Categories",
+    "orders": "Orders",
+    "users": "Users",
+    "coupons": "Coupons",
+    "reviews": "Reviews"
+  },
+  "product_management": {
+    "title": "Product Management",
+    "add_button": "Add Product",
+    "load_error": "Failed to fetch products. Please try again later.",
+    "delete_confirm": "Are you sure you want to delete this product?",
+    "delete_error": "Failed to delete product.",
+    "form": {
+      "edit_title": "Edit Product",
+      "add_title": "Add Product",
+      "upload_button": "Upload Image",
+      "name_label": "Name",
+      "description_label": "Description",
+      "price_label": "Price",
+      "category_label": "Category",
+      "cancel_button": "Cancel",
+      "save_button": "Save Changes",
+      "add_button": "Add Product"
+    },
+    "card": {
+      "edit_button": "Edit",
+      "delete_button": "Delete"
+    }
   }
 }

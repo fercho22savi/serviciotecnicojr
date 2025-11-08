@@ -94,6 +94,7 @@
     },
     "account_menu": {
         "title": "Mi Cuenta",
+        "go_to_store": "Ir a la Tienda",
         "dashboard": "Dashboard",
         "order_history": "Historial de Pedidos",
         "wishlist": "Lista de Deseos",

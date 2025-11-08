@@ -1,14 +1,12 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin';
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Reglas para la colección de usuarios y sus documentos
     match /users/{userId} {
       allow get: if request.auth.uid == userId;
       allow list: if isAdmin();
@@ -16,55 +14,29 @@ service cloud.firestore {
       allow create: if isAdmin();
     }
 
-    // Regla explícita para la subcolección del carrito
-    match /users/{userId}/cart/{document=**} {
+    match /users/{userId}/{document=**} {
       allow read, write: if request.auth.uid == userId || isAdmin();
     }
 
-    // Regla explícita para la subcolección de la lista de deseos
-    match /users/{userId}/wishlist/{document=**} {
-      allow read, write: if request.auth.uid == userId || isAdmin();
+    match /products/{productId} {
+      allow read: if true; // Everyone can read products
+      allow create, update, delete: if isAdmin(); // Only admins can modify products
     }
 
-    // Regla explícita para la subcolección de métodos de pago
-    match /users/{userId}/paymentMethods/{document=**} {
-      allow read, write: if request.auth.uid == userId || isAdmin();
+    match /categories/{categoryId} {
+      allow read: if true; // Everyone can read categories
+      allow create, update, delete: if isAdmin(); // Only admins can modify categories
     }
 
-    // Reglas para productos y categorías
-    match /products/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin() || request.auth != null; // Permitir escritura a admins o para la carga inicial
-    }
-
-    match /categories/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin() || request.auth != null; // Permitir escritura a admins o para la carga inicial
-    }
-
-    // Reglas para los pedidos
-    match /orders/{orderId} {
-        allow create: if request.auth.uid != null;
-        allow read, update: if request.auth.uid == resource.data.userId || isAdmin();
-        allow delete: if isAdmin();
-    }
-    
-    // Reglas para las reseñas de productos
-    match /products/{productId}/reviews/{reviewId} {
+    match /reviews/{reviewId} {
         allow read: if true;
         allow create: if request.auth.uid != null;
-        allow update: if request.auth.uid == resource.data.userId;
-        allow delete: if request.auth.uid == resource.data.userId || isAdmin();
+        allow update, delete: if isAdmin() || request.auth.uid == resource.data.userId;
     }
 
-    // Reglas para los cupones
-    match /coupons/{couponId} {
-        allow read, create, update, delete: if isAdmin();
-    }
-    
-    // Denegación por defecto para cualquier otra ruta
-    match /{document=**} {
-      allow read, write: if false;
+    match /orders/{orderId} {
+        allow read, update: if isAdmin() || request.auth.uid == resource.data.userId;
+        allow create: if request.auth.uid != null;
     }
   }
 }

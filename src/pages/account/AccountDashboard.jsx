@@ -1,133 +1,137 @@
+
 import React, { useState, useEffect } from 'react';
-import { Grid, Paper, Typography, Avatar, Box, Button, Chip } from '@mui/material';
+import { Grid, Paper, Typography, Avatar, Box, Button, Chip, CircularProgress } from '@mui/material';
 import { getAuth, signOut } from 'firebase/auth';
-import { db } from '../../firebase/config'; // Adjust as needed
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
-import OrderTrackerMap from '../../components/OrderTrackerMap'; // Create this component
+import { db } from '../../firebase/config';
+import { collection, query, where, doc, onSnapshot, collectionGroup } from 'firebase/firestore';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useWishlist } from '../../context/WishlistContext';
 
-const StatCard = ({ title, value }) => (
-    <Paper sx={{ 
-        p: 2, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'center', // Center content vertically
-        height: 120, 
-        backgroundColor: '#333', 
-        color: 'white', 
-        borderRadius: '12px' 
+const StatCard = ({ title, value, icon }) => (
+    <Paper sx={{
+        p: 2.5,
+        display: 'flex',
+        alignItems: 'center',
+        height: 120,
+        backgroundColor: '#f0f2f5',
+        color: 'black',
+        borderRadius: '16px',
+        boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)'
     }}>
-      <Typography variant="subtitle1" color="#ccc">{title}</Typography>
-      <Typography
-        variant="h4"
-        sx={{
-          fontWeight: 'bold',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          fontSize: {
-            xs: '1.5rem',
-            sm: '2rem',
-            md: '2.125rem'
-          }
-        }}
-      >
-        {value}
-      </Typography>
+        {icon && <Box sx={{ mr: 2, color: 'primary.main' }}>{icon}</Box>}
+        <Box>
+            <Typography variant="subtitle1" color="text.secondary">{title}</Typography>
+            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                {value}
+            </Typography>
+        </Box>
     </Paper>
-  );
+);
 
-  const RecentOrder = ({ order }) => (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1, borderBottom: '1px solid #444' }}>
-      <Typography>#{order.id.slice(0, 6)}</Typography>
-      <Typography>{new Date((order.createdAt?.seconds || 0) * 1000).toLocaleDateString()}</Typography>
-      <Chip label={order.status} size="small" sx={{ backgroundColor: order.status === 'Delivered' ? '#4caf50' : '#ff9800', color: 'white' }} />
-      <Typography>${(order.total || order.amount || 0).toFixed(2)}</Typography>
+const RecentOrder = ({ order }) => (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, borderBottom: '1px solid #e0e0e0' }}>
+        <Typography component={RouterLink} to={`/account/orders/${order.id}`} sx={{ textDecoration: 'none', color: 'primary.main', fontWeight: 'bold' }}>#{order.id.slice(0, 6)}</Typography>
+        <Typography color="text.secondary">{new Date((order.createdAt?.seconds || 0) * 1000).toLocaleDateString()}</Typography>
+        <Chip label={order.status} size="small" color={order.status === 'Delivered' ? 'success' : 'warning'} />
+        <Typography fontWeight="bold">${(order.total || order.amount || 0).toLocaleString('es-CO')}</Typography>
     </Box>
-  );
+);
 
 const AccountDashboard = () => {
-  const [user, setUser] = useState(null);
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const auth = getAuth();
-  const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+    const [orders, setOrders] = useState([]);
+    const [reviewsCount, setReviewsCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const auth = getAuth();
+    const navigate = useNavigate();
+    const { wishlist } = useWishlist();
 
-  const API_KEY = 'AIzaSyBioa5eRPcSJ_LrndxJJC5FFiaXCbfBHto'; // Replace with your actual key
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser(userDoc.data());
+    useEffect(() => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            setLoading(false);
+            return;
         }
 
+        setLoading(true);
+
+        // Listener for user data
+        const unsubUser = onSnapshot(doc(db, 'users', currentUser.uid), (doc) => {
+            if (doc.exists()) {
+                setUser(doc.data());
+            }
+        });
+
+        // Listener for orders
         const ordersQuery = query(collection(db, 'orders'), where('userId', '==', currentUser.uid));
-        const ordersSnapshot = await getDocs(ordersQuery);
-        const ordersData = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setOrders(ordersData);
-      }
-      setLoading(false);
+        const unsubOrders = onSnapshot(ordersQuery, (snapshot) => {
+            const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setOrders(ordersData);
+        });
+
+        // Listener for reviews
+        const reviewsQuery = query(collectionGroup(db, 'reviews'), where('userId', '==', currentUser.uid));
+        const unsubReviews = onSnapshot(reviewsQuery, (snapshot) => {
+            setReviewsCount(snapshot.size);
+            setLoading(false); // Stop loading once the first data comes in
+        }, (error) => {
+            console.error("Error fetching reviews:", error);
+            setLoading(false);
+        });
+
+        // Cleanup function to unsubscribe from listeners on component unmount
+        return () => {
+            unsubUser();
+            unsubOrders();
+            unsubReviews();
+        };
+    }, [auth]); // Only re-run if auth object changes
+
+    const handleLogout = async () => {
+        await signOut(auth);
+        navigate('/login');
     };
 
-    fetchData();
-  }, [auth]);
+    if (loading) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><CircularProgress /></Box>;
+    }
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    navigate('/login');
-  };
+    const totalSpent = orders.reduce((acc, order) => acc + (order.total || order.amount || 0), 0);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+    return (
+        <Box sx={{ flexGrow: 1, p: { xs: 2, md: 4 }, backgroundColor: 'white', color: 'black', minHeight: '100vh' }}>
+            <Grid container spacing={3}>
+                <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                    <div>
+                        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Mi Panel</Typography>
+                        <Typography color="text.secondary">¡Bienvenido de vuelta, {user?.name || 'Usuario'}!</Typography>
+                    </div>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Avatar src={user?.avatarUrl} sx={{ mr: 2 }} />
+                        <Typography fontWeight="bold">{user?.name || 'Usuario'}</Typography>
+                        <Button onClick={handleLogout} sx={{ ml: 2, color: 'text.secondary', borderColor: 'grey.400', borderRadius: '20px' }} variant="outlined">Cerrar Sesión</Button>
+                    </Box>
+                </Grid>
 
-  const totalSpent = orders.reduce((acc, order) => acc + (order.total || order.amount || 0), 0);
-  const averageRating = 4.3; // Placeholder
-  const userLocation = user?.address ? { lat: user.address.latitude, lng: user.address.longitude } : null;
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Mis Pedidos" value={orders.length} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Gasto Total" value={`$${totalSpent.toLocaleString('es-CO')}`} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><StatCard title="En Mi Lista" value={wishlist.size} /></Grid> {/* Get size directly from context */}
+                <Grid item xs={12} sm={6} md={3}><StatCard title="Reseñas Escritas" value={reviewsCount} /></Grid>
 
-  return (
-    <Box sx={{ flexGrow: 1, p: 3, backgroundColor: '#1a1a1a', color: 'white', minHeight: '100vh' }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Dashboard</Typography>
-            <Typography color="#ccc">Welcome, {user?.name || 'User'}! Here is a summary of your recent activity</Typography>
-          </div>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar src={user?.avatarUrl} sx={{ mr: 2 }} />
-            <Typography>{user?.name || 'User'}</Typography>
-            <Button onClick={handleLogout} sx={{ ml: 2, color: '#ccc', borderColor: '#ccc', borderRadius: '20px' }} variant="outlined">Log out</Button>
-          </Box>
-        </Grid>
+                <Grid item xs={12}>
+                    <Paper sx={{ p: 3, backgroundColor: 'white', color: 'black', borderRadius: '16px', boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)' }}>
+                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>Mis Pedidos Recientes</Typography>
+                        {orders.length > 0 ? (
+                            orders.sort((a,b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, 5).map(order => <RecentOrder key={order.id} order={order} />)
+                        ) : (
+                            <Typography color="text.secondary">Aún no has realizado ningún pedido.</Typography>
+                        )}
+                    </Paper>
+                </Grid>
 
-        <Grid item xs={12} md={3}><StatCard title="Total Orders" value={orders.length} /></Grid>
-        <Grid item xs={12} md={3}><StatCard title="Total Spent" value={`$${totalSpent.toFixed(2)}`} /></Grid>
-        <Grid item xs={12} md={3}><StatCard title="Current Orders" value={orders.filter(o => o.status === 'Processing' || o.status === 'Shipped').length} /></Grid>
-        <Grid item xs={12} md={3}><StatCard title="Average Rating" value={averageRating} /></Grid>
-
-        <Grid item xs={12} lg={7}>
-          <Paper sx={{ p: 2, backgroundColor: '#2b2b2b', color: 'white', borderRadius: '12px', height: '100%' }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Recent Orders</Typography>
-            {orders.slice(0, 4).map(order => <RecentOrder key={order.id} order={order} />)}
-          </Paper>
-        </Grid>
-        
-        <Grid item xs={12} lg={5}>
-           <Paper sx={{ p: 2, backgroundColor: '#2b2b2b', color: 'white', borderRadius: '12px', height: '100%' }}>
-             <Typography variant="h6" sx={{ mb: 2 }}>Mi Ubicación</Typography>
-             {userLocation ? 
-                <OrderTrackerMap apiKey={API_KEY} userLocation={userLocation} /> : 
-                <Typography color="#ccc">No se encontró una dirección. Ve a tu perfil para agregar una.</Typography>
-             }
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
-  );
+            </Grid>
+        </Box>
+    );
 };
 
 export default AccountDashboard;
