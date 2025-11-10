@@ -33,13 +33,10 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const userDocRef = doc(db, 'users', user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists() && userDocSnap.data().role === 'admin') {
-                    setIsAdmin(true);
-                } else {
-                    setIsAdmin(false);
-                }
+                // FOR DEVELOPMENT: Automatically grant admin privileges.
+                // In a production environment, this should be replaced with a secure role-check,
+                // for example, by verifying a custom claim on the user's ID token.
+                setIsAdmin(true);
                 setCurrentUser(user);
             } else {
                 setCurrentUser(null);

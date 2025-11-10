@@ -1,0 +1,130 @@
+{
+  "header": {
+    "searchPlaceholder": "Buscar productos...",
+    "catalog": "Catálogo",
+    "wishlist": "Lista de deseos",
+    "cart": "Carrito",
+    "account": "Mi Cuenta",
+    "adminPanel": "Panel de Admin",
+    "logout": "Cerrar Sesión",
+    "login": "INICIAR SESIÓN",
+    "signup": "REGISTRARSE",
+    "allCategories": "Todas"
+  },
+  "home": {
+    "heroTitle": "Estilo que Define tu Espacio",
+    "heroSubtitle": "Descubre piezas únicas que transforman tu casa en un hogar.",
+    "exploreButton": "EXPLORA LA COLECCIÓN",
+    "ourCatalog": "Nuestro Catálogo",
+    "resultsFor": "Resultados para",
+    "showingProductsFrom": "Mostrando productos de"
+  },
+  "products_page": {
+      "title": "Catálogo de Productos"
+  },
+  "account_menu": {
+    "title": "Mi Cuenta",
+    "go_to_store": "Ir a la Tienda",
+    "dashboard": "Panel Principal",
+    "order_history": "Historial de Pedidos",
+    "wishlist": "Lista de Deseos",
+    "profile": "Mi Perfil",
+    "recently_viewed": "Vistos Recientemente",
+    "payment_methods": "Métodos de Pago",
+    "manage_products": "Gestionar Productos",
+    "settings": "Configuración"
+  },
+  "admin_menu": {
+    "title": "Panel de Admin",
+    "dashboard": "Panel Principal",
+    "products": "Productos",
+    "categories": "Categorías",
+    "orders": "Pedidos",
+    "users": "Usuarios",
+    "coupons": "Cupones",
+    "reviews": "Reseñas"
+  },
+    "product_management": {
+    "title": "Gestión de Productos",
+    "add_button": "Añadir Producto",
+    "load_error": "Error al cargar los productos. Por favor, inténtalo de nuevo más tarde.",
+    "saving": "Guardando producto...",
+    "save_success": "¡Producto guardado con éxito!",
+    "save_error": "Error al guardar el producto.",
+    "deleting": "Eliminando producto...",
+    "delete_success": "¡Producto eliminado con éxito!",
+    "delete_error": "Error al eliminar el producto.",
+    "empty_text": "No se encontraron productos. Haz clic en \"Añadir Producto\" para empezar.",
+    "delete_confirm_title": "Confirmar Eliminación",
+    "delete_confirm_text": "¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.",
+    "table_header": {
+        "image": "Imagen",
+        "name": "Nombre",
+        "category": "Categoría",
+        "price": "Precio",
+        "actions": "Acciones"
+    },
+    "actions": {
+        "edit_tooltip": "Editar Producto",
+        "delete_tooltip": "Eliminar Producto"
+    },
+    "form": {
+      "edit_title": "Editar Producto",
+      "add_title": "Añadir Nuevo Producto",
+      "upload_button": "Subir Imagen",
+      "image_placeholder": "Vista Previa de la Imagen",
+      "name_label": "Nombre del Producto",
+      "description_label": "Descripción",
+      "price_label": "Precio",
+      "category_label": "Categoría",
+      "cancel_button": "Cancelar",
+      "save_button": "Guardar Cambios",
+      "add_new_button": "Añadir Producto"
+    }
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Gestiona las preferencias y ajustes de tu cuenta.",
+    "appearance": {
+        "title": "Apariencia",
+        "language_label": "Idioma",
+        "dark_mode_label": "Modo Oscuro",
+        "dark_mode_secondary": "Alterna entre el tema claro y oscuro."
+    },
+    "notifications": {
+        "title": "Notificaciones",
+        "offers_label": "Ofertas Promocionales",
+        "offers_secondary": "Recibe correos sobre promociones y nuevos productos.",
+        "orders_label": "Actualizaciones de Pedidos",
+        "orders_secondary": "Recibe notificaciones por correo sobre tus pedidos."
+    },
+    "security": {
+        "title": "Seguridad y Datos",
+        "password_label": "Contraseña",
+        "password_secondary": "Último cambio hace un mes.",
+        "change_password_action": "Cambiar Contraseña",
+        "export_data_label": "Exportar tus Datos",
+        "export_data_secondary": "Descarga una copia de tus datos personales.",
+        "export_data_action": "Exportar Datos",
+        "password_action_message": "Aquí es donde implementarías el flujo de cambio de contraseña.",
+        "export_data_action_message": "Aquí es donde activarías el proceso de exportación de datos."
+    },
+    "danger_zone": {
+        "title": "Zona de Peligro",
+        "delete_account_label": "Eliminar Cuenta",
+        "delete_account_secondary": "Elimina permanentemente tu cuenta y todos los datos asociados.",
+        "delete_account_button": "Eliminar Cuenta",
+        "delete_warning": "Las acciones en esta zona son irreversibles.",
+        "delete_confirm_title": "¿Estás seguro?",
+        "delete_confirm_text": "Esto eliminará permanentemente tu cuenta. Esta acción no se puede deshacer.",
+        "deletion_initiated": "El proceso de eliminación de la cuenta ha comenzado. Se cerrará tu sesión en breve.",
+        "delete_account_action": "Eliminar Cuenta"
+    },
+    "action_alert_prefix": "Acción disparada para",
+    "action_alert_suffix": "Esto es un marcador de posición.",
+    "change_button": "Cambiar",
+    "export_button": "Exportar"
+  },
+  "cancel": "Cancelar",
+  "delete": "Eliminar"
+}

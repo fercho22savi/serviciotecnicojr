@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db, storage } from '../../firebase/config';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore'; // Changed to setDoc
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile, sendPasswordResetEmail, getAuth } from 'firebase/auth';
 import {
@@ -27,7 +27,7 @@ function Profile() {
         birthDate: '',
         photoURL: '',
         address: '',
-        country: 'Colombia', // Default country
+        country: 'Colombia',
         department: '',
         city: '',
         postalCode: ''
@@ -62,6 +62,13 @@ function Profile() {
                             city: data.city || '',
                             postalCode: data.postalCode || ''
                         });
+                    } else {
+                        // If document doesn't exist, use basic info from auth
+                        setProfile(prev => ({ 
+                            ...prev,
+                            displayName: currentUser.displayName || '', 
+                            photoURL: currentUser.photoURL || ''
+                        }));
                     }
                     setLoading(false);
                 }
@@ -84,7 +91,6 @@ function Profile() {
         }
     }, [profile.department]);
 
-
     const handlePhotoChange = async (e) => {
         const file = e.target.files[0];
         if (!file || !currentUser) return;
@@ -101,7 +107,7 @@ function Profile() {
             await updateProfile(auth.currentUser, { photoURL });
             
             const userDocRef = doc(db, 'users', currentUser.uid);
-            await updateDoc(userDocRef, { photoURL });
+            await setDoc(userDocRef, { photoURL }, { merge: true });
 
             setProfile(prev => ({ ...prev, photoURL }));
 
@@ -118,7 +124,6 @@ function Profile() {
         const { name, value } = e.target;
         setProfile(prevState => {
             const newState = { ...prevState, [name]: value };
-            // If department changes, reset city
             if (name === 'department') {
                 newState.city = '';
             }
@@ -138,7 +143,7 @@ function Profile() {
             let addressPayload = { text: profile.address || '' };
             const fullAddressForGeocode = `${profile.address}, ${profile.city}, ${profile.department}, ${profile.country}`.trim();
 
-            if (fullAddressForGeocode && GEOCODE_API_KEY) {
+            if (fullAddressForGeocode.length > 5 && GEOCODE_API_KEY) {
                 try {
                     const encodedAddress = encodeURIComponent(fullAddressForGeocode);
                     const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${GEOCODE_API_KEY}`;
@@ -175,12 +180,13 @@ function Profile() {
                 photoURL: profile.photoURL
             };
     
-            await updateDoc(userDocRef, updatedData, { merge: true });
+            // Use setDoc with merge: true for robust create/update
+            await setDoc(userDocRef, updatedData, { merge: true });
             
             toast.success(t('profile.toast.success'), { id: toastId });
     
         } catch (error) {
-            console.error("Error updating profile:", error);
+            console.error("Error saving profile:", error);
             toast.error(t('profile.errors.update_profile'), { id: toastId });
         }
     };
@@ -286,7 +292,7 @@ function Profile() {
                     </Grid>
 
                     <Grid item xs={12}>
-                        <TextField name="email" label="Email" value={currentUser?.email || ''} fullWidth disabled helperText={t('profile.form.email_helper')} />
+                        <TextField name="email" label={t('profile.form.email')} value={currentUser?.email || ''} fullWidth disabled helperText={t('profile.form.email_helper')} />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                         <TextField name="phone" label={t('profile.form.phone')} value={profile.phone} onChange={handleChange} fullWidth />

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../context/AuthContext'; // <-- Import useAuth
+import { useAuth } from '../context/AuthContext';
 import {
-    Box, Drawer, List, ListItem, ListItemButton, ListItemText, Typography, 
-    AppBar, Toolbar, IconButton, useTheme, useMediaQuery, CssBaseline, ListItemIcon, Divider
+    Box, Drawer, List, ListItem, ListItemButton, ListItemText, Typography,
+    AppBar, Toolbar, IconButton, useTheme, useMediaQuery, CssBaseline, ListItemIcon, Divider, ListSubheader
 } from '@mui/material';
 import {
     Menu as MenuIcon,
@@ -16,14 +16,15 @@ import {
     Settings as SettingsIcon,
     CreditCard as CreditCardIcon,
     Storefront as StorefrontIcon,
-    AdminPanelSettings as AdminPanelSettingsIcon // <-- Import new icon
+    PeopleAlt as PeopleAltIcon,
+    Build as BuildIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 250;
 
 const AccountLayout = () => {
   const { t } = useTranslation();
-  const { isAdmin } = useAuth(); // <-- Get admin status
+  const { isAdmin } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
@@ -31,28 +32,6 @@ const AccountLayout = () => {
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
-
-  // Build the links array dynamically
-  const accountLinks = [
-    { text: t('account_menu.go_to_store'), to: '/', icon: <StorefrontIcon /> },
-    // Divider is handled separately
-    { text: t('account_menu.dashboard'), to: '/account/dashboard', icon: <DashboardIcon /> },
-    { text: t('account_menu.order_history'), to: '/account/orders', icon: <ShoppingBagIcon /> },
-    { text: t('account_menu.wishlist'), to: '/account/wishlist', icon: <FavoriteIcon /> },
-    { text: t('account_menu.profile'), to: '/account/profile', icon: <AccountCircleIcon /> },
-    { text: t('account_menu.recently_viewed'), to: '/account/recently-viewed', icon: <VisibilityIcon /> },
-    { text: t('account_menu.payment_methods'), to: '/account/payment-methods', icon: <CreditCardIcon /> },
-  ];
-
-  if (isAdmin) {
-    accountLinks.push({ 
-      text: t('account_menu.manage_products'), 
-      to: '/admin/products', 
-      icon: <AdminPanelSettingsIcon /> 
-    });
-  }
-
-  accountLinks.push({ text: t('account_menu.settings'), to: '/account/settings', icon: <SettingsIcon /> });
 
   const navLinkStyle = ({ isActive }) => ({
     backgroundColor: isActive ? theme.palette.action.selected : 'transparent',
@@ -68,30 +47,66 @@ const AccountLayout = () => {
     transition: 'background-color 0.3s, color 0.3s',
   });
 
+  // Link Groups
+  const mainLink = { text: t('account_menu.go_to_store'), to: '/', icon: <StorefrontIcon /> };
+  
+  const userLinks = [
+    { text: t('account_menu.dashboard'), to: '/account/dashboard', icon: <DashboardIcon /> },
+    { text: t('account_menu.order_history'), to: '/account/orders', icon: <ShoppingBagIcon /> },
+    { text: t('account_menu.wishlist'), to: '/account/wishlist', icon: <FavoriteIcon /> },
+    { text: t('account_menu.profile'), to: '/account/profile', icon: <AccountCircleIcon /> },
+    { text: t('account_menu.recently_viewed'), to: '/account/recently-viewed', icon: <VisibilityIcon /> },
+    { text: t('account_menu.payment_methods'), to: '/account/payment-methods', icon: <CreditCardIcon /> },
+    { text: t('account_menu.settings'), to: '/account/settings', icon: <SettingsIcon /> },
+  ];
+
+  const adminLinks = [
+    { text: t('admin_menu.user_management'), to: '/admin/users', icon: <PeopleAltIcon /> },
+    { text: t('admin_menu.manage_products'), to: '/admin/products', icon: <BuildIcon /> },
+  ];
+
   const drawerContent = (
     <Box sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-            {t('account_menu.title')}
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', px: 2, pt: 1, pb: 2 }}>
+            {t('header.storeName')}
         </Typography>
         <List component="nav">
-            {accountLinks.map((link, index) => (
-            <React.Fragment key={link.to}>
-                <ListItem disablePadding>
-                    <ListItemButton 
-                        component={NavLink} 
-                        to={link.to} 
-                        sx={navLinkStyle}
-                        onClick={!isDesktop ? handleDrawerToggle : undefined}
-                        end={link.to === '/'}
-                    >
-                    <ListItemIcon sx={{ minWidth: 40 }}>{link.icon}</ListItemIcon>
-                    <ListItemText primary={link.text} />
+            {/* Main Link */}
+            <ListItem disablePadding>
+                <ListItemButton component={NavLink} to={mainLink.to} sx={navLinkStyle} onClick={!isDesktop ? handleDrawerToggle : undefined} end>
+                    <ListItemIcon sx={{ minWidth: 40 }}>{mainLink.icon}</ListItemIcon>
+                    <ListItemText primary={mainLink.text} />
+                </ListItemButton>
+            </ListItem>
+
+            <Divider sx={{ my: 1 }} />
+
+            {/* User Links */}
+            <ListSubheader sx={{ bgcolor: 'transparent', ...theme.typography.h6, fontWeight: 'bold' }}>{t('account_menu.title')}</ListSubheader>
+            {userLinks.map(link => (
+                <ListItem key={link.to} disablePadding>
+                    <ListItemButton component={NavLink} to={link.to} sx={navLinkStyle} onClick={!isDesktop ? handleDrawerToggle : undefined}>
+                        <ListItemIcon sx={{ minWidth: 40 }}>{link.icon}</ListItemIcon>
+                        <ListItemText primary={link.text} />
                     </ListItemButton>
                 </ListItem>
-                {/* Add a divider after the first item */}
-                {index === 0 && <Divider sx={{ my: 1 }} />}
-            </React.Fragment>
             ))}
+
+            {/* Admin Links */}
+            {isAdmin && (
+                <>
+                    <Divider sx={{ my: 1 }} />
+                    <ListSubheader sx={{ bgcolor: 'transparent', ...theme.typography.h6, fontWeight: 'bold' }}>{t('admin_menu.title')}</ListSubheader>
+                    {adminLinks.map(link => (
+                        <ListItem key={link.to} disablePadding>
+                            <ListItemButton component={NavLink} to={link.to} sx={navLinkStyle} onClick={!isDesktop ? handleDrawerToggle : undefined}>
+                                <ListItemIcon sx={{ minWidth: 40 }}>{link.icon}</ListItemIcon>
+                                <ListItemText primary={link.text} />
+                            </ListItemButton>
+                        </ListItem>
+                    ))}
+                </>
+            )}
         </List>
     </Box>
   );

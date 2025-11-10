@@ -7,12 +7,12 @@
         "orders": "Pedidos",
         "wishlist": "Lista de deseos",
         "cart": "Carrito",
-        "login": "Iniciar Sesión",
+        "login": "Iniciar sesión",
         "signup": "Registrarse",
-        "account": "Mi Cuenta",
-        "my_orders": "Mis Pedidos",
-        "dashboard": "Panel de Admin",
-        "logout": "Cerrar Sesión",
+        "account": "Mi cuenta",
+        "my_orders": "Mis pedidos",
+        "dashboard": "Panel de administración",
+        "logout": "Cerrar sesión",
         "lightModeTooltip": "Cambiar a modo claro",
         "darkModeTooltip": "Cambiar a modo oscuro",
         "logout_error": "Error al cerrar sesión"
@@ -20,174 +20,189 @@
     "footer": {
         "company_slogan": "La mejor tecnología al alcance de tu mano. Calidad, servicio y los mejores precios.",
         "legal": "Legal",
-        "privacy_policy": "Política de Privacidad",
-        "terms_of_service": "Términos de Servicio",
+        "privacy_policy": "Política de privacidad",
+        "terms_of_service": "Términos de servicio",
         "help": "Ayuda",
-        "faq": "Preguntas Frecuentes",
+        "faq": "Preguntas frecuentes",
         "contact": "Contacto",
-        "shipping_returns": "Envíos y Devoluciones",
-        "refund_policy": "Política de Devoluciones y Reembolsos",
+        "shipping_returns": "Envíos y devoluciones",
+        "refund_policy": "Política de reembolso",
         "follow_us": "Síguenos",
-        "copyright": "Copyright © TuTienda.com {{year}}. Ahorra con nosotros"
+        "copyright": "Copyright © YourStore.com {{year}}. Ahorra con nosotros"
     },
     "home_page": {
-        "hero_title": "Tecnología que Inspira tu Futuro",
+        "hero_title": "Tecnología que inspira tu futuro",
         "hero_subtitle": "Descubre las últimas innovaciones en nuestra colección de productos de alta gama.",
-        "explore_collection_button": "Explorar Colección",
-        "explore_categories_title": "Explora Nuestras Categorías",
+        "explore_collection_button": "Explorar colección",
+        "explore_categories_title": "Explora nuestras categorías",
         "new_arrivals_title": "Novedades",
-        "most_popular_title": "Los Más Populares"
+        "most_popular_title": "Más populares"
     },
     "settings": {
         "title": "Configuración",
-        "subtitle": "Gestiona la apariencia, notificaciones y seguridad de tu cuenta.",
+        "subtitle": "Gestiona la apariencia, las notificaciones y la seguridad de tu cuenta.",
         "action_alert_prefix": "La funcionalidad para",
-        "action_alert_suffix": "se implementará próximamente.",
+        "action_alert_suffix": "se implementará pronto.",
         "delete_account_confirm": "¿Estás seguro de que quieres eliminar tu cuenta de forma permanente? Esta acción no se puede deshacer.",
-        "delete_account_action": "Eliminar Cuenta",
+        "delete_account_action": "Eliminar cuenta",
         "change_button": "Cambiar",
         "export_button": "Exportar",
         "appearance": {
             "title": "Apariencia",
             "language_label": "Idioma",
-            "dark_mode_label": "Modo Oscuro",
+            "dark_mode_label": "Modo oscuro",
             "dark_mode_secondary": "Ideal para navegar de noche"
         },
         "notifications": {
             "title": "Notificaciones",
-            "offers_label": "Ofertas y Promociones",
-            "offers_secondary": "Recibir correos con nuestros mejores descuentos",
-            "orders_label": "Actualizaciones de Pedidos",
-            "orders_secondary": "Recibir notificaciones sobre el estado de tus compras"
+            "offers_label": "Ofertas y promociones",
+            "offers_secondary": "Recibe correos con nuestros mejores descuentos",
+            "orders_label": "Actualizaciones de pedidos",
+            "orders_secondary": "Recibe notificaciones sobre el estado de tu pedido"
         },
         "security": {
-            "title": "Seguridad y Datos",
+            "title": "Seguridad y datos",
             "password_label": "Contraseña",
             "password_secondary": "Se recomienda actualizarla periódicamente",
-            "change_password_action": "Cambiar Contraseña",
+            "change_password_action": "Cambiar contraseña",
             "export_data_label": "Exportar mis datos",
             "export_data_secondary": "Descarga un archivo con toda tu información",
-            "export_data_action": "Exportar Datos"
+            "export_data_action": "Exportar datos"
         },
         "danger_zone": {
-            "title": "Zona de Peligro",
-            "delete_account_label": "Eliminar Cuenta",
-            "delete_account_secondary": "Esta acción es permanente y no se puede deshacer.",
+            "title": "Zona de peligro",
+            "delete_account_label": "Eliminar cuenta",
+            "delete_account_secondary": "Esta acción es permanente e irreversible.",
             "delete_account_button": "Eliminar mi cuenta",
-            "delete_warning": "Al eliminar tu cuenta, se borrará tu historial de pedidos, listas de deseos y toda la información asociada de forma irreversible."
+            "delete_warning": "Eliminar tu cuenta borrará permanentemente tu historial de pedidos, listas de deseos y toda la información asociada."
         }
     },
     "faq_page": {
-        "title": "Preguntas Frecuentes",
+        "title": "Preguntas frecuentes",
         "payment_q": "¿Qué métodos de pago aceptan?",
         "payment_a": "Aceptamos una amplia variedad de métodos de pago, incluyendo tarjetas de crédito y débito (Visa, MasterCard, American Express), PayPal y otras plataformas de pago digital. Todas las transacciones son 100% seguras.",
-        "shipping_q": "¿Cuánto tiempo tarda en llegar mi pedido?",
+        "shipping_q": "¿Cuánto tarda en llegar mi pedido?",
         "shipping_a": "El tiempo de entrega estándar es de 3 a 5 días hábiles. También ofrecemos envío exprés (1-2 días hábiles) por un costo adicional.",
         "returns_q": "¿Cuál es su política de devoluciones?",
-        "returns_a": "Ofrecemos una política de devolución de 30 días. Si no estás satisfecho, puedes devolverlo para un reembolso completo o cambio. El producto debe estar en su estado original.",
-        "account_q": "¿Necesito una cuenta para comprar?",
-        "account_a": "No, puedes comprar como invitado. Sin embargo, una cuenta te ofrece advantages como un proceso de compra más rápido y acceso a tu historial de pedidos.",
-        "international_q": "¿Realizan envíos internacionales?",
-        "international_a": "Actualmente, nos enfocamos en el mercado nacional, but we plan to expand. Subscribe to our newsletter to be the first to know!",
-        "damaged_q": "Mi producto ha llegado dañado, ¿qué hago?",
+        "returns_a": "Ofrecemos una política de devolución de 30 días. Si no estás satisfecho, puedes devolverlo para un reembolso completo o un cambio. El producto debe estar en su estado original.",
+        "account_q": "¿Necesito una cuenta para realizar una compra?",
+        "account_a": "No, puedes realizar el pago como invitado. Sin embargo, una cuenta ofrece ventajas como un proceso de pago más rápido y acceso a tu historial de pedidos.",
+        "international_q": "¿Hacen envíos internacionales?",
+        "international_a": "Actualmente, nos centramos en el mercado nacional, pero planeamos expandirnos. ¡Suscríbete a nuestro boletín para ser el primero en saberlo!",
+        "damaged_q": "Mi producto llegó dañado, ¿qué debo hacer?",
         "damaged_a": "Lamentamos oír eso. Por favor, contacta a soporte al cliente con tu número de pedido y fotos del producto dañado para que podamos ayudarte."
     },
     "account_menu": {
-        "title": "Mi Cuenta",
-        "go_to_store": "Ir a la Tienda",
-        "dashboard": "Dashboard",
-        "order_history": "Historial de Pedidos",
-        "wishlist": "Lista de Deseos",
-        "profile": "Mi Perfil",
-        "recently_viewed": "Vistos Recientemente",
+        "title": "Mi cuenta",
+        "go_to_store": "Ir a la tienda",
+        "dashboard": "Panel de control",
+        "order_history": "Historial de pedidos",
+        "wishlist": "Lista de deseos",
+        "profile": "Mi perfil",
+        "recently_viewed": "Vistos recientemente",
         "settings": "Configuración",
-        "payment_methods": "Métodos de Pago"
+        "payment_methods": "Métodos de pago",
+        "user_management": "Administración de usuarios",
+        "manage_products": "Gestionar productos"
     },
     "admin_menu": {
-        "title": "Panel de Admin",
-        "dashboard": "Dashboard",
+        "title": "Panel de administración",
+        "dashboard": "Panel de control",
         "products": "Productos",
         "categories": "Categorías",
         "orders": "Pedidos",
         "users": "Usuarios",
         "coupons": "Cupones",
-        "reviews": "Opiniones"
+        "reviews": "Reseñas"
     },
     "category_management": {
         "title": "Gestión de Categorías",
         "add_button": "Añadir Categoría",
         "load_error": "Error al cargar las categorías.",
+        "saving": "Guardando...",
+        "deleting": "Eliminando...",
         "update_success": "Categoría actualizada con éxito.",
         "create_success": "Categoría creada con éxito.",
-        "update_error": "Error al actualizar la categoría.",
-        "create_error": "Error al crear la categoría.",
-        "delete_confirm": "¿Estás seguro de que quieres eliminar esta categoría?",
+        "save_error": "Error al guardar la categoría.",
         "delete_success": "Categoría eliminada con éxito.",
         "delete_error": "Error al eliminar la categoría.",
-        "no_categories": "No se encontraron categorías.",
-        "edit_title": "Editar Categoría",
-        "add_title": "Añadir Nueva Categoría",
-        "cancel_button": "Cancelar",
-        "save_button": "Guardar",
+        "delete_confirm": "¿Estás seguro de que quieres eliminar esta categoría?",
+        "empty_text": "No se encontraron categorías. Haz clic en \"Añadir Categoría\" para empezar.",
         "table": {
             "name": "Nombre",
             "description": "Descripción",
             "actions": "Acciones"
         },
+        "actions": {
+            "edit": "Editar",
+            "delete": "Eliminar"
+        },
         "form": {
-            "name": "Nombre de la Categoría",
-            "description": "Descripción"
+            "edit_title": "Editar Categoría",
+            "add_title": "Añadir Nueva Categoría",
+            "name_label": "Nombre de la Categoría",
+            "description_label": "Descripción",
+            "cancel_button": "Cancelar",
+            "save_button": "Guardar Cambios",
+            "add_button": "Añadir Categoría",
+            "saving_button": "Guardando...",
+            "errors": {
+                "name_required": "El nombre de la categoría es obligatorio."
+            }
         },
         "errors": {
-            "name_required": "El nombre de la categoría es obligatorio."
+            "name_required": "El nombre de la categoría es obligatorio.",
+            "permission_denied_load": "Permiso denegado: No tienes autorización para ver las categorías. Inicia sesión como administrador.",
+            "permission_denied_save": "Permiso denegado: Debes ser administrador para guardar una categoría.",
+            "permission_denied_delete": "Permiso denegado: Debes ser administrador para eliminar una categoría."
         }
     },
     "addresses": {
-        "title": "Mis Direcciones",
-        "add_button": "Añadir Dirección",
+        "title": "Mis direcciones",
+        "add_button": "Añadir dirección",
         "loading_error": "Error al cargar las direcciones.",
         "saving_toast": "Guardando dirección...",
         "updating_toast": "Actualizando dirección...",
-        "save_success": "Dirección guardada con éxito",
-        "update_success": "Dirección actualizada con éxito",
+        "save_success": "Dirección guardada correctamente",
+        "update_success": "Dirección actualizada correctamente",
         "save_error": "Hubo un error al guardar la dirección.",
         "delete_confirm": "¿Estás seguro de que quieres eliminar esta dirección?",
         "deleting_toast": "Eliminando dirección...",
-        "delete_success": "Dirección eliminada con éxito",
+        "delete_success": "Dirección eliminada correctamente",
         "delete_error": "Error al eliminar la dirección.",
         "no_addresses_title": "No tienes direcciones guardadas.",
-        "no_addresses_subtitle": "Añade una dirección para facilitar tus futuras compras.",
-        "phone_label": "Tel",
-        "edit_dialog_title": "Editar Dirección",
-        "add_dialog_title": "Añadir Nueva Dirección",
+        "no_addresses_subtitle": "Añade una dirección para que tus futuras compras sean más fáciles.",
+        "phone_label": "Teléfono",
+        "edit_dialog_title": "Editar dirección",
+        "add_dialog_title": "Añadir nueva dirección",
         "cancel_button": "Cancelar",
-        "save_changes_button": "Guardar Cambios",
+        "save_changes_button": "Guardar cambios",
         "save_button": "Guardar",
         "form": {
-            "recipient_name": "Nombre del Receptor",
+            "recipient_name": "Nombre del destinatario",
             "address": "Dirección",
             "city": "Ciudad",
-            "state": "Departamento/Estado",
-            "postal_code": "Código Postal",
+            "state": "Estado/Departamento",
+            "postal_code": "Código postal",
             "country": "País",
-            "recipient_phone": "Teléfono del Receptor",
-            "shipping_notes": "Notas de Envío"
+            "recipient_phone": "Teléfono del destinatario",
+            "shipping_notes": "Notas de envío"
         }
     },
     "orders": {
-        "title": "Mis Pedidos",
+        "title": "Mis pedidos",
         "fetch_error": "No se pudieron cargar tus pedidos.",
-        "login_prompt": "Por favor, inicia sesión para ver tu historial.",
+        "login_prompt": "Inicia sesión para ver tu historial.",
         "no_orders": "Aún no has realizado ningún pedido.",
-        "order_number": "N° Pedido",
+        "order_number": "Pedido #",
         "date": "Fecha",
         "status_label": "Estado",
         "total": "Total",
         "actions": "Acciones",
-        "view_details": "Ver Detalles",
+        "view_details": "Ver detalles",
         "cancel_button": "Cancelar",
         "cancel_confirm": "¿Estás seguro de que quieres cancelar este pedido?",
-        "cancel_success": "Pedido cancelado con éxito.",
+        "cancel_success": "Pedido cancelado correctamente.",
         "cancel_error": "No se pudo cancelar el pedido.",
         "generating_invoice": "Generando tu factura...",
         "rows_per_page": "Pedidos por página:",
@@ -195,69 +210,70 @@
         "download_pdf": "Descargar PDF",
         "exchange_rate_error": "No se pudo obtener la tasa de cambio.",
         "status": {
-            "processing": "Procesando",
+            "processing": "En proceso",
             "completed": "Completado",
             "cancelled": "Cancelado",
             "shipped": "Enviado"
         }
     },
     "order_detail": {
-        "title": "Detalles del Pedido #{{id}}",
-        "title_simple": "Detalles del Pedido",
+        "title": "Detalles del pedido #{{id}}",
+        "title_simple": "Detalles del pedido",
         "invalid_amount": "$0",
         "items_label": "Artículos",
         "quantity_label": "Cantidad",
         "subtotal": "Subtotal",
         "discount": "Descuento",
-        "shipping_cost": "Coste de Envío",
+        "shipping_cost": "Costo de envío",
         "free_shipping": "Gratis",
         "total_label": "Total",
-        "shipping_address": "Dirección de Envío",
-        "payment_method": "Método de Pago",
-        "card_ending_in": "Tarjeta terminada en **** {{last4}}",
+        "shipping_address": "Dirección de envío",
+        "payment_method": "Método de pago",
+        "card_ending_in": "Tarjeta que termina en **** {{last4}}",
         "brand_label": "Marca"
     },
     "invoice": {
-        "title": "FACTURA DE VENTA",
+        "title": "FACTURA",
         "filename": "factura",
         "bill_to": "Facturar a:",
-        "invoice_number": "N° de Factura:",
-        "issue_date": "Fecha de Emisión:",
-        "order_status": "Estado del Pedido:",
-        "payment_method_card": "Tarjeta {{brand}} terminada en {{last4}}",
+        "invoice_number": "Factura No:",
+        "issue_date": "Fecha de emisión:",
+        "order_status": "Estado del pedido:",
+        "payment_method_card": "Tarjeta {{brand}} que termina en {{last4}}",
         "table": {
             "description": "Descripción",
             "quantity": "Cant.",
-            "unit_price": "Precio Unit.",
+            "unit_price": "Precio unitario",
             "total": "Total"
         },
         "total_due": "TOTAL A PAGAR:",
-        "footer_thanks": "¡Gracias por su compra!",
-        "footer_page": "Página"
+        "footer_thanks": "¡Gracias por tu compra!",
+        "footer_page": "Página",
+        "phone_label": "Teléfono"
     },
     "payment_methods": {
-        "title": "Métodos de Pago",
-        "add_button": "Añadir Nuevo",
+        "title": "Métodos de pago",
+        "add_button": "Añadir nuevo",
         "load_error": "Error al cargar los métodos de pago.",
         "saving_toast": "Guardando método de pago...",
-        "save_success": "Método de pago guardado con éxito",
+        "save_success": "Método de pago guardado correctamente",
         "save_error": "Hubo un error al guardar el método de pago.",
         "delete_confirm": "¿Estás seguro de que quieres eliminar este método de pago?",
         "deleting_toast": "Eliminando...",
         "delete_success": "Método de pago eliminado",
         "delete_error": "Error al eliminar.",
         "no_methods_title": "No tienes métodos de pago guardados.",
-        "no_methods_subtitle": "Añade uno para un proceso de compra más rápido.",
-        "card_ending_in": "{{brand}} terminada en {{last4}}",
-        "expires_label": "Expira",
-        "add_dialog_title": "Añadir Nuevo Método de Pago",
+        "no_methods_subtitle": "Añade uno para un proceso de pago más rápido.",
+        "card_ending_in": "{{brand}} que termina en {{last4}}",
+        "expires_label": "Vence",
+        "add_dialog_title": "Añadir nuevo método de pago",
         "cancel_button": "Cancelar",
-        "save_button": "Guardar Tarjeta",
-        "unknown_brand": "Desconocida",
+        "save_button": "Guardar tarjeta",
+        "unknown_brand": "Desconocido",
         "setup_intent_error": "No se pudo inicializar el formulario de pago. Por favor, inténtalo de nuevo.",
         "form": {
-            "cardholder_name": "Nombre en la Tarjeta",
-            "card_number": "Número de Tarjeta",
+            "cardholder_name": "Nombre en la tarjeta",
+            "card_number": "Número de tarjeta",
             "expiry": "MM/AA",
             "cvc": "CVC",
             "security_note": "Tu información de pago está segura. No almacenamos los detalles completos de tu tarjeta.",
@@ -265,22 +281,22 @@
         }
     },
     "security": {
-        "title": "Seguridad de la Cuenta",
+        "title": "Seguridad de la cuenta",
         "subtitle": "Para mantener tu cuenta segura, te recomendamos cambiar tu contraseña periódicamente.",
         "form": {
-            "current_password": "Contraseña Actual",
-            "new_password": "Nueva Contraseña",
-            "confirm_password": "Confirmar Nueva Contraseña"
+            "current_password": "Contraseña actual",
+            "new_password": "Nueva contraseña",
+            "confirm_password": "Confirmar nueva contraseña"
         },
         "button": {
-            "change_password": "Cambiar Contraseña"
+            "change_password": "Cambiar contraseña"
         },
         "toast": {
             "changing_password": "Cambiando contraseña...",
-            "success": "Contraseña actualizada con éxito"
+            "success": "Contraseña actualizada correctamente"
         },
         "errors": {
-            "fill_all_fields": "Por favor, rellena todos los campos.",
+            "fill_all_fields": "Por favor, completa todos los campos.",
             "passwords_do_not_match": "Las nuevas contraseñas no coinciden.",
             "password_too_short": "La nueva contraseña debe tener al menos 6 caracteres.",
             "generic_error": "Hubo un error al cambiar la contraseña.",
@@ -288,29 +304,29 @@
         }
     },
     "profile": {
-        "title": "Mi Perfil",
-        "subtitle": "Actualiza tus datos personales y de contacto.",
+        "title": "Mi perfil",
+        "subtitle": "Actualiza tu información personal y de contacto.",
         "loading": "Cargando perfil...",
         "form": {
             "displayName": "Nombre de usuario",
             "first_name": "Nombre",
             "last_name": "Apellido",
-            "email_helper": "El correo electrónico no se puede cambiar.",
+            "email_helper": "La dirección de correo electrónico no se puede cambiar.",
             "phone": "Teléfono",
-            "id_document": "Documento de Identidad",
-            "birth_date": "Fecha de Nacimiento",
+            "id_document": "Documento de identidad",
+            "birth_date": "Fecha de nacimiento",
             "address": "Dirección",
             "city": "Ciudad / Municipio",
             "country": "País",
             "department": "Departamento",
-            "postal_code": "Código Postal"
+            "postal_code": "Código postal"
         },
         "button": {
-            "save": "Guardar Cambios"
+            "save": "Guardar cambios"
         },
         "toast": {
             "updating": "Actualizando perfil...",
-            "success": "Perfil actualizado con éxito",
+            "success": "Perfil actualizado correctamente",
             "uploading": "Subiendo foto...",
             "photo_success": "Foto de perfil actualizada",
             "sending_email": "Enviando correo...",
@@ -324,46 +340,46 @@
             "email_fail": "No se pudo enviar el correo de restablecimiento."
         },
         "security_panel": {
-            "title": "Seguridad de la Cuenta",
+            "title": "Seguridad de la cuenta",
             "subtitle": "Para cambiar tu contraseña, te enviaremos un enlace seguro a tu correo electrónico.",
             "action_button": "Enviar correo para cambiar contraseña"
         },
-        "login_prompt": "Por favor, inicia sesión para ver tu perfil."
+        "login_prompt": "Inicia sesión para ver tu perfil."
     },
     "shipping_policy": {
-        "title": "Envíos y Devoluciones",
-        "subtitle": "Todo lo que necesitas saber sobre cómo llevamos nuestros productos hasta tu puerta.",
+        "title": "Envíos y devoluciones",
+        "subtitle": "Todo lo que necesitas saber sobre cómo llevamos nuestros productos a tu puerta.",
         "delivery_time_label": "Tiempo de entrega",
         "shipping_options": {
-            "title": "Opciones de Envío",
+            "title": "Opciones de envío",
             "standard": {
-                "title": "Envío Estándar Nacional",
-                "description": "Nuestro envío estándar es gratuito para todos los pedidos superiores a $50. Para pedidos inferiores, tiene un coste fijo de $5.",
-                "time": "3-5 días laborables",
-                "tracking": "Todos los paquetes son enviados con un número de seguimiento que recibirás por correo electrónico tan pronto como el pedido sea despachado."
+                "title": "Envío nacional estándar",
+                "description": "Nuestro envío estándar es gratuito para todos los pedidos superiores a $50. Para pedidos inferiores, hay una tarifa plana de $5.",
+                "time": "3-5 días hábiles",
+                "tracking": "Todos los paquetes se envían con un número de seguimiento que recibirás por correo electrónico tan pronto como se despache el pedido."
             },
             "express": {
-                "title": "Envío Express",
-                "description": "¿Necesitas tu pedido con urgencia? Ofrecemos un servicio de envío express por un coste adicional de $15.",
-                "time": "1-2 días laborables"
+                "title": "Envío exprés",
+                "description": "¿Necesitas tu pedido con urgencia? Ofrecemos un servicio de envío exprés por un costo adicional de $15.",
+                "time": "1-2 días hábiles"
             }
         },
         "returns_policy": {
-            "title": "Política de Devoluciones",
+            "title": "Política de devoluciones",
             "conditions": {
-                "title": "Plazo y Condiciones",
+                "title": "Plazo y condiciones",
                 "description": "Aceptamos devoluciones hasta 30 días después de la fecha de entrega. Para que una devolución sea aceptada, el producto debe estar en su embalaje original, sin usar y en las mismas condiciones en que lo recibiste.",
                 "exceptions": "Los productos de software y las tarjetas de regalo no son retornables."
             },
             "process": {
-                "title": "Proceso de Devolución",
-                "description": "Para iniciar una devolución, por favor, contacta con nuestro equipo de soporte a través de la página de contacto con tu número de pedido. Te proporcionaremos las instrucciones y la dirección para el envío.",
-                "shipping_costs": "Los costes de envío de la devolución corren a cargo del cliente, a menos que el motivo de la devolución sea un error por nuestra parte (producto incorrecto o defectuoso)."
+                "title": "Proceso de devolución",
+                "description": "Para iniciar una devolución, por favor contacta a nuestro equipo de soporte a través de la página de contacto con tu número de pedido. Te proporcionaremos las instrucciones y la dirección de envío.",
+                "shipping_costs": "Los costos de envío de la devolución corren por cuenta del cliente, a menos que el motivo de la devolución sea un error de nuestra parte (producto incorrecto o defectuoso)."
             }
         },
         "general_rules": {
-            "title": "Reglas Generales",
-            "description": "Nos reservamos el derecho de rechazar cualquier devolución que no cumpla con los criterios mencionados. Es importante inspeccionar tu pedido tan pronto como lo recibas. Si encuentras algún problema, contáctanos inmediatamente."
+            "title": "Reglas generales",
+            "description": "Nos reservamos el derecho de rechazar cualquier devolución que no cumpla con los criterios anteriores. Es importante inspeccionar tu pedido tan pronto como lo recibas. Si encuentras algún problema, por favor contáctanos de inmediato."
         }
     },
     "contact_page": {
@@ -373,90 +389,90 @@
         "form": {
             "first_name": "Nombre",
             "last_name": "Apellido",
-            "email": "Correo Electrónico",
+            "email": "Correo electrónico",
             "subject": "Asunto",
             "message": "Mensaje",
-            "send_button": "Enviar Mensaje"
+            "send_button": "Enviar mensaje"
         }
     },
     "checkout": {
-        "title": "Proceso de Pago",
+        "title": "Finalizar compra",
         "steps": {
-            "shipping": "Dirección de Envío",
-            "review": "Revisar Pedido",
-            "payment": "Método de Pago"
+            "shipping": "Dirección de envío",
+            "review": "Revisar pedido",
+            "payment": "Método de pago"
         },
-        "coupon_code_label": "Código de Cupón",
+        "coupon_code_label": "Código de cupón",
         "apply_button": "Aplicar",
-        "payment_method_title": "Tarjeta de Crédito o Débito",
+        "payment_method_title": "Tarjeta de crédito o débito",
         "payment_security_note": "Tu pago se procesa de forma segura por Stripe.",
         "back_button": "Atrás",
         "next_button": "Siguiente",
-        "place_order_button": "Finalizar Compra",
+        "place_order_button": "Realizar pedido",
         "order_placed": "¡Pedido #{{orderNumber}} realizado!",
         "order_success_title": "¡Gracias por tu compra!",
-        "order_success_message": "Tu pedido ha sido procesado con éxito. Recibirás una confirmación por correo electrónico en breve.",
-        "confirmation_number": "Tu número de confirmación es:",
-        "continue_shopping": "Seguir Comprando",
-        "view_orders": "Ver Mis Pedidos",
+        "order_success_message": "Tu pedido ha sido procesado correctamente. Recibirás una confirmación por correo electrónico en breve.",
+        "confirmation_number": "Tu número de confirmación es: #{{orderId}}",
+        "continue_shopping": "Continuar comprando",
+        "view_orders": "Ver mis pedidos",
         "errors": {
             "load_addresses": "No se pudieron cargar tus direcciones.",
             "init_payment": "No se pudo inicializar el pago.",
-            "coupon_code_required": "Por favor, ingresa un código de cupón.",
+            "coupon_code_required": "Por favor, introduce un código de cupón.",
             "server_error": "Error del servidor",
-            "coupon_invalid": "El cupón no es válido o ha expirado.",
-            "name_required": "El nombre es requerido.",
-            "address_required": "La dirección es requerida.",
-            "city_required": "La ciudad es requerida.",
-            "zip_required": "El código postal es requerido.",
-            "country_required": "El país es requerido.",
+            "coupon_invalid": "El cupón no es válido o ha caducado.",
+            "name_required": "El nombre es obligatorio.",
+            "address_required": "La dirección es obligatoria.",
+            "city_required": "La ciudad es obligatoria.",
+            "zip_required": "El código postal es obligatorio.",
+            "country_required": "El país es obligatorio.",
             "payment_form_not_ready": "El formulario de pago no está listo.",
             "card_details_not_found": "No se encontraron los detalles de la tarjeta.",
             "order_save_error": "El pago fue exitoso, pero hubo un error al guardar tu pedido.",
             "unknown_step": "Paso desconocido"
         },
         "review": {
-            "title": "Resumen del Pedido",
+            "title": "Resumen del pedido",
             "items": "Artículos en tu carrito",
             "shipping_to": "Enviar a",
-            "order_summary": "Resumen de la Compra",
+            "order_summary": "Resumen de la compra",
             "subtotal": "Subtotal",
             "shipping": "Envío",
             "discount": "Descuento",
             "total": "Total",
-            "coupon_placeholder": "Código de Cupón",
+            "coupon_placeholder": "Código de cupón",
             "apply_button": "Aplicar",
             "coupon_applied": "¡Cupón aplicado!",
             "free_shipping": "GRATIS",
             "quantity": "Cantidad",
             "coupon_code_label": "Código:",
-            "discount_code_title": "Código de Descuento"
+            "discount_code_title": "Código de descuento"
         },
         "payment": {
-            "title_simulated": "Detalles del Pago (Simulado)",
-            "cardholder": "Titular:",
+            "title_simulated": "Detalles del pago (simulado)",
+            "cardholder": "Titular de la tarjeta:",
             "card_number_label": "Número:"
         }
     },
     "privacy_policy_page": {
-        "title": "Política de Privacidad",
-        "last_updated": "Última actualización: 1 de Agosto de 2024",
+        "title": "Política de privacidad",
+        "last_updated": "Última actualización: 1 de agosto de 2024",
         "introduction": {
             "title": "1. Introducción",
             "content": "Bienvenido a ElectronicaNr. Tu privacidad es de suma importancia para nosotros. Esta Política de Privacidad describe qué datos personales recopilamos, cómo los usamos, cómo los compartimos y tus derechos con respecto a tus datos."
         },
         "data_we_collect": {
-            "title": "2. Datos que Recopilamos",
+            "title": "2. Datos que recopilamos",
             "intro": "Recopilamos información de varias maneras cuando utilizas nuestros servicios:",
             "points": [
-                "<strong>Información que nos proporcionas directamente:</strong> Esto incluye la información que proporcionas al crear una cuenta, realizar un pedido o contactarnos, como tu nombre, dirección de correo electrónico, dirección de envío y número de teléfono.",
+                "<strong>Información que proporcionas directamente:</strong> Esto incluye la información que proporcionas al crear una cuenta, realizar un pedido o contactarnos, como tu nombre, dirección de correo electrónico, dirección de envío y número de teléfono.",
                 "<strong>Información recopilada automáticamente:</strong> Recopilamos información sobre tu dispositivo y tu uso de nuestro sitio web, como tu dirección IP, tipo de navegador, páginas visitadas y la fecha y hora de tu visita.",
-                "<strong>Cookies y tecnologías similares:</strong> Utilizamos cookies para mejorar tu experiencia, analizar el tráfico y personalizar el contenido."
+                "<strong>Cookies y tecnologías similares:</strong> Usamos cookies para mejorar tu experiencia, analizar el tráfico y personalizar el contenido."
             ]
         },
         "how_we_use_your_information": {
-            "title": "3. Cómo Usamos tu Información",
-            "intro": "Utilizamos la información que recopilamos para:",
+            "title": "3. Cómo usamos tu información",
+            "intro": "Usamos la información que recopilamos para:",
             "points": [
                 "Procesar y gestionar tus pedidos.",
                 "Mejorar y personalizar nuestros servicios y tu experiencia de compra.",
@@ -466,7 +482,7 @@
             ]
         },
         "how_we_share_your_information": {
-            "title": "4. Cómo Compartimos tu Información",
+            "title": "4. Cómo compartimos tu información",
             "intro": "No vendemos ni alquilamos tu información personal a terceros. Podemos compartir tu información con:",
             "points": [
                 "Proveedores de servicios que nos ayudan a operar nuestro negocio (por ejemplo, procesadores de pago y empresas de envío).",
@@ -474,30 +490,30 @@
             ]
         },
         "your_rights": {
-            "title": "5. Tus Derechos",
+            "title": "5. Tus derechos",
             "content": "Tienes derecho a acceder, corregir o eliminar tu información personal. También puedes oponerte al procesamiento de tus datos. Para ejercer estos derechos, por favor contáctanos a través de nuestra página de contacto."
         },
         "changes_to_this_policy": {
-            "title": "6. Cambios a esta Política",
+            "title": "6. Cambios a esta política",
             "content": "Podemos actualizar esta Política de Privacidad de vez en cuando. Te notificaremos cualquier cambio publicando la nueva política en esta página."
         },
         "apple_app_store_disclosure": {
-            "title": "7. Divulgación de Datos en la App Store de Apple",
-            "content": "Para los usuarios que han descargado nuestra aplicación desde la App Store de Apple, proporcionamos divulgaciones específicas sobre nuestras prácticas de manejo de datos. Apple requiere que los desarrolladores sean transparentes sobre cómo los servicios de terceros, como Firebase, recopilan y utilizan los datos. Como desarrolladores, somos responsables de asegurar que la información proporcionada en la sección de privacidad de la App Store sea precisa y esté actualizada. Puedes encontrar información detallada sobre los datos que recopila nuestra aplicación en la página de producto de nuestra App-Store."
+            "title": "7. Divulgación de datos de la App Store de Apple",
+            "content": "Para los usuarios que han descargado nuestra aplicación desde la App Store de Apple, proporcionamos divulgaciones específicas sobre nuestras prácticas de manejo de datos. Apple requiere que los desarrolladores sean transparentes sobre cómo los servicios de terceros, como Firebase, recopilan y usan los datos. As desarrolladores, somos responsables de garantizar que la información proporcionada en la sección de privacidad de la App Store sea precisa y esté actualizada. Puedes encontrar información detallada sobre los datos que nuestra aplicación recopila en nuestra página de producto de la App Store."
         }
     },
     "wishlist": {
-        "title": "Mi Lista de Deseos",
+        "title": "Mi lista de deseos",
         "subtitle": "Tus productos favoritos, guardados en un solo lugar.",
         "fetch_error": "No se pudieron cargar los productos de tu lista de deseos.",
         "login_prompt": "Inicia sesión para ver tu lista de deseos.",
-        "login_button": "Iniciar Sesión",
+        "login_button": "Iniciar sesión",
         "empty_title": "Tu lista de deseos está vacía",
-        "empty_subtitle": "Explora el catálogo y pulsa el corazón para guardar tus productos favoritos.",
-        "explore_button": "Buscar Productos",
+        "empty_subtitle": "Explora el catálogo y haz clic en el corazón para guardar tus productos favoritos.",
+        "explore_button": "Explorar productos",
         "toast": {
             "fetch_error": "No se pudo obtener la lista de deseos.",
-            "add_login_prompt": "Por favor, inicia sesión para añadir artículos a tu lista de deseos.",
+            "add_login_prompt": "Inicia sesión para añadir artículos a tu lista de deseos.",
             "add_success": "¡Añadido a la lista de deseos!",
             "add_error": "No se pudo añadir a la lista de deseos.",
             "remove_success": "¡Eliminado de la lista de deseos!",
@@ -505,11 +521,11 @@
         }
     },
     "order_management": {
-        "title": "Gestión de Pedidos",
+        "title": "Gestión de pedidos",
         "load_error": "Error al cargar los pedidos.",
-        "update_success": "Estado del pedido actualizado con éxito.",
+        "update_success": "Estado del pedido actualizado correctamente.",
         "update_error": "Error al actualizar el estado del pedido.",
-        "customer_id": "ID de Cliente",
+        "customer_id": "ID del cliente",
         "no_orders": "No se encontraron pedidos."
     }
 }

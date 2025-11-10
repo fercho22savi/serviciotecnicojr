@@ -30,7 +30,7 @@ const ShippingPolicyPage = React.lazy(() => import('./pages/ShippingPolicyPage.j
 // Account Pages
 const AccountDashboard = React.lazy(() => import('./pages/account/AccountDashboard.jsx'));
 const OrderHistory = React.lazy(() => import('./pages/account/Orders.jsx'));
-const OrderDetail = React.lazy(() => import('./pages/account/OrderDetail.jsx'));
+const OrderDetailPage = React.lazy(() => import('./pages/account/OrderDetailPage.jsx'));
 const RecentlyViewedPage = React.lazy(() => import('./pages/account/RecentlyViewedPage.jsx'));
 const UserProfile = React.lazy(() => import('./pages/account/Profile.jsx'));
 const SettingsPage = React.lazy(() => import('./pages/account/SettingsPage.jsx'));
@@ -41,10 +41,11 @@ const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard.jsx'));
 const ProductManagement = React.lazy(() => import('./pages/admin/ProductManagement.jsx'));
 const CategoryManagement = React.lazy(() => import('./pages/admin/CategoryManagement.jsx'));
 const OrderManagement = React.lazy(() => import('./pages/admin/OrderManagement.jsx'));
-const OrderDetailPage = React.lazy(() => import('./pages/admin/OrderDetailPage.jsx'));
+const AdminOrderDetailPage = React.lazy(() => import('./pages/admin/OrderDetailPage.jsx'));
 const UserManagement = React.lazy(() => import('./pages/admin/UserManagementPage.jsx'));
 const CouponManagement = React.lazy(() => import('./pages/admin/CouponManagement.jsx'));
 const ReviewManagementPage = React.lazy(() => import('./pages/admin/ReviewManagementPage.jsx'));
+const AdminSettingsPage = React.lazy(() => import('./pages/admin/Settings.jsx')); // Importa la nueva página de configuración
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -96,7 +97,7 @@ const App = () => {
                 { index: true, element: <Navigate to="dashboard" replace /> },
                 { path: "dashboard", element: <AccountDashboard /> },
                 { path: "orders", element: <OrderHistory /> },
-                { path: "orders/:orderId", element: <OrderDetail /> },
+                { path: "order/:orderId", element: <OrderDetailPage /> },
                 { path: "profile", element: <UserProfile /> },
                 { path: "recently-viewed", element: <RecentlyViewedPage /> },
                 { path: "settings", element: <SettingsPage /> },
@@ -116,10 +117,11 @@ const App = () => {
                 { path: "products", element: <ProductManagement /> },
                 { path: "categories", element: <CategoryManagement /> },
                 { path: "orders", element: <OrderManagement /> },
-                { path: "orders/:orderId", element: <OrderDetailPage /> },
+                { path: "orders/:orderId", element: <AdminOrderDetailPage /> },
                 { path: "users", element: <UserManagement /> },
                 { path: "coupons", element: <CouponManagement /> },
                 { path: "reviews", element: <ReviewManagementPage /> },
+                { path: "settings", element: <AdminSettingsPage /> }, // Añade la nueva ruta
             ],
         },
         {

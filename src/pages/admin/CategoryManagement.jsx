@@ -4,6 +4,7 @@ import {
     Table, TableBody, TableCell, TableHead, TableRow, IconButton, Dialog, 
     DialogTitle, DialogContent, DialogActions, TextField, Grid 
 } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import EditIcon from '@mui/icons-material/Edit';
@@ -29,9 +30,14 @@ const CategoryManagement = () => {
             const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setCategories(cats);
             setLoading(false);
+            setError(null); // Clear previous errors on successful load
         }, (err) => {
             console.error(err);
-            setError(t('category_management.load_error'));
+            if (err.code === 'permission-denied') {
+                setError(t('category_management.errors.permission_denied_load', 'Permission Denied: You do not have permission to view categories.'));
+            } else {
+                setError(t('category_management.load_error', 'Failed to load categories.'));
+            }
             setLoading(false);
         });
         return () => unsubscribe();
@@ -39,7 +45,7 @@ const CategoryManagement = () => {
 
     const validateForm = () => {
         const errors = {};
-        if (!formValues.name.trim()) errors.name = t('category_management.errors.name_required');
+        if (!formValues.name.trim()) errors.name = t('category_management.form.errors.name_required', 'Category name is required');
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -59,6 +65,7 @@ const CategoryManagement = () => {
     };
 
     const handleClose = () => {
+        if (isSaving) return;
         setOpen(false);
         setCurrentCategory(null);
     };
@@ -67,33 +74,43 @@ const CategoryManagement = () => {
         if (!validateForm()) return;
         
         setIsSaving(true);
+        const toastId = toast.loading(t('category_management.saving', 'Saving...'));
         const data = { name: formValues.name, description: formValues.description };
 
         try {
             if (isEditing) {
                 await updateDoc(doc(db, 'categories', currentCategory.id), data);
-                toast.success(t('category_management.update_success'));
+                toast.success(t('category_management.update_success', 'Category updated successfully'), { id: toastId });
             } else {
                 await addDoc(collection(db, 'categories'), data);
-                toast.success(t('category_management.create_success'));
+                toast.success(t('category_management.create_success', 'Category created successfully'), { id: toastId });
             }
             handleClose();
         } catch (err) {
             console.error(err);
-            toast.error(isEditing ? t('category_management.update_error') : t('category_management.create_error'));
+            let errorMessage = t('category_management.save_error', 'Error saving category');
+            if (err.code === 'permission-denied') {
+                errorMessage = t('category_management.errors.permission_denied_save', 'Permission Denied: You must be an administrator to save a category.');
+            }
+            toast.error(errorMessage, { id: toastId });
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm(t('category_management.delete_confirm'))) {
+        if (window.confirm(t('category_management.delete_confirm', 'Are you sure you want to delete this category?'))) {
+            const toastId = toast.loading(t('category_management.deleting', 'Deleting...'));
             try {
                 await deleteDoc(doc(db, 'categories', id));
-                toast.success(t('category_management.delete_success'));
+                toast.success(t('category_management.delete_success', 'Category deleted successfully'), { id: toastId });
             } catch (err) {
                 console.error(err);
-                toast.error(t('category_management.delete_error'));
+                let errorMessage = t('category_management.delete_error', 'Error deleting category');
+                if (err.code === 'permission-denied') {
+                    errorMessage = t('category_management.errors.permission_denied_delete', 'Permission Denied: You must be an administrator to delete a category.');
+                }
+                toast.error(errorMessage, { id: toastId });
             }
         }
     };
@@ -101,8 +118,8 @@ const CategoryManagement = () => {
     return (
         <Container maxWidth="lg" sx={{ my: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1">{t('category_management.title')}</Typography>
-                <Button variant="contained" onClick={() => handleOpen()}>{t('category_management.add_button')}</Button>
+                <Typography variant="h4" component="h1">{t('category_management.title', 'Category Management')}</Typography>
+                <Button variant="contained" color="primary" onClick={() => handleOpen()}>{t('category_management.add_button', 'Add Category')}</Button>
             </Box>
 
             {loading && <Box sx={{ display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>}
@@ -110,35 +127,36 @@ const CategoryManagement = () => {
             
             {!loading && !error && (
                 <Paper elevation={3} sx={{ overflowX: 'auto' }}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>{t('category_management.table.name')}</TableCell>
-                                <TableCell>{t('category_management.table.description')}</TableCell>
-                                <TableCell align="right">{t('category_management.table.actions')}</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {categories.map((cat) => (
-                                <TableRow key={cat.id} hover>
-                                    <TableCell>{cat.name}</TableCell>
-                                    <TableCell>{cat.description}</TableCell>
-                                    <TableCell align="right">
-                                        <IconButton onClick={() => handleOpen(cat)}><EditIcon /></IconButton>
-                                        <IconButton onClick={() => handleDelete(cat.id)}><DeleteIcon /></IconButton>
-                                    </TableCell>
+                    {categories.length === 0 ? (
+                        <Typography sx={{textAlign: 'center', p: 4}}>{t('category_management.empty_text', 'No categories found. Click "Add Category" to start.')}</Typography>
+                    ) : (
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>{t('category_management.table.name', 'Name')}</TableCell>
+                                    <TableCell>{t('category_management.table.description', 'Description')}</TableCell>
+                                    <TableCell align="right">{t('category_management.table.actions', 'Actions')}</TableCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                    {categories.length === 0 && !loading && 
-                        <Typography sx={{textAlign: 'center', p: 4}}>{t('category_management.no_categories')}</Typography>
-                    }
+                            </TableHead>
+                            <TableBody>
+                                {categories.map((cat) => (
+                                    <TableRow key={cat.id} hover>
+                                        <TableCell component="th" scope="row">{cat.name}</TableCell>
+                                        <TableCell>{cat.description}</TableCell>
+                                        <TableCell align="right">
+                                            <IconButton onClick={() => handleOpen(cat)} aria-label={t('category_management.actions.edit', 'Edit')}><EditIcon /></IconButton>
+                                            <IconButton onClick={() => handleDelete(cat.id)} aria-label={t('category_management.actions.delete', 'Delete')}><DeleteIcon /></IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </Paper>
             )}
 
             <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-                <DialogTitle>{isEditing ? t('category_management.edit_title') : t('category_management.add_title')}</DialogTitle>
+                <DialogTitle>{isEditing ? t('category_management.form.edit_title', 'Edit Category') : t('category_management.form.add_title', 'Add New Category')}</DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2} sx={{pt: 1}}>
                         <Grid item xs={12}>
@@ -146,7 +164,7 @@ const CategoryManagement = () => {
                                 autoFocus
                                 margin="dense"
                                 name="name"
-                                label={t('category_management.form.name')}
+                                label={t('category_management.form.name_label', 'Category Name')}
                                 type="text"
                                 fullWidth
                                 variant="outlined"
@@ -160,7 +178,7 @@ const CategoryManagement = () => {
                             <TextField
                                 margin="dense"
                                 name="description"
-                                label={t('category_management.form.description')}
+                                label={t('category_management.form.description_label', 'Description')}
                                 type="text"
                                 fullWidth
                                 multiline
@@ -172,11 +190,17 @@ const CategoryManagement = () => {
                         </Grid>
                     </Grid>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleClose}>{t('category_management.cancel_button')}</Button>
-                    <Button onClick={handleSave} variant="contained" disabled={isSaving}>
-                        {isSaving ? <CircularProgress size={24} /> : t('category_management.save_button')}
-                    </Button>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={handleClose} disabled={isSaving}>{t('category_management.form.cancel_button', 'Cancel')}</Button>
+                    <LoadingButton 
+                        onClick={handleSave} 
+                        variant="contained"
+                        loading={isSaving}
+                        loadingPosition="start"
+                        startIcon={<div/>}
+                    >
+                        {isSaving ? t('category_management.form.saving_button', 'Saving...') : (isEditing ? t('category_management.form.save_button', 'Save Changes') : t('category_management.form.add_button', 'Add Category'))}
+                    </LoadingButton>
                 </DialogActions>
             </Dialog>
         </Container>

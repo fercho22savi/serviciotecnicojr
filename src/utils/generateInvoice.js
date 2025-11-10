@@ -59,10 +59,18 @@ export const generateInvoice = (order, t, i18n) => {
 
     const clientInfo = order.shippingAddress;
     doc.setFont('helvetica', 'normal');
-    doc.text(clientInfo?.recipientName || 'N/A', 15, infoStartY + 7);
-    doc.text(clientInfo?.street || 'N/A', 15, infoStartY + 14);
-    doc.text(`${clientInfo?.city || ''}, ${clientInfo?.postalCode || ''}`, 15, infoStartY + 21);
-    doc.text(clientInfo?.country || 'N/A', 15, infoStartY + 28);
+    let yPos = infoStartY + 7;
+    doc.text(clientInfo?.recipientName || 'N/A', 15, yPos);
+    yPos += 7;
+    doc.text(clientInfo?.street || 'N/A', 15, yPos);
+    yPos += 7;
+    const cityLine = [clientInfo?.city, clientInfo?.state, clientInfo?.postalCode].filter(Boolean).join(', ');
+    doc.text(cityLine, 15, yPos);
+    yPos += 7;
+    doc.text(clientInfo?.country || 'N/A', 15, yPos);
+    yPos += 7;
+    const phoneLine = `${t('invoice.phone_label')}: ${clientInfo?.recipientPhone || 'N/A'}`;
+    doc.text(phoneLine, 15, yPos);
 
     const invoiceDetails = [
         [t('invoice.invoice_number'), order.orderNumber || order.id.substring(0, 8).toUpperCase()],
@@ -91,7 +99,7 @@ export const generateInvoice = (order, t, i18n) => {
     autoTable(doc, {
         head: tableHeaders,
         body: tableBody,
-        startY: infoStartY + 45,
+        startY: yPos + 20, // Adjusted startY to be dynamic
         theme: 'grid',
         headStyles: { fillColor: primaryColor, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center' },
         columnStyles: { 0: { halign: 'left' }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },

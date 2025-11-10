@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import { functions } from '../../firebase/config'; // Make sure this path is correct
+import { httpsCallable } from 'firebase/functions';
 import toast from 'react-hot-toast';
 
 import {
     Container, Typography, Box, Paper, CircularProgress, Fab, Tooltip, Switch,
     Table, TableBody, TableCell, TableHead, TableRow, IconButton, Chip, Dialog,
-    DialogContent, DialogTitle, Button
+    DialogTitle, DialogContent, DialogActions, Button
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 
 import CouponForm from './CouponForm';
+
+// Callable Cloud Functions
+const listCoupons = httpsCallable(functions, 'listCoupons');
+const createCoupon = httpsCallable(functions, 'createCoupon');
+const updateCoupon = httpsCallable(functions, 'updateCoupon');
 
 function CouponManagement() {
     const [coupons, setCoupons] = useState([]);
@@ -22,13 +27,16 @@ function CouponManagement() {
     const fetchCoupons = useCallback(async () => {
         setLoading(true);
         try {
-            const q = query(collection(db, 'coupons'), orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(q);
-            const couponsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const result = await listCoupons();
+            const couponsList = result.data.coupons.map(c => ({
+                ...c,
+                // Convert ISO strings back to Date objects for the form/UI
+                expiresAt: c.expiresAt ? new Date(c.expiresAt) : null,
+            }));
             setCoupons(couponsList);
         } catch (error) {
             console.error("Error fetching coupons:", error);
-            toast.error("Error al cargar los cupones.");
+            toast.error(error.message || "Error al cargar los cupones.");
         } finally {
             setLoading(false);
         }
@@ -49,43 +57,44 @@ function CouponManagement() {
     };
 
     const handleToggleActive = async (coupon) => {
-        const couponRef = doc(db, 'coupons', coupon.id);
+        const newActiveState = !coupon.isActive;
+        // Optimistically update UI
+        setCoupons(prev => prev.map(c => c.id === coupon.id ? {...c, isActive: newActiveState} : c));
+        
         try {
-            await updateDoc(couponRef, { isActive: !coupon.isActive });
-            toast.success(`Cupón "${coupon.code}" ${!coupon.isActive ? 'activado' : 'desactivado'}.`);
-            // Optimistically update UI
-            setCoupons(prev => prev.map(c => c.id === coupon.id ? {...c, isActive: !c.isActive} : c));
+            await updateCoupon({ id: coupon.id, isActive: newActiveState });
+            toast.success(`Cupón "${coupon.code}" ${newActiveState ? 'activado' : 'desactivado'}.`);
         } catch (error) {
             console.error("Error toggling coupon status:", error);
             toast.error("No se pudo cambiar el estado del cupón.");
+            // Revert optimistic update on failure
+            setCoupons(prev => prev.map(c => c.id === coupon.id ? {...c, isActive: coupon.isActive} : c));
         }
     };
 
     const handleCouponSubmit = async (formData) => {
         const dataToSave = {
             ...formData,
-            discountValue: Number(formData.discountValue),
-            expiresAt: formData.expiresAt ? Timestamp.fromDate(formData.expiresAt) : null,
+            // Convert Date object to ISO string for Firebase Function
+            expiresAt: formData.expiresAt ? formData.expiresAt.toISOString() : null,
         };
 
         try {
             if (selectedCoupon) {
-                // Update existing coupon
-                const couponRef = doc(db, 'coupons', selectedCoupon.id);
-                await updateDoc(couponRef, dataToSave);
+                await updateCoupon({ id: selectedCoupon.id, ...dataToSave });
             } else {
-                // Create new coupon
-                await addDoc(collection(db, 'coupons'), { ...dataToSave, createdAt: serverTimestamp() });
+                await createCoupon(dataToSave);
             }
-            await fetchCoupons(); // Refresh the list
+            await fetchCoupons();
             handleCloseForm();
         } catch (error) {
-            throw error; // Let CouponForm handle the error toast
+            console.error("Error saving coupon:", error);
+            throw error; // Let CouponForm handle displaying the error
         }
     };
 
     const formatValue = (type, value) => {
-        return type === 'percentage' ? `${value}%` : `$${value.toLocaleString('es-CO')}`;
+        return type === 'percentage' ? `${value}%` : `$${Number(value).toLocaleString('es-CO')}`;
     }
 
     return (
@@ -110,10 +119,10 @@ function CouponManagement() {
                         <TableBody>
                             {coupons.map((coupon) => (
                                 <TableRow key={coupon.id} hover>
-                                    <TableCell><Chip label={coupon.code} color="primary" size="small" /></TableCell>
+                                    <TableCell><Chip label={coupon.code} color="primary" variant="outlined" size="small" /></TableCell>
                                     <TableCell>{coupon.discountType === 'percentage' ? 'Porcentaje' : 'Fijo'}</TableCell>
                                     <TableCell>{formatValue(coupon.discountType, coupon.discountValue)}</TableCell>
-                                    <TableCell>{coupon.expiresAt ? coupon.expiresAt.toDate().toLocaleDateString() : 'Nunca'}</TableCell>
+                                    <TableCell>{coupon.expiresAt ? coupon.expiresAt.toLocaleDateString() : 'Nunca'}</TableCell>
                                     <TableCell align="center">
                                         <Switch
                                             checked={coupon.isActive}
@@ -142,13 +151,14 @@ function CouponManagement() {
             </Tooltip>
 
             <Dialog open={isFormOpen} onClose={handleCloseForm} maxWidth="sm" fullWidth>
-                <DialogTitle>{selectedCoupon ? 'Editar Cupón' : 'Crear Nuevo Cupón'}</DialogTitle>
-                <DialogContent>
-                    <CouponForm coupon={selectedCoupon} onSubmit={handleCouponSubmit} />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseForm}>Cancelar</Button>
-                </DialogActions>
+                 <DialogTitle>{selectedCoupon ? 'Editar Cupón' : 'Crear Nuevo Cupón'}</DialogTitle>
+                 <DialogContent>
+                     <CouponForm 
+                        coupon={selectedCoupon} 
+                        onSubmit={handleCouponSubmit} 
+                        onClose={handleCloseForm} 
+                    />
+                 </DialogContent>
             </Dialog>
         </Container>
     );

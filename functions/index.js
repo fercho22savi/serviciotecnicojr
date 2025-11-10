@@ -1,89 +1,138 @@
-const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const stripe = require("stripe")(functions.config().stripe.secret);
-const cors = require("cors");
+const functions = require("firebase-functions");
 
 admin.initializeApp();
 
-const corsHandler = cors({ origin: true });
+// Helper function to check for Admin role
+const ensureAdmin = (context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+  }
+  // You might want to enable this check in production
+  // if (context.auth.token.role !== 'Admin') {
+  //   throw new functions.https.HttpsError('permission-denied', 'Must be an administrative user to perform this action.');
+  // }
+};
 
-exports.createPaymentIntent = functions.https.onRequest((req, res) => {
-  return corsHandler(req, res, async () => {
-    const { amount, currency } = req.body;
-
-    if (amount === undefined || !currency) {
-      functions.logger.error("Request body missing amount or currency", { body: req.body });
-      return res.status(400).send({ error: "Missing 'amount' and/or 'currency' in request body." });
+// --- User Management Functions ---
+exports.createUser = functions.https.onCall(async (data, context) => {
+  ensureAdmin(context);
+  if (!data.email || !data.password || !data.displayName) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing required fields.");
+  }
+  try {
+    const userRecord = await admin.auth().createUser({ email: data.email, password: data.password, displayName: data.displayName, emailVerified: true });
+    const role = data.role || "Miembro";
+    await admin.auth().setCustomUserClaims(userRecord.uid, { role });
+    return { uid: userRecord.uid };
+  } catch (error) {
+    if (error.code === 'auth/email-already-exists') {
+      throw new functions.https.HttpsError('already-exists', 'Email is already in use.');
     }
-
-    // --- Stripe Amount Logic ---
-    // Stripe expects the amount in the smallest currency unit.
-    // For USD, this is cents. For COP, it's the base unit.
-    let finalAmount;
-    if (currency.toLowerCase() === 'usd') {
-      // Convert dollars to cents and ensure it's an integer
-      finalAmount = Math.round(amount * 100);
-    } else {
-      finalAmount = Math.round(amount); // For COP, just ensure it's an integer
-    }
-    
-    functions.logger.info(`Processing payment: Amount=${amount}, Currency=${currency}, FinalAmountForStripe=${finalAmount}`);
-
-    try {
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: finalAmount,
-        currency: currency,
-        payment_method_types: ['card'],
-      });
-
-      return res.status(200).send({ clientSecret: paymentIntent.client_secret });
-
-    } catch (error) {
-      functions.logger.error("Error creating Stripe PaymentIntent:", { 
-        errorMessage: error.message,
-        currency: currency,
-        originalAmount: amount,
-        finalAmount: finalAmount
-      });
-      return res.status(500).send({ error: `An error occurred while creating the PaymentIntent: ${error.message}` });
-    }
-  });
+    throw new functions.https.HttpsError("internal", error.message, error);
+  }
 });
 
-exports.applyCoupon = functions.https.onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).send('');
-  }
-
-  const { couponCode } = req.body;
-
-  if (!couponCode) {
-    return res.status(400).send({ error: "Missing 'couponCode' in request body." });
-  }
-
+exports.listUsers = functions.https.onCall(async (data, context) => {
+  ensureAdmin(context);
   try {
-    const couponsRef = admin.firestore().collection("coupons");
-    const snapshot = await couponsRef.where("code", "==", couponCode).limit(1).get();
-
-    if (snapshot.empty) {
-      return res.status(404).send({ error: "El código de cupón no es válido." });
-    }
-
-    const couponDoc = snapshot.docs[0];
-    const couponData = couponDoc.data();
-
-    if (!couponData.isActive) {
-      return res.status(400).send({ error: "Este cupón ya no está activo." });
-    }
-
-    return res.status(200).send({ data: couponData });
-
+    const listUsersResult = await admin.auth().listUsers(1000);
+    return { users: listUsersResult.users.map(u => ({ uid: u.uid, email: u.email, displayName: u.displayName, customClaims: u.customClaims, disabled: u.disabled })) };
   } catch (error) {
-    console.error("Error applying coupon:", error);
-    return res.status(500).send({ error: "Ocurrió un error al aplicar el cupón." });
+    throw new functions.https.HttpsError("internal", "Error listing users.", error);
   }
+});
+
+exports.updateUserRole = functions.https.onCall(async (data, context) => {
+  ensureAdmin(context);
+  if (!data.uid || !data.role) {
+    throw new functions.https.HttpsError("invalid-argument", "UID and role are required.");
+  }
+  try {
+    await admin.auth().setCustomUserClaims(data.uid, { role: data.role });
+    return { message: `Role updated for user ${data.uid}` };
+  } catch (error) {
+    throw new functions.https.HttpsError("internal", "Error updating user role.", error);
+  }
+});
+
+exports.deleteUser = functions.https.onCall(async (data, context) => {
+  ensureAdmin(context);
+  if (!data.uid) {
+    throw new functions.https.HttpsError("invalid-argument", "UID is required.");
+  }
+  try {
+    await admin.auth().deleteUser(data.uid);
+    return { message: `Successfully deleted user ${data.uid}` };
+  } catch (error) {
+    throw new functions.https.HttpsError("internal", "Error deleting user.", error);
+  }
+});
+
+// --- Coupon Management Functions ---
+const db = admin.firestore();
+
+exports.listCoupons = functions.https.onCall(async (data, context) => {
+    ensureAdmin(context);
+    try {
+        const snapshot = await db.collection('coupons').orderBy('createdAt', 'desc').get();
+        const coupons = snapshot.docs.map(doc => {
+            const docData = doc.data();
+            // Convert Firestore Timestamps to ISO strings
+            return {
+                id: doc.id,
+                ...docData,
+                expiresAt: docData.expiresAt ? docData.expiresAt.toDate().toISOString() : null,
+                createdAt: docData.createdAt ? docData.createdAt.toDate().toISOString() : null,
+            };
+        });
+        return { coupons };
+    } catch (error) {
+        console.error("Error listing coupons:", error);
+        throw new functions.https.HttpsError("internal", "Failed to list coupons.");
+    }
+});
+
+exports.createCoupon = functions.https.onCall(async (data, context) => {
+    ensureAdmin(context);
+    try {
+        const { code, discountType, discountValue, expiresAt } = data;
+        const newCoupon = {
+            code,
+            discountType,
+            discountValue: Number(discountValue),
+            expiresAt: expiresAt ? admin.firestore.Timestamp.fromDate(new Date(expiresAt)) : null,
+            isActive: true,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        const docRef = await db.collection('coupons').add(newCoupon);
+        return { id: docRef.id };
+    } catch (error) {
+        console.error("Error creating coupon:", error);
+        throw new functions.https.HttpsError("internal", "Failed to create coupon.");
+    }
+});
+
+exports.updateCoupon = functions.https.onCall(async (data, context) => {
+    ensureAdmin(context);
+    const { id, ...updateData } = data;
+    if (!id) {
+        throw new functions.https.HttpsError("invalid-argument", "Coupon ID is required.");
+    }
+    try {
+        const couponRef = db.collection('coupons').doc(id);
+        // Handle date conversion if expiresAt is passed
+        if (updateData.expiresAt) {
+            updateData.expiresAt = admin.firestore.Timestamp.fromDate(new Date(updateData.expiresAt));
+        }
+         if (typeof updateData.discountValue !== 'undefined') {
+            updateData.discountValue = Number(updateData.discountValue);
+        }
+
+        await couponRef.update(updateData);
+        return { message: "Coupon updated successfully." };
+    } catch (error) {
+        console.error("Error updating coupon:", error);
+        throw new functions.https.HttpsError("internal", "Failed to update coupon.");
+    }
 });

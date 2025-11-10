@@ -64,34 +64,27 @@ function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [tabValue, setTabValue] = useState(0);
 
-  // --- Start of Corrected fetchReviews Logic ---
   const fetchReviews = async () => {
     if (!productId) return;
     setReviewsLoading(true);
     try {
-      // Simplified query to fetch all reviews
-      const reviewsQuery = query(collection(db, `products/${productId}/reviews`));
+      // This query requires a composite index. The link to create it is in the browser's console log.
+      const reviewsQuery = query(
+        collection(db, `products/${productId}/reviews`),
+        where('status', '==', 'approved'),
+        orderBy('createdAt', 'desc')
+      );
       const reviewsSnapshot = await getDocs(reviewsQuery);
-      const allReviews = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      // Filter and sort on the client-side
-      const approvedAndSortedReviews = allReviews
-        .filter(review => review.status === 'approved')
-        .sort((a, b) => {
-            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
-            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
-            return dateB - dateA; // Sort descending
-        });
-
-      setReviews(approvedAndSortedReviews);
+      const approvedReviews = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setReviews(approvedReviews);
     } catch (err) { 
       console.error("Error fetching reviews:", err); 
-      toast.error("No se pudieron cargar las opiniones en este momento.");
+      // The error message in the console contains the link to create the index.
+      toast.error("No se pudieron cargar las opiniones. Es posible que falte una configuración en la base de datos.");
     } finally {
       setReviewsLoading(false);
     }
   };
-  // --- End of Corrected fetchReviews Logic ---
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -150,10 +143,10 @@ function ProductDetail() {
             rating,
             comment,
             createdAt: serverTimestamp(),
-            status: 'approved'
+            status: 'pending'
         });
-        toast.success("¡Gracias por tu opinión! Ha sido publicada.");
-        fetchReviews(); // Re-fetch reviews to show the new one immediately
+        toast.success("¡Gracias por tu opinión! Será revisada por un administrador antes de ser publicada.");
+        // No need to re-fetch reviews, the user won't see the pending one anyway.
     } catch (err) { 
         console.error("Error submitting review: ", err);
         toast.error("No se pudo enviar tu opinión.");
@@ -173,7 +166,25 @@ function ProductDetail() {
       addToCart(product, quantity);
   }
 
-  const userHasReviewed = reviews.some(review => review.userId === currentUser?.uid);
+  // Check if the user has already submitted a review that is either pending or approved.
+  const [userHasReviewed, setUserHasReviewed] = useState(false);
+  useEffect(() => {
+    const checkUserReview = async () => {
+        if (!currentUser) return;
+
+        const reviewsRef = collection(db, `products/${productId}/reviews`);
+        const q = query(reviewsRef, where('userId', '==', currentUser.uid));
+        
+        const querySnapshot = await getDocs(q);
+        
+        // Check if any review from this user exists, regardless of status.
+        if (!querySnapshot.empty) {
+            setUserHasReviewed(true);
+        }
+    };
+
+    checkUserReview();
+  }, [currentUser, productId]);
 
   if (loading) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress /></Box>;

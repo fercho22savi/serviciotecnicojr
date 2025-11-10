@@ -19,24 +19,26 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow read: if true; // Everyone can read products
-      allow create, update, delete: if isAdmin(); // Only admins can modify products
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+
+      // Rules for the reviews subcollection
+      match /reviews/{reviewId} {
+        allow read, list: if true; // Everybody can read reviews
+        allow create: if request.auth.uid != null; // Authenticated users can create reviews
+        allow update, delete: if isAdmin(); // Only admins can change status or delete
+      }
     }
 
     match /categories/{categoryId} {
-      allow read: if true; // Everyone can read categories
-      allow create, update, delete: if isAdmin(); // Only admins can modify categories
-    }
-
-    match /reviews/{reviewId} {
-        allow read: if true;
-        allow create: if request.auth.uid != null;
-        allow update, delete: if isAdmin() || request.auth.uid == resource.data.userId;
+      allow read, create, update, delete: if isAdmin();
     }
 
     match /orders/{orderId} {
         allow read, update: if isAdmin() || request.auth.uid == resource.data.userId;
         allow create: if request.auth.uid != null;
+        // Allow users to list their own orders, and admins to list all orders
+        allow list: if isAdmin() || request.auth.uid == request.query.filters.userId;
     }
   }
 }

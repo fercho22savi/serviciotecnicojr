@@ -1,89 +1,47 @@
-import { db, analytics } from './config';
-import { collection, serverTimestamp, getDocs, doc, setDoc } from 'firebase/firestore';
-import { logEvent } from "firebase/analytics";
-
-// --- ORDER MANAGEMENT --- //
+import { db } from './config';
+import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 
 /**
- * Guarda una orden en la base de datos y actualiza el stock de productos.
- * @param {object} orderData - Datos de la orden a guardar.
- * @returns {string} El número de orden legible para el usuario.
- * @throws {Error} Si falla al guardar la orden.
+ * Guarda un nuevo pedido en la base de datos.
+ * @param {Object} orderData Los datos del pedido a guardar.
+ * @returns {string} El ID del pedido recién creado.
  */
 export const saveOrder = async (orderData) => {
-  if (!orderData || !orderData.userId || !orderData.items) {
-    throw new Error('Datos de la orden incompletos o inválidos.');
-  }
-
-  const orderRef = doc(collection(db, 'orders'));
-  const orderId = orderRef.id; // Firestore document ID
-  const orderNumber = `ORD-${Date.now()}`; // Human-readable order number
-
   try {
-    await setDoc(orderRef, {
+    const orderWithTimestamp = {
       ...orderData,
-      id: orderId, // Store the document ID in the document
-      orderNumber: orderNumber, // Store the human-readable number
-      createdAt: serverTimestamp()
-    });
-
-    // --- Conditional Analytics Event ---
-    if (analytics) {
-      logEvent(analytics, 'purchase', {
-        transaction_id: orderNumber,
-        value: orderData.pricing.total,
-        currency: orderData.pricing.currency,
-        coupon: orderData.coupon?.code,
-        items: orderData.items.map(item => ({ 
-          item_id: item.id, 
-          item_name: item.name, 
-          price: item.price, 
-          quantity: item.quantity 
-        }))
-      });
-    } else {
-      console.log("Analytics not initialized, skipping purchase event.");
-    }
-
-    return orderNumber; // Return the human-readable number
-
+      createdAt: serverTimestamp(),
+      orderNumber: `JR-${Date.now()}` // Generar un número de pedido simple
+    };
+    const docRef = await addDoc(collection(db, 'orders'), orderWithTimestamp);
+    return docRef.id;
   } catch (error) {
-    console.error("Error detallado al guardar la orden: ", error);
-    throw new Error(`Error al guardar la orden en la base de datos: ${error.message}`);
+    console.error("Error saving order to Firestore: ", error);
+    throw new Error('Could not save the order. Please try again.');
   }
 };
-
-// --- ADDRESS MANAGEMENT --- //
 
 /**
  * Obtiene las direcciones guardadas de un usuario.
- * @param {string} userId - El ID del usuario.
- * @returns {Array<object>} Una lista de direcciones.
+ * @param {string} userId El ID del usuario.
+ * @returns {Array<Object>} Una lista de las direcciones del usuario.
  */
 export const fetchUserAddresses = async (userId) => {
-    if (!userId) return [];
-    try {
-        const snapshot = await getDocs(collection(db, 'users', userId, 'addresses'));
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-        console.error("Error fetching user addresses: ", error);
-        throw new Error('No se pudieron cargar las direcciones.');
-    }
-};
-
-/**
- * Guarda o actualiza una dirección de envío para un usuario.
- * @param {string} userId - El ID del usuario.
- * @param {object} addressData - Los datos de la dirección.
- * @param {string|null} addressId - El ID de la dirección si se está actualizando.
- * @returns {string} El ID de la dirección guardada.
- */
-export const saveShippingAddress = async (userId, addressData, addressId = null) => {
-    if (!userId || !addressData) throw new Error('Datos de dirección inválidos.');
+  if (!userId) return [];
+  try {
+    const addressesRef = collection(db, `users/${userId}/addresses`);
+    const q = query(addressesRef);
+    const querySnapshot = await getDocs(q);
     
-    const addressRef = addressId ? doc(db, 'users', userId, 'addresses', addressId) : doc(collection(db, 'users', userId, 'addresses'));
+    const addresses = [];
+    querySnapshot.forEach((doc) => {
+      addresses.push({ id: doc.id, ...doc.data() });
+    });
     
-    await setDoc(addressRef, addressData, { merge: true });
-    
-    return addressRef.id;
+    return addresses;
+  } catch (error) {
+    console.error("Error fetching user addresses: ", error);
+    // No lanzar un error fatal, simplemente devolver una lista vacía.
+    return [];
+  }
 };

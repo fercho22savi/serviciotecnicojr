@@ -1,9 +1,10 @@
 {
     "header": {
-        "storeName": "MyStore",
+        "storeName": "MiTienda",
         "allCategories": "All Categories",
         "searchPlaceholder": "Search products...",
         "products": "Products",
+        "orders": "Orders",
         "wishlist": "Wishlist",
         "cart": "Cart",
         "login": "Login",
@@ -14,24 +15,24 @@
         "logout": "Logout",
         "lightModeTooltip": "Switch to light mode",
         "darkModeTooltip": "Switch to dark mode",
-        "logout_error": "Error signing out"
+        "logout_error": "Error logging out"
     },
     "footer": {
-        "company_slogan": "The best technology at your fingertips. Quality, service, and the best market prices.",
+        "company_slogan": "The best technology at your fingertips. Quality, service, and the best prices.",
         "legal": "Legal",
         "privacy_policy": "Privacy Policy",
         "terms_of_service": "Terms of Service",
         "help": "Help",
-        "faq": "Frequently Asked Questions",
+        "faq": "FAQ",
         "contact": "Contact",
         "shipping_returns": "Shipping & Returns",
-        "refund_policy": "Refund & Return Policy",
+        "refund_policy": "Refund Policy",
         "follow_us": "Follow Us",
-        "copyright": "Copyright © YourStore.com {{year}}. All rights reserved."
+        "copyright": "Copyright © YourStore.com {{year}}. Save with us"
     },
     "home_page": {
         "hero_title": "Technology that Inspires Your Future",
-        "hero_subtitle": "Discover the latest innovations in our high-end product collection.",
+        "hero_subtitle": "Discover the latest innovations in our collection of high-end products.",
         "explore_collection_button": "Explore Collection",
         "explore_categories_title": "Explore Our Categories",
         "new_arrivals_title": "New Arrivals",
@@ -50,17 +51,17 @@
             "title": "Appearance",
             "language_label": "Language",
             "dark_mode_label": "Dark Mode",
-            "dark_mode_secondary": "Perfect for nighttime browsing"
+            "dark_mode_secondary": "Ideal for night browsing"
         },
         "notifications": {
             "title": "Notifications",
-            "offers_label": "Offers & Promotions",
+            "offers_label": "Offers and Promotions",
             "offers_secondary": "Receive emails with our best discounts",
             "orders_label": "Order Updates",
-            "orders_secondary": "Get notifications about the status of your purchases"
+            "orders_secondary": "Receive notifications about your order status"
         },
         "security": {
-            "title": "Security & Data",
+            "title": "Security and Data",
             "password_label": "Password",
             "password_secondary": "It is recommended to update it periodically",
             "change_password_action": "Change Password",
@@ -73,7 +74,7 @@
             "delete_account_label": "Delete Account",
             "delete_account_secondary": "This action is permanent and cannot be undone.",
             "delete_account_button": "Delete my account",
-            "delete_warning": "Deleting your account will irreversibly erase your order history, wishlists, and all associated information."
+            "delete_warning": "Deleting your account will permanently erase your order history, wishlists, and all associated information."
         }
     },
     "faq_page": {
@@ -81,24 +82,27 @@
         "payment_q": "What payment methods do you accept?",
         "payment_a": "We accept a wide variety of payment methods, including credit and debit cards (Visa, MasterCard, American Express), PayPal, and other digital payment platforms. All transactions are 100% secure.",
         "shipping_q": "How long does it take for my order to arrive?",
-        "shipping_a": "Standard delivery time is 3-5 business days. We also offer express shipping (1-2 business days) for an additional cost.",
+        "shipping_a": "Standard delivery time is 3-5 business days. We also offer express shipping (1-2 business days) for an additional fee.",
         "returns_q": "What is your return policy?",
         "returns_a": "We offer a 30-day return policy. If you are not satisfied, you can return it for a full refund or exchange. The product must be in its original condition.",
         "account_q": "Do I need an account to make a purchase?",
         "account_a": "No, you can check out as a guest. However, an account offers advantages like a faster checkout process and access to your order history.",
         "international_q": "Do you ship internationally?",
-        "international_a": "We are currently focused on the domestic market, but we plan to expand. Subscribe to our newsletter to be the first to know!",
+        "international_a": "Currently, we focus on the domestic market, but we plan to expand. Subscribe to our newsletter to be the first to know!",
         "damaged_q": "My product arrived damaged, what should I do?",
         "damaged_a": "We are sorry to hear that. Please contact customer support with your order number and photos of the damaged product so we can assist you."
     },
     "account_menu": {
         "title": "My Account",
+        "go_to_store": "Go to Store",
         "dashboard": "Dashboard",
         "order_history": "Order History",
         "wishlist": "Wishlist",
         "profile": "My Profile",
         "recently_viewed": "Recently Viewed",
-        "settings": "Settings"
+        "settings": "Settings",
+        "payment_methods": "Payment Methods",
+        "user_management": "User Management"
     },
     "admin_menu": {
         "title": "Admin Panel",
@@ -113,30 +117,43 @@
     "category_management": {
         "title": "Category Management",
         "add_button": "Add Category",
-        "load_error": "Error loading categories.",
+        "load_error": "Failed to load categories.",
+        "saving": "Saving...",
+        "deleting": "Deleting...",
         "update_success": "Category updated successfully.",
         "create_success": "Category created successfully.",
-        "update_error": "Error updating category.",
-        "create_error": "Error creating category.",
-        "delete_confirm": "Are you sure you want to delete this category?",
+        "save_error": "Error saving category.",
         "delete_success": "Category deleted successfully.",
         "delete_error": "Error deleting category.",
-        "no_categories": "No categories found.",
-        "edit_title": "Edit Category",
-        "add_title": "Add New Category",
-        "cancel_button": "Cancel",
-        "save_button": "Save",
+        "delete_confirm": "Are you sure you want to delete this category?",
+        "empty_text": "No categories found. Click \"Add Category\" to start.",
         "table": {
             "name": "Name",
             "description": "Description",
             "actions": "Actions"
         },
+        "actions": {
+            "edit": "Edit",
+            "delete": "Delete"
+        },
         "form": {
-            "name": "Category Name",
-            "description": "Description"
+            "edit_title": "Edit Category",
+            "add_title": "Add New Category",
+            "name_label": "Category Name",
+            "description_label": "Description",
+            "cancel_button": "Cancel",
+            "save_button": "Save Changes",
+            "add_button": "Add Category",
+            "saving_button": "Saving...",
+            "errors": {
+                "name_required": "Category name is required."
+            }
         },
         "errors": {
-            "name_required": "Category name is required."
+            "name_required": "Category name is required.",
+            "permission_denied_load": "Permission Denied: You do not have permission to view categories. Please log in as an administrator.",
+            "permission_denied_save": "Permission Denied: You must be an administrator to save a category.",
+            "permission_denied_delete": "Permission Denied: You must be an administrator to delete a category."
         }
     },
     "addresses": {
@@ -151,7 +168,7 @@
         "delete_confirm": "Are you sure you want to delete this address?",
         "deleting_toast": "Deleting address...",
         "delete_success": "Address deleted successfully",
-        "delete_error": "Error deleting the address.",
+        "delete_error": "Error deleting address.",
         "no_addresses_title": "You have no saved addresses.",
         "no_addresses_subtitle": "Add an address to make your future purchases easier.",
         "phone_label": "Phone",
@@ -161,21 +178,21 @@
         "save_changes_button": "Save Changes",
         "save_button": "Save",
         "form": {
-            "recipient_name": "Recipient's Name",
+            "recipient_name": "Recipient Name",
             "address": "Address",
             "city": "City",
-            "state": "State/Province",
+            "state": "State/Department",
             "postal_code": "Postal Code",
             "country": "Country",
-            "recipient_phone": "Recipient's Phone",
+            "recipient_phone": "Recipient Phone",
             "shipping_notes": "Shipping Notes"
         }
     },
     "orders": {
         "title": "My Orders",
-        "fetch_error": "Couldn't load your orders.",
+        "fetch_error": "Could not load your orders.",
         "login_prompt": "Please log in to see your history.",
-        "no_orders": "You haven't placed any orders yet.",
+        "no_orders": "You have not placed any orders yet.",
         "order_number": "Order #",
         "date": "Date",
         "status_label": "Status",
@@ -190,6 +207,7 @@
         "rows_per_page": "Orders per page:",
         "close_button": "Close",
         "download_pdf": "Download PDF",
+        "exchange_rate_error": "Could not get the exchange rate.",
         "status": {
             "processing": "Processing",
             "completed": "Completed",
@@ -216,11 +234,11 @@
     "invoice": {
         "title": "INVOICE",
         "filename": "invoice",
-        "bill_to": "Bill to:",
-        "invoice_number": "Invoice #:",
+        "bill_to": "Bill To:",
+        "invoice_number": "Invoice No:",
         "issue_date": "Issue Date:",
         "order_status": "Order Status:",
-        "payment_method_card": "Card {{brand}} ending in {{last4}}",
+        "payment_method_card": "{{brand}} card ending in {{last4}}",
         "table": {
             "description": "Description",
             "quantity": "Qty",
@@ -229,7 +247,8 @@
         },
         "total_due": "TOTAL DUE:",
         "footer_thanks": "Thank you for your purchase!",
-        "footer_page": "Page"
+        "footer_page": "Page",
+        "phone_label": "Phone"
     },
     "payment_methods": {
         "title": "Payment Methods",
@@ -240,8 +259,8 @@
         "save_error": "There was an error saving the payment method.",
         "delete_confirm": "Are you sure you want to delete this payment method?",
         "deleting_toast": "Deleting...",
-        "delete_success": "Payment method deleted successfully",
-        "delete_error": "There was an error deleting the payment method.",
+        "delete_success": "Payment method deleted",
+        "delete_error": "Error deleting.",
         "no_methods_title": "You have no saved payment methods.",
         "no_methods_subtitle": "Add one for a faster checkout process.",
         "card_ending_in": "{{brand}} ending in {{last4}}",
@@ -250,14 +269,14 @@
         "cancel_button": "Cancel",
         "save_button": "Save Card",
         "unknown_brand": "Unknown",
-        "setup_intent_error": "Could not initialize the payment form. Please try again.",
+        "setup_intent_error": "Could not initialize payment form. Please try again.",
         "form": {
             "cardholder_name": "Name on Card",
             "card_number": "Card Number",
             "expiry": "MM/YY",
             "cvc": "CVC",
             "security_note": "Your payment information is secure. We do not store your full card details.",
-            "fill_all_fields": "Please complete all fields to save your card."
+            "fill_all_fields": "Please fill all fields to save your card."
         }
     },
     "security": {
@@ -273,11 +292,11 @@
         },
         "toast": {
             "changing_password": "Changing password...",
-            "success": "Password has been updated successfully"
+            "success": "Password updated successfully"
         },
         "errors": {
-            "fill_all_fields": "Please fill in all fields.",
-            "passwords_do_not_match": "The new passwords do not match.",
+            "fill_all_fields": "Please fill all fields.",
+            "passwords_do_not_match": "New passwords do not match.",
             "password_too_short": "The new password must be at least 6 characters long.",
             "generic_error": "There was an error changing the password.",
             "wrong_current_password": "The current password is incorrect."
@@ -288,39 +307,53 @@
         "subtitle": "Update your personal and contact information.",
         "loading": "Loading profile...",
         "form": {
+            "displayName": "Username",
             "first_name": "First Name",
             "last_name": "Last Name",
             "email_helper": "The email address cannot be changed.",
             "phone": "Phone",
             "id_document": "Identity Document",
-            "birth_date": "Date of Birth"
+            "birth_date": "Date of Birth",
+            "address": "Address",
+            "city": "City / Municipality",
+            "country": "Country",
+            "department": "Department",
+            "postal_code": "Postal Code"
         },
         "button": {
             "save": "Save Changes"
         },
         "toast": {
             "updating": "Updating profile...",
-            "success": "Profile updated successfully"
+            "success": "Profile updated successfully",
+            "uploading": "Uploading photo...",
+            "photo_success": "Profile photo updated",
+            "sending_email": "Sending email...",
+            "email_sent": "Email sent! Check your inbox."
         },
         "errors": {
             "load_profile": "Could not load your profile.",
-            "update_profile": "There was an error updating your profile."
+            "update_profile": "There was an error updating your profile.",
+            "upload_photo": "Error uploading photo.",
+            "not_logged_in": "You are not logged in.",
+            "email_fail": "Could not send reset email."
         },
         "security_panel": {
             "title": "Account Security",
             "subtitle": "To change your password, we will send a secure link to your email.",
-            "action_button": "Send password reset email"
-        }
+            "action_button": "Send email to change password"
+        },
+        "login_prompt": "Please log in to see your profile."
     },
     "shipping_policy": {
         "title": "Shipping and Returns",
         "subtitle": "Everything you need to know about how we get our products to your door.",
-        "delivery_time_label": "Delivery time",
+        "delivery_time_label": "Delivery Time",
         "shipping_options": {
             "title": "Shipping Options",
             "standard": {
-                "title": "Standard Domestic Shipping",
-                "description": "Our standard shipping is free for all orders over $50. For smaller orders, there is a flat rate of $5.",
+                "title": "Standard National Shipping",
+                "description": "Our standard shipping is free for all orders over $50. For orders under that, there is a flat rate of $5.",
                 "time": "3-5 business days",
                 "tracking": "All packages are sent with a tracking number that you will receive by email as soon as the order is dispatched."
             },
@@ -331,7 +364,7 @@
             }
         },
         "returns_policy": {
-            "title": "Returns Policy",
+            "title": "Return Policy",
             "conditions": {
                 "title": "Timeframe and Conditions",
                 "description": "We accept returns up to 30 days after the delivery date. For a return to be accepted, the product must be in its original packaging, unused, and in the same condition you received it.",
@@ -339,13 +372,13 @@
             },
             "process": {
                 "title": "Return Process",
-                "description": "To initiate a return, please contact our support team through the contact page with your order number. We will provide you with instructions and the shipping address.",
+                "description": "To initiate a return, please contact our support team through the contact page with your order number. We will provide you with the instructions and the shipping address.",
                 "shipping_costs": "Return shipping costs are the responsibility of the customer, unless the reason for the return is an error on our part (incorrect or defective product)."
             }
         },
         "general_rules": {
             "title": "General Rules",
-            "description": "We reserve the right to refuse any return that does not meet the above criteria. It is important to inspect your order as soon as you receive it. If you find any issues, please contact us immediately."
+            "description": "We reserve the right to refuse any return that does not meet the above criteria. It is important to inspect your order as soon as you receive it. If you find any problems, please contact us immediately."
         }
     },
     "contact_page": {
@@ -362,7 +395,7 @@
         }
     },
     "checkout": {
-        "title": "Checkout Process",
+        "title": "Checkout",
         "steps": {
             "shipping": "Shipping Address",
             "review": "Review Order",
@@ -371,17 +404,22 @@
         "coupon_code_label": "Coupon Code",
         "apply_button": "Apply",
         "payment_method_title": "Credit or Debit Card",
-        "payment_security_note": "Your payment is securely processed by Stripe.",
+        "payment_security_note": "Your payment is processed securely by Stripe.",
         "back_button": "Back",
         "next_button": "Next",
         "place_order_button": "Place Order",
         "order_placed": "Order #{{orderNumber}} placed!",
+        "order_success_title": "Thank you for your purchase!",
+        "order_success_message": "Your order has been processed successfully. You will receive an email confirmation shortly.",
+        "confirmation_number": "Your confirmation number is: #{{orderId}}",
+        "continue_shopping": "Continue Shopping",
+        "view_orders": "View My Orders",
         "errors": {
             "load_addresses": "Could not load your addresses.",
             "init_payment": "Could not initialize payment.",
             "coupon_code_required": "Please enter a coupon code.",
             "server_error": "Server error",
-            "coupon_invalid": "Coupon is not valid or has expired.",
+            "coupon_invalid": "The coupon is invalid or has expired.",
             "name_required": "Name is required.",
             "address_required": "Address is required.",
             "city_required": "City is required.",
@@ -420,13 +458,13 @@
         "last_updated": "Last updated: August 1, 2024",
         "introduction": {
             "title": "1. Introduction",
-            "content": "Welcome to ElectronicaNr. Your privacy is critically important to us. This Privacy Policy outlines what personal data we collect, how we use it, how we share it, and your rights regarding your data."
+            "content": "Welcome to ElectronicaNr. Your privacy is of the utmost importance to us. This Privacy Policy outlines what personal data we collect, how we use it, how we share it, and your rights regarding your data."
         },
         "data_we_collect": {
             "title": "2. Data We Collect",
             "intro": "We collect information in several ways when you use our services:",
             "points": [
-                "<strong>Information you provide directly:</strong> This includes information you provide when creating an account, placing an order, or contacting us, such as your name, email address, shipping address, and phone number.",
+                "<strong>Information you provide directly:</strong> This includes the information you provide when creating an account, placing an order, or contacting us, such as your name, email address, shipping address, and phone number.",
                 "<strong>Information collected automatically:</strong> We collect information about your device and your use of our website, such as your IP address, browser type, pages visited, and the date and time of your visit.",
                 "<strong>Cookies and similar technologies:</strong> We use cookies to enhance your experience, analyze traffic, and personalize content."
             ]
@@ -460,20 +498,20 @@
         },
         "apple_app_store_disclosure": {
             "title": "7. Apple App Store Data Disclosure",
-            "content": "For users who have downloaded our application from the Apple App Store, we provide specific disclosures regarding our data handling practices. Apple requires developers to be transparent about how third-party services, such as Firebase, collect and use data. As developers, we are responsible for ensuring that the information provided in the App Store's privacy section is accurate and up-to-date. You can find detailed information about the data collected by our app on our App Store product page."
+            "content": "For users who have downloaded our application from the Apple App Store, we provide specific disclosures about our data handling practices. Apple requires that developers be transparent about how third-party services, such as Firebase, collect and use data. As developers, we are responsible for ensuring that the information provided in the App Store's privacy section is accurate and up-to-date. You can find detailed information about the data our app collects on our App-Store product page."
         }
     },
     "wishlist": {
         "title": "My Wishlist",
         "subtitle": "Your favorite products, saved in one place.",
-        "fetch_error": "Could not load your wishlist products.",
-        "login_prompt": "Please log in to see your wishlist.",
-        "login_button": "Login",
+        "fetch_error": "Could not load the products from your wishlist.",
+        "login_prompt": "Log in to see your wishlist.",
+        "login_button": "Log In",
         "empty_title": "Your wishlist is empty",
-        "empty_subtitle": "Explore the catalog and tap the heart to save your favorite products.",
-        "explore_button": "Explore Products",
+        "empty_subtitle": "Explore the catalog and click the heart to save your favorite products.",
+        "explore_button": "Browse Products",
         "toast": {
-            "fetch_error": "Could not fetch wishlist.",
+            "fetch_error": "Could not get wishlist.",
             "add_login_prompt": "Please log in to add items to your wishlist.",
             "add_success": "Added to wishlist!",
             "add_error": "Could not add to wishlist.",

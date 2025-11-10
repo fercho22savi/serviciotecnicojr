@@ -1,132 +1,162 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, query, updateDoc, doc, orderBy } from 'firebase/firestore';
-import { db as firestore } from '../../firebase/config';
+import React, { useState, useEffect } from 'react';
+import { collectionGroup, query, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { db } from '../../firebase/config'; // Asegúrate de que esta ruta sea correcta
 import { 
-    Container, Typography, Box, Paper, CircularProgress, Chip, IconButton, 
-    List, ListItem, ListItemText, ListItemAvatar, Avatar, Divider, ToggleButtonGroup, ToggleButton
+    Paper, Typography, Table, TableBody, TableCell, TableContainer, 
+    TableHead, TableRow, Button, Chip, Select, MenuItem, FormControl, 
+    InputLabel, Box, TablePagination, CircularProgress, Alert
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
-const getStatusChipColor = (status) => {
+const StatusChip = ({ status }) => {
+    let color;
+    let label;
     switch (status) {
-        case 'Pendiente': return 'warning';
-        case 'Aprobada': return 'success';
-        case 'Rechazada': return 'error';
-        default: return 'default';
+        case 'approved':
+            color = 'success';
+            label = 'Aprobado';
+            break;
+        case 'rejected':
+            color = 'error';
+            label = 'Rechazado';
+            break;
+        default:
+            color = 'warning';
+            label = 'Pendiente';
+            break;
     }
+    return <Chip label={label} color={color} size="small" />;
 };
 
-function ReviewManagement() {
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('Pendiente'); // Default filter to Pending
+const ReviewManagement = () => {
+    const [reviews, setReviews] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const fetchReviews = useCallback(async () => {
-    setLoading(true);
-    try {
-      const reviewsQuery = query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(reviewsQuery);
-      const reviewsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setReviews(reviewsList);
-    } catch (error) {
-      console.error("Error fetching reviews: ", error);
-      toast.error("Error al cargar las reseñas.");
-    } finally {
-      setLoading(false);
+    const fetchReviews = async () => {
+        setLoading(true);
+        try {
+            const reviewsQuery = query(collectionGroup(db, 'reviews'));
+            const querySnapshot = await getDocs(reviewsQuery);
+            const reviewsData = querySnapshot.docs.map(doc => {
+                const pathParts = doc.ref.path.split('/');
+                // Path: products/{productId}/reviews/{reviewId}
+                const productId = pathParts.length > 1 ? pathParts[1] : 'Desconocido';
+                return {
+                    id: doc.id,
+                    ...doc.data(),
+                    fullPath: doc.ref.path,
+                    productId: productId, // Add the extracted product ID
+                };
+            });
+            setReviews(reviewsData);
+        } catch (err) {
+            console.error("Error fetching reviews:", err);
+            setError("No se pudieron cargar las reseñas.");
+            toast.error("No se pudieron cargar las reseñas.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchReviews();
+    }, []);
+
+    const handleStatusChange = async (fullPath, newStatus) => {
+        try {
+            const reviewRef = doc(db, fullPath);
+            await updateDoc(reviewRef, { status: newStatus });
+
+            // Actualizar el estado localmente
+            setReviews(prevReviews => 
+                prevReviews.map(review => 
+                    review.fullPath === fullPath ? { ...review, status: newStatus } : review
+                )
+            );
+            toast.success('Estado de la reseña actualizado.');
+        } catch (error) {
+            console.error("Error updating review status:", error);
+            toast.error('No se pudo actualizar el estado de la reseña.');
+        }
+    };
+
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
+    if (loading) {
+        return <CircularProgress />;
     }
-  }, []);
 
-  useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
-
-  const handleUpdateStatus = async (reviewId, newStatus) => {
-    const originalReviews = [...reviews];
-    // Optimistic UI update
-    setReviews(prevReviews => prevReviews.map(r => r.id === reviewId ? { ...r, status: newStatus } : r));
-
-    try {
-      const reviewRef = doc(firestore, 'reviews', reviewId);
-      await updateDoc(reviewRef, { status: newStatus });
-      toast.success(`Reseña ${newStatus.toLowerCase()}.`);
-    } catch (error) {
-      console.error("Error updating review status: ", error);
-      toast.error("Error al actualizar la reseña.");
-      // Rollback on error
-      setReviews(originalReviews);
+    if (error) {
+        return <Alert severity="error">{error}</Alert>;
     }
-  };
 
-  const handleFilterChange = (event, newFilter) => {
-    if (newFilter !== null) {
-      setFilter(newFilter);
-    }
-  };
+    const paginatedReviews = reviews.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  const filteredReviews = reviews.filter(review => review.status === filter);
-
-  return (
-    <Container maxWidth="lg" sx={{ my: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Moderación de Reseñas
-      </Typography>
-
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-        <ToggleButtonGroup value={filter} exclusive onChange={handleFilterChange} aria-label="filtro de estado">
-          <ToggleButton value="Pendiente" aria-label="pendientes">Pendientes</ToggleButton>
-          <ToggleButton value="Aprobada" aria-label="aprobadas">Aprobadas</ToggleButton>
-          <ToggleButton value="Rechazada" aria-label="rechazadas">Rechazadas</ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>
-      ) : (
-        <Paper elevation={2}>
-          <List sx={{ p: 0 }}>
-            {filteredReviews.length > 0 ? filteredReviews.map((review, index) => (
-              <React.Fragment key={review.id}>
-                <ListItem alignItems="flex-start" sx={{ p: 2 }}>
-                  <ListItemAvatar>
-                    <Avatar alt={review.userName} src={review.userPhotoURL} />
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={<span><b>{review.userName}</b> comentó sobre el producto <b>{review.productId}</b></span>}
-                    secondary={
-                      <span>
-                        <Typography sx={{ display: 'block' }} component="span" variant="body2" color="text.primary">
-                          {"\u2605".repeat(review.rating)}{"\u2606".repeat(5 - review.rating)}
-                        </Typography>
-                        {review.comment}
-                      </span>
-                    }
-                  />
-                  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center' }}>
-                    <Chip label={review.status} color={getStatusChipColor(review.status)} sx={{ mb: { xs: 1, sm: 0 }, mr: { sm: 2 } }} />
-                    {review.status === 'Pendiente' && (
-                      <Box>
-                        <IconButton color="success" onClick={() => handleUpdateStatus(review.id, 'Aprobada')}>
-                          <CheckCircleIcon />
-                        </IconButton>
-                        <IconButton color="error" onClick={() => handleUpdateStatus(review.id, 'Rechazada')}>
-                          <CancelIcon />
-                        </IconButton>
-                      </Box>
-                    )}
-                  </Box>
-                </ListItem>
-                {index < filteredReviews.length - 1 && <Divider component="li" />}
-              </React.Fragment>
-            )) : (
-                <Typography sx={{textAlign: 'center', p: 4}}>No hay reseñas en estado "{filter}".</Typography>
-            )}
-          </List>
+    return (
+        <Paper sx={{ p: 2 }}>
+            <Typography variant="h4" gutterBottom>Gestión de Reseñas</Typography>
+            <TableContainer>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>ID Producto</TableCell>
+                            <TableCell>Usuario</TableCell>
+                            <TableCell>Calificación</TableCell>
+                            <TableCell>Comentario</TableCell>
+                            <TableCell>Fecha</TableCell>
+                            <TableCell>Estado</TableCell>
+                            <TableCell>Acciones</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {paginatedReviews.map((review) => (
+                            <TableRow key={review.id}>
+                                <TableCell sx={{wordBreak: 'break-all'}}>{review.productId}</TableCell>
+                                <TableCell>{review.userName}</TableCell>
+                                <TableCell>{review.rating}</TableCell>
+                                <TableCell>{review.comment}</TableCell>
+                                <TableCell>{review.createdAt?.toDate().toLocaleDateString()}</TableCell>
+                                <TableCell>
+                                    <StatusChip status={review.status} />
+                                </TableCell>
+                                <TableCell>
+                                    <FormControl size="small" sx={{minWidth: 120}}>
+                                        <Select
+                                            value={review.status || 'pending'}
+                                            onChange={(e) => handleStatusChange(review.fullPath, e.target.value)}
+                                        >
+                                            <MenuItem value="pending">Pendiente</MenuItem>
+                                            <MenuItem value="approved">Aprobar</MenuItem>
+                                            <MenuItem value="rejected">Rechazar</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+            <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={reviews.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+            />
         </Paper>
-      )}
-    </Container>
-  );
-}
+    );
+};
 
 export default ReviewManagement;

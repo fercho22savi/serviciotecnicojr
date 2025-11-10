@@ -1,156 +1,137 @@
 import React, { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDocs, collection, query, where, limit } from 'firebase/firestore';
-import { auth, db } from '../firebase/firebase';
-import {
-    Container, Box, Typography, TextField, Button, Avatar, CssBaseline,
-    Grid, Link, Alert
-} from '@mui/material';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // Corrected Path
+import { db } from '../firebase/config'; // Corrected Path
+import { doc, setDoc } from 'firebase/firestore';
+import { Avatar, Button, CssBaseline, TextField, Grid, Box, Typography, Container, Alert } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { useTranslation } from 'react-i18next';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import toast from 'react-hot-toast';
 
-const SignUp = () => {
-    const { t } = useTranslation();
-    const navigate = useNavigate();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [displayName, setDisplayName] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+const defaultTheme = createTheme();
 
-    const isFirstAdmin = async () => {
-        const adminsQuery = query(collection(db, "users"), where("role", "==", "admin"), limit(1));
-        const querySnapshot = await getDocs(adminsQuery);
-        return querySnapshot.empty;
-    };
+export default function SignUp() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { signup } = useAuth();
+  const navigate = useNavigate();
 
-    const handleSignUp = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (password !== confirmPassword) {
+      return setError('Las contraseñas no coinciden');
+    }
 
-        if (password !== confirmPassword) {
-            setError("Passwords do not match.");
-            setLoading(false);
-            return;
+    const toastId = toast.loading('Creando tu cuenta...');
+    try {
+      setError('');
+      setLoading(true);
+      const { user } = await signup(email, password);
+      
+      // Create user document in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: email.split('@')[0], // Default display name
+        role: 'customer', // Default role
+        createdAt: new Date(),
+        photoURL: ''
+      });
+
+      toast.success('¡Cuenta creada con éxito!', { id: toastId });
+      navigate('/');
+    } catch (e) {
+        let errorMessage = 'Error al crear la cuenta';
+        if (e.code === 'auth/email-already-in-use') {
+            errorMessage = 'Este correo electrónico ya está en uso.';
+        } else if (e.code === 'auth/weak-password') {
+            errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
         }
+        setError(errorMessage);
+        toast.error(errorMessage, { id: toastId });
+    } finally {
+        setLoading(false);
+    }
+  };
 
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            const role = await isFirstAdmin() ? 'admin' : 'customer';
-
-            await setDoc(doc(db, "users", user.uid), {
-                uid: user.uid,
-                email: user.email,
-                displayName: displayName,
-                role: role,
-                createdAt: new Date()
-            });
-
-            setLoading(false);
-            navigate(role === 'admin' ? '/admin' : '/');
-
-        } catch (err) {
-            setError(err.message);
-            setLoading(false);
-        }
-    };
-
-    return (
-        <Container component="main" maxWidth="xs">
-            <CssBaseline />
-            <Box
-                sx={{
-                    marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                }}
+  return (
+    <ThemeProvider theme={defaultTheme}>
+      <Container component="main" maxWidth="xs">
+        <CssBaseline />
+        <Box
+          sx={{
+            marginTop: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+            <LockOutlinedIcon />
+          </Avatar>
+          <Typography component="h1" variant="h5">
+            Crear una cuenta
+          </Typography>
+          {error && <Alert severity="error" sx={{ mt: 2, width: '100%' }}>{error}</Alert>}
+          <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  required
+                  fullWidth
+                  id="email"
+                  label="Correo Electrónico"
+                  name="email"
+                  autoComplete="email"
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  required
+                  fullWidth
+                  name="password"
+                  label="Contraseña"
+                  type="password"
+                  id="password"
+                  autoComplete="new-password"
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  required
+                  fullWidth
+                  name="confirmPassword"
+                  label="Confirmar Contraseña"
+                  type="password"
+                  id="confirmPassword"
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </Grid>
+            </Grid>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+              disabled={loading}
             >
-                <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-                    <LockOutlinedIcon />
-                </Avatar>
-                <Typography component="h1" variant="h5">
-                    Sign Up
-                </Typography>
-                <Box component="form" onSubmit={handleSignUp} noValidate sx={{ mt: 3 }}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                            <TextField
-                                autoComplete="name"
-                                name="displayName"
-                                required
-                                fullWidth
-                                id="displayName"
-                                label="Display Name"
-                                autoFocus
-                                value={displayName}
-                                onChange={(e) => setDisplayName(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                required
-                                fullWidth
-                                id="email"
-                                label="Email Address"
-                                name="email"
-                                autoComplete="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                required
-                                fullWidth
-                                name="password"
-                                label="Password"
-                                type="password"
-                                id="password"
-                                autoComplete="new-password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                required
-                                fullWidth
-                                name="confirmPassword"
-                                label="Confirm Password"
-                                type="password"
-                                id="confirmPassword"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                            />
-                        </Grid>
-                    </Grid>
-                    {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-                    <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        sx={{ mt: 3, mb: 2 }}
-                        disabled={loading}
-                    >
-                        {loading ? 'Signing Up...' : 'Sign Up'}
-                    </Button>
-                    <Grid container justifyContent="flex-end">
-                        <Grid item>
-                            <Link component={RouterLink} to="/login" variant="body2">
-                                Already have an account? Sign in
-                            </Link>
-                        </Grid>
-                    </Grid>
-                </Box>
-            </Box>
-        </Container>
-    );
-};
-
-export default SignUp;
+              Registrarse
+            </Button>
+            <Grid container justifyContent="flex-end">
+              <Grid item>
+                <Link to="/login" variant="body2">
+                  ¿Ya tienes una cuenta? Inicia sesión
+                </Link>
+              </Grid>
+            </Grid>
+          </Box>
+        </Box>
+      </Container>
+    </ThemeProvider>
+  );
+}

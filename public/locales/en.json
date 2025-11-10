@@ -48,23 +48,83 @@
     "title": "Product Management",
     "add_button": "Add Product",
     "load_error": "Failed to fetch products. Please try again later.",
-    "delete_confirm": "Are you sure you want to delete this product?",
+    "saving": "Saving product...",
+    "save_success": "Product saved successfully!",
+    "save_error": "Failed to save product.",
+    "deleting": "Deleting product...",
+    "delete_success": "Product deleted successfully!",
     "delete_error": "Failed to delete product.",
+    "empty_text": "No products found. Click \"Add Product\" to get started.",
+    "delete_confirm_title": "Confirm Deletion",
+    "delete_confirm_text": "Are you sure you want to delete this product? This action cannot be undone.",
+    "table_header": {
+        "image": "Image",
+        "name": "Name",
+        "category": "Category",
+        "price": "Price",
+        "actions": "Actions"
+    },
+    "actions": {
+        "edit_tooltip": "Edit Product",
+        "delete_tooltip": "Delete Product"
+    },
     "form": {
       "edit_title": "Edit Product",
-      "add_title": "Add Product",
+      "add_title": "Add New Product",
       "upload_button": "Upload Image",
-      "name_label": "Name",
+      "image_placeholder": "Image Preview",
+      "name_label": "Product Name",
       "description_label": "Description",
       "price_label": "Price",
       "category_label": "Category",
       "cancel_button": "Cancel",
       "save_button": "Save Changes",
-      "add_button": "Add Product"
-    },
-    "card": {
-      "edit_button": "Edit",
-      "delete_button": "Delete"
+      "add_new_button": "Add Product"
     }
-  }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account preferences and settings.",
+    "appearance": {
+        "title": "Appearance",
+        "language_label": "Language",
+        "dark_mode_label": "Dark Mode",
+        "dark_mode_secondary": "Toggle between light and dark theme."
+    },
+    "notifications": {
+        "title": "Notifications",
+        "offers_label": "Promotional Offers",
+        "offers_secondary": "Receive emails about promotions and new products.",
+        "orders_label": "Order Updates",
+        "orders_secondary": "Receive email notifications about your orders."
+    },
+    "security": {
+        "title": "Security & Data",
+        "password_label": "Password",
+        "password_secondary": "Last changed a month ago.",
+        "change_password_action": "Change Password",
+        "export_data_label": "Export Your Data",
+        "export_data_secondary": "Download a copy of your personal data.",
+        "export_data_action": "Export Data",
+        "password_action_message": "This is where you would implement the password change flow.",
+        "export_data_action_message": "This is where you would trigger the data export process."
+    },
+    "danger_zone": {
+        "title": "Danger Zone",
+        "delete_account_label": "Delete Account",
+        "delete_account_secondary": "Permanently delete your account and all associated data.",
+        "delete_account_button": "Delete Account",
+        "delete_warning": "Actions in this zone are irreversible.",
+        "delete_confirm_title": "Are you sure?",
+        "delete_confirm_text": "This will permanently delete your account. This action cannot be undone.",
+        "deletion_initiated": "Account deletion process has been initiated. You will be logged out shortly.",
+        "delete_account_action": "Delete Account"
+    },
+    "action_alert_prefix": "Action triggered for",
+    "action_alert_suffix": "This is a placeholder.",
+    "change_button": "Change",
+    "export_button": "Export"
+  },
+  "cancel": "Cancel",
+  "delete": "Delete"
 }
