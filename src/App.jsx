@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { Typography } from '@mui/material';
@@ -26,6 +27,9 @@ const OrderConfirmationPage = React.lazy(() => import('./pages/OrderConfirmation
 const WishlistPage = React.lazy(() => import('./pages/Wishlist.jsx'));
 const PrivacyPolicyPage = React.lazy(() => import('./pages/PrivacyPolicyPage.jsx'));
 const ShippingPolicyPage = React.lazy(() => import('./pages/ShippingPolicyPage.jsx'));
+const FaqPage = React.lazy(() => import('./pages/FaqPage.jsx'));
+const RefundPolicyPage = React.lazy(() => import('./pages/RefundPolicyPage.jsx'));
+const TermsOfServicePage = React.lazy(() => import('./pages/TermsOfServicePage.jsx'));
 
 // Account Pages
 const AccountDashboard = React.lazy(() => import('./pages/account/AccountDashboard.jsx'));
@@ -68,6 +72,7 @@ const App = () => {
                 { path: "/product/:productId", element: <ProductDetail /> },
                 { path: "/about", element: <AboutPage /> },
                 { path: "/contact", element: <ContactPage /> },
+                { path: "/faq", element: <FaqPage /> },
                 { path: "/cart", element: <CartPage /> },
                 {
                     path: "/checkout",
@@ -80,6 +85,8 @@ const App = () => {
                 { path: "/order-confirmation/:orderId", element: <OrderConfirmationPage /> },
                 { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
                 { path: "/shipping-policy", element: <ShippingPolicyPage /> },
+                { path: "/refund-policy", element: <RefundPolicyPage /> },
+                { path: "/terms-of-service", element: <TermsOfServicePage /> },
             ],
         },
         {

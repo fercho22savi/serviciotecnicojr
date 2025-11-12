@@ -347,39 +347,71 @@
         "login_prompt": "Inicia sesión para ver tu perfil."
     },
     "shipping_policy": {
-        "title": "Envíos y devoluciones",
+        "title": "Envíos y Devoluciones",
         "subtitle": "Todo lo que necesitas saber sobre cómo llevamos nuestros productos a tu puerta.",
-        "delivery_time_label": "Tiempo de entrega",
+        "delivery_time_label": "Tiempo de Entrega",
         "shipping_options": {
-            "title": "Opciones de envío",
+            "title": "Opciones de Envío",
             "standard": {
-                "title": "Envío nacional estándar",
-                "description": "Nuestro envío estándar es gratuito para todos los pedidos superiores a $50. Para pedidos inferiores, hay una tarifa plana de $5.",
+                "title": "Envío Nacional Estándar",
+                "description": "Nuestro envío estándar es gratuito para todos los pedidos superiores a $200.000. Para pedidos inferiores, hay una tarifa plana de $10.000.",
                 "time": "3-5 días hábiles",
                 "tracking": "Todos los paquetes se envían con un número de seguimiento que recibirás por correo electrónico tan pronto como se despache el pedido."
             },
             "express": {
-                "title": "Envío exprés",
-                "description": "¿Necesitas tu pedido con urgencia? Ofrecemos un servicio de envío exprés por un costo adicional de $15.",
+                "title": "Envío Exprés",
+                "description": "¿Necesitas tu pedido con urgencia? Ofrecemos un servicio de envío exprés por un costo adicional de $25.000.",
                 "time": "1-2 días hábiles"
             }
         },
         "returns_policy": {
-            "title": "Política de devoluciones",
+            "title": "Política de Devoluciones",
             "conditions": {
-                "title": "Plazo y condiciones",
-                "description": "Aceptamos devoluciones hasta 30 días después de la fecha de entrega. Para que una devolución sea aceptada, el producto debe estar en su embalaje original, sin usar y en las mismas condiciones en que lo recibiste.",
-                "exceptions": "Los productos de software y las tarjetas de regalo no son retornables."
-            },
-            "process": {
-                "title": "Proceso de devolución",
-                "description": "Para iniciar una devolución, por favor contacta a nuestro equipo de soporte a través de la página de contacto con tu número de pedido. Te proporcionaremos las instrucciones y la dirección de envío.",
-                "shipping_costs": "Los costos de envío de la devolución corren por cuenta del cliente, a menos que el motivo de la devolución sea un error de nuestra parte (producto incorrecto o defectuoso)."
+                "timeframe": {
+                    "title": "Plazo para Devoluciones",
+                    "description": "Aceptamos devoluciones hasta 30 días después de la fecha de entrega."
+                },
+                "item_condition": {
+                    "title": "Condición del Artículo",
+                    "description": "Para que una devolución sea aceptada, el producto debe estar en su embalaje original, sin usar y en las mismas condiciones en que lo recibiste."
+                },
+                "process": {
+                    "title": "Proceso de Devolución",
+                    "description": "Para iniciar una devolución, por favor contacta a nuestro equipo de soporte a través de la página de contacto con tu número de pedido. Te proporcionaremos las instrucciones y la dirección de envío de la devolución."
+                }
             }
         },
-        "general_rules": {
-            "title": "Reglas generales",
-            "description": "Nos reservamos el derecho de rechazar cualquier devolución que no cumpla con los criterios anteriores. Es importante inspeccionar tu pedido tan pronto como lo recibas. Si encuentras algún problema, por favor contáctanos de inmediato."
+        "international": {
+            "title": "Envíos Internacionales",
+            "body": "Por el momento, solo realizamos envíos dentro del país. Estamos trabajando para expandir nuestros envíos a otros países en el futuro. ¡Suscríbete a nuestro boletín para ser el primero en saber sobre nuestra expansión internacional!"
+        },
+        "damaged_items": {
+            "title": "Artículos Dañados o Defectuosos",
+            "body": "Si recibes un artículo dañado o defectuoso, por favor contáctanos inmediatamente a través de nuestra página de contacto. Asegúrate de incluir tu número de pedido y una foto del artículo. Organizaremos un reemplazo o un reembolso completo sin costo adicional para ti."
+        }
+    },
+    "refund_policy": {
+        "title": "Política de Reembolso",
+        "subtitle": "Nuestro compromiso para asegurar que estés satisfecho con tu compra.",
+        "general": {
+            "title": "Política General",
+            "timeframe": "Nuestra política de reembolso tiene una validez de 30 días desde la fecha de la compra. Si han pasado más de 30 días, lamentablemente no podemos ofrecer un reembolso o cambio.",
+            "conditions": "Para ser elegible para un reembolso, el artículo debe estar sin usar, en la misma condición en que lo recibiste y en su embalaje original."
+        },
+        "process": {
+            "title": "Proceso de Reembolso",
+            "initiate": "Para iniciar una devolución, por favor contáctanos a través de nuestra página de contacto con tu número de pedido y el motivo de la devolución. Te proporcionaremos instrucciones detalladas.",
+            "shipping": "Serás responsable de pagar los costos de envío para devolver tu artículo. Los costos de envío no son reembolsables."
+        },
+        "non_refundable": {
+            "title": "Artículos no Reembolsables",
+            "items": "Varios tipos de bienes están exentos de ser devueltos. Productos perecederos como comida, flores, periódicos o revistas no pueden ser devueltos. Tampoco aceptamos productos que sean bienes íntimos o sanitarios, materiales peligrosos o líquidos o gases inflamables. Adicionalmente, las tarjetas de regalo y los productos de software descargables no son reembolsables."
+        },
+        "late_refunds": {
+            "title": "Reembolsos Tardíos o Faltantes",
+            "check_account": "Si aún no has recibido un reembolso, primero revisa tu cuenta bancaria de nuevo.",
+            "contact_card": "Luego, contacta a tu compañía de tarjeta de crédito, puede tomar algún tiempo antes de que tu reembolso se publique oficialmente.",
+            "contact_us": "Si has hecho todo esto y aún no has recibido tu reembolso, por favor contáctanos."
         }
     },
     "contact_page": {

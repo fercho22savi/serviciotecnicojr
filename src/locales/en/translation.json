@@ -366,20 +366,76 @@
         "returns_policy": {
             "title": "Return Policy",
             "conditions": {
-                "title": "Timeframe and Conditions",
-                "description": "We accept returns up to 30 days after the delivery date. For a return to be accepted, the product must be in its original packaging, unused, and in the same condition you received it.",
-                "exceptions": "Software products and gift cards are non-returnable."
-            },
-            "process": {
-                "title": "Return Process",
-                "description": "To initiate a return, please contact our support team through the contact page with your order number. We will provide you with the instructions and the shipping address.",
-                "shipping_costs": "Return shipping costs are the responsibility of the customer, unless the reason for the return is an error on our part (incorrect or defective product)."
+              "timeframe": {
+                  "title": "Timeframe for Returns",
+                  "description": "We accept returns up to 30 days after the delivery date."
+              },
+              "item_condition": {
+                  "title": "Item Condition",
+                  "description": "For a return to be accepted, the product must be in its original packaging, unused, and in the same condition you received it."
+              },
+              "process": {
+                  "title": "Return Process",
+                  "description": "To initiate a return, please contact our support team through the contact page with your order number. We will provide you with the instructions and the return shipping address."
+              }
             }
         },
-        "general_rules": {
-            "title": "General Rules",
-            "description": "We reserve the right to refuse any return that does not meet the above criteria. It is important to inspect your order as soon as you receive it. If you find any problems, please contact us immediately."
+        "international": {
+            "title": "International Shipping",
+            "body": "At this time, we only ship within the country. We are working to expand our shipping to other countries in the future. Subscribe to our newsletter to be the first to know about our international expansion!"
+        },
+        "damaged_items": {
+            "title": "Damaged or Defective Items",
+            "body": "If you receive a damaged or defective item, please contact us immediately through our contact page. Be sure to include your order number and a photo of the item. We will arrange for a replacement or a full refund at no additional cost."
         }
+    },
+    "refund_policy": {
+        "title": "Refund Policy",
+        "subtitle": "Our commitment to ensuring you are satisfied with your purchase.",
+        "general": {
+            "title": "General Policy",
+            "timeframe": "Our refund policy is valid for 30 days from the date of purchase. If more than 30 days have passed, unfortunately, we cannot offer a refund or exchange.",
+            "conditions": "To be eligible for a refund, the item must be unused, in the same condition that you received it, and in its original packaging."
+        },
+        "process": {
+            "title": "Refund Process",
+            "initiate": "To initiate a return, please contact us through our contact page with your order number and the reason for the return. We will provide you with detailed instructions.",
+            "shipping": "You will be responsible for paying the shipping costs for returning your item. Shipping costs are non-refundable."
+        },
+        "non_refundable": {
+            "title": "Non-Refundable Items",
+            "items": "Several types of goods are exempt from being returned. Perishable goods such as food, flowers, newspapers or magazines cannot be returned. We also do not accept products that are intimate or sanitary goods, hazardous materials, or flammable liquids or gases. Additionally, gift cards and downloadable software products are non-refundable."
+        },
+        "late_refunds": {
+            "title": "Late or Missing Refunds",
+            "check_account": "If you haven’t received a refund yet, first check your bank account again.",
+            "contact_card": "Then contact your credit card company, it may take some time before your refund is officially posted.",
+            "contact_us": "If you’ve done all of this and you still have not received your refund yet, please contact us."
+        }
+    },
+    "terms_of_service_page": {
+        "title": "Terms of Service",
+        "last_updated": "Last updated: August 1, 2024",
+        "acceptance_title": "1. Acceptance of Terms",
+        "acceptance_content": "By accessing and using our website ElectronicaNr (the \"Service\"), you agree to comply with and be bound by the following terms and conditions. If you do not agree to these terms, you should not use our Service.",
+        "use_of_service_title": "2. Use of the Service",
+        "use_of_service_intro": "You agree to use the Service only for lawful purposes and in accordance with these Terms. You agree not to use the Service:",
+        "use_of_service_points": [
+            "In any way that violates any applicable law or regulation.",
+            "To exploit, harm, or attempt to exploit or harm minors in any way.",
+            "To transmit, or procure the sending of, any unsolicited advertising or promotional material (spam).",
+            "To impersonate or attempt to impersonate the Company, a Company employee, another user, or any other person or entity."
+        ],
+        "intellectual_property_title": "3. Intellectual Property",
+        "intellectual_property_content": "The Service and all its original content, features, and functionality are and will remain the exclusive property of ElectronicaNr and its licensors. The Service is protected by copyright, trademark, and other laws of both our country and foreign countries.",
+        "user_accounts_title": "4. User Accounts",
+        "user_accounts_content": "When you create an account with us, you must provide us with information that is accurate, complete, and current at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our Service.",
+        "limitation_of_liability_title": "5. Limitation of Liability",
+        "limitation_of_liability_content": "In no event shall ElectronicaNr, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.",
+        "changes_to_terms_title": "6. Changes to Terms",
+        "changes_to_terms_content": "We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will try to provide at least 30 days' notice prior to any new terms taking effect.",
+        "contact_us_title": "7. Contact Us",
+        "contact_us_content": "If you have any questions about these Terms, please contact us through our contact page."
     },
     "contact_page": {
         "title": "Contact Us",
